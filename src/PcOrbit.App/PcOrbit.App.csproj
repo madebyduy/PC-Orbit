@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>PcOrbit.App</RootNamespace>
+    <AssemblyName>PcControl</AssemblyName>
+    <UseWPF>true</UseWPF>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The CLI project is the composition root: the executor allowlist lives in PcOrbitHost and
+         nowhere else (spec 19.1). The app reuses it rather than growing a second allowlist. -->
+    <ProjectReference Include="..\PcOrbit.Cli\PcOrbit.Cli.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\..\data\**\*.json" LinkBase="data" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

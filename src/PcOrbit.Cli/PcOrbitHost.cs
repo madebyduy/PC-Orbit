@@ -92,7 +92,12 @@ public sealed class PcOrbitHost : IDisposable
 
     public IClock Clock { get; } = SystemClock.Instance;
 
-    public static PcOrbitHost Create(CliOptions options)
+    /// <param name="safeApplyConfirmation">
+    /// How Safe Apply asks "can you still see the screen?" (spec 10.1). The console countdown by
+    /// default; the desktop app passes its own dialog. Never <see cref="NeverConfirms"/> for an
+    /// interactive surface — silence must stay distinguishable from "yes".
+    /// </param>
+    public static PcOrbitHost Create(CliOptions options, ISafeApplyConfirmation? safeApplyConfirmation = null)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -116,7 +121,7 @@ public sealed class PcOrbitHost : IDisposable
             new WslDefaultVersionExecutor(),
             new SystemRestoreExecutor(),
             new BitLockerSuspendExecutor(),
-            new DisplayRefreshRateExecutor(new ConsoleSafeApplyConfirmation()),
+            new DisplayRefreshRateExecutor(safeApplyConfirmation ?? new ConsoleSafeApplyConfirmation()),
             new GuidedFirmwareExecutor(guides),
             new DellFirmwareExecutor(),
         ]);

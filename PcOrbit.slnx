@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/PcOrbit.Adapters.Windows/PcOrbit.Adapters.Windows.csproj" />
+    <Project Path="src/PcOrbit.App/PcOrbit.App.csproj" />
     <Project Path="src/PcOrbit.Cli/PcOrbit.Cli.csproj" />
     <Project Path="src/PcOrbit.Core/PcOrbit.Core.csproj" />
     <Project Path="src/PcOrbit.Store/PcOrbit.Store.csproj" />
