@@ -86,10 +86,14 @@ public sealed class FakeReader : ICapabilityReader
 public sealed class ScriptedExecutor(string id) : IActionExecutor
 {
     private readonly List<string> _applied = [];
+    private readonly List<ActionExecutionContext> _rolledBack = [];
 
     public string Id { get; } = id;
 
     public IReadOnlyList<string> Applied => _applied;
+
+    /// <summary>Every rollback call, with its full context — so a test can assert on the restore target.</summary>
+    public IReadOnlyList<ActionExecutionContext> RolledBack => _rolledBack;
 
     public ApplyOutcome Result { get; set; } = ApplyOutcome.Applied("scripted");
 
@@ -97,6 +101,9 @@ public sealed class ScriptedExecutor(string id) : IActionExecutor
 
     /// <summary>Runs when Apply is called. Use it to move the fake machine, or not.</summary>
     public Action<ActionExecutionContext>? OnApply { get; set; }
+
+    /// <summary>Runs when Rollback is called — the undo-direction twin of <see cref="OnApply"/>.</summary>
+    public Action<ActionExecutionContext>? OnRollback { get; set; }
 
     public Exception? ThrowOnApply { get; set; }
 
@@ -113,8 +120,12 @@ public sealed class ScriptedExecutor(string id) : IActionExecutor
         return Task.FromResult(Result);
     }
 
-    public Task<ApplyOutcome> RollbackAsync(ActionExecutionContext context, CancellationToken cancellationToken = default) =>
-        Task.FromResult(RollbackResult);
+    public Task<ApplyOutcome> RollbackAsync(ActionExecutionContext context, CancellationToken cancellationToken = default)
+    {
+        _rolledBack.Add(context);
+        OnRollback?.Invoke(context);
+        return Task.FromResult(RollbackResult);
+    }
 }
 
 /// <summary>An event log a test can read back without a database.</summary>

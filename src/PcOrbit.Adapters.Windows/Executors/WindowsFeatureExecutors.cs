@@ -163,12 +163,16 @@ public sealed class WslDefaultVersionExecutor(
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        // Roll back to whatever was actually there before, not to a hard-coded version.
-        string previous = context.Before.Status == CapabilityStatus.Value && context.Before.Raw is "1" or "2"
-            ? context.Before.Raw
-            : "2";
+        // Restore to what was actually there before the change (context.Requested during an undo),
+        // not to a hard-coded version. If that value was never read, refuse rather than guess.
+        if (context.Requested.Status != CapabilityStatus.Value || context.Requested.Raw is not ("1" or "2"))
+        {
+            return Task.FromResult(ApplyOutcome.Failed(
+                "action.failed",
+                "The previous WSL default version was never read, so there is nothing to restore to."));
+        }
 
-        return SetAsync(context, previous, cancellationToken);
+        return SetAsync(context, context.Requested.Raw, cancellationToken);
     }
 
     private async Task<ApplyOutcome> SetAsync(

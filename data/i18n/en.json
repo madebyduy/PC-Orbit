@@ -188,6 +188,21 @@
     "cli.risk.medium": "medium risk",
     "cli.risk.high": "high risk",
     "cli.risk.critical": "critical risk",
-    "cli.apply.dryRunDespiteBlockers": "Simulating anyway: a dry run changes nothing, so the blockers above are what a real apply would need, not what this preview needs."
+    "cli.apply.dryRunDespiteBlockers": "Simulating anyway: a dry run changes nothing, so the blockers above are what a real apply would need, not what this preview needs.",
+    "transaction.undone": "All of this transaction's changes have been undone.",
+    "cli.undo.heading": "Undo {id} — {title}",
+    "cli.undo.notFound": "No transaction '{id}'. Run 'pco history --verbose' to find transaction ids.",
+    "cli.undo.nothing": "Nothing to undo: no transaction has changes in effect on this PC.",
+    "cli.undo.isUndo": "Transaction {id} is itself an undo. To redo the change, plan the outcome again.",
+    "cli.undo.alreadyRolledBack": "Transaction {id} has already been rolled back.",
+    "cli.undo.nothingChanged": "This transaction never changed anything, so there is nothing to undo.",
+    "cli.undo.noAutomatic": "None of this transaction's remaining changes can be undone automatically. The list above says why, and what to do instead.",
+    "cli.undo.excluded.heading": "Stays as it is",
+    "cli.undo.excluded.byHand": "{action} — you made this change by hand, so you change it back the same way: the same setting, in the same firmware screen.",
+    "cli.undo.excluded.notAutomatic": "{action} — cannot be undone automatically.",
+    "cli.undo.excluded.previousUnknown": "{action} — the value before this change was never read, so there is no known value to restore.",
+    "cli.undo.confirm": "Undo {count, plural, one {# change} other {# changes}} on this PC?",
+    "cli.undo.sourceRolledBack": "Transaction {id} is now fully rolled back.",
+    "cli.undo.sourcePartial": "Transaction {id} is partially rolled back. Its step records show exactly what remains."
   }
 }

@@ -26,6 +26,7 @@ Run against a real Windows 11 machine, with no elevation required for anything r
 | `pco outcomes` | The outcomes you can ask for. |
 | `pco plan <outcome>` | Compiles a **difference plan** for this specific machine: only what is still missing, ordered by dependency, split at restart boundaries, with a cost header and a plan hash. Changes nothing. |
 | `pco apply <outcome>` | Runs that plan as a transaction: preflight → apply → verify → restart boundary → resume → verify the outcome. `--dry-run` simulates the whole thing. |
+| `pco undo [tx]` | Undoes a transaction — as a **reverse transaction** through the same preview → apply → verify (spec 21.9). Restores the values read before each change, in reverse order. Whatever cannot be undone automatically is listed with the reason, never silently dropped. Defaults to the most recent transaction still in effect. |
 | `pco resume` | Picks a transaction back up after the restart and reads the real values from Windows. |
 | `pco history` | Normalised change events with before/after values and the boot session each one belongs to. |
 | `pco doctor` | Validates the shipped data and the executor allowlist. Meant for CI. |
@@ -147,6 +148,12 @@ way an ordinary person breaks their PC with a tool like this (spec 10.3).
 **A manifest names an executor; it never carries a script.** Executors are a hand-written
 allowlist in the composition root. An unknown executor id fails the plan before anything is
 touched — there is no shell fallback and no dynamic loading (spec 17.1, 19.1).
+
+**Undo is a reverse transaction, not a special code path.** `pco undo` compiles a reverse plan
+from the manifests carried *inside* the original transaction and runs it through the same engine —
+same checkpoints, same restart handling, same read-the-machine verification. A step whose
+before-value was never read is excluded rather than restored to a guess, and a guided firmware
+step is listed as "you change it back by hand" instead of hiding the option (spec 21.9).
 
 **The plan the user reviewed is locked by hash.** Recompiling after a machine or data change
 produces a different hash, and applying then refuses rather than running something nobody

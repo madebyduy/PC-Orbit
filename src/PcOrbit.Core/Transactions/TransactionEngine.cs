@@ -67,7 +67,37 @@ public sealed class TransactionEngine
     /// changed, or the graph or catalog was updated — this refuses rather than applying something
     /// nobody approved (spec 9.1, 12.3, 19.1).
     /// </param>
-    public Transaction Begin(Plan plan, ExecutionMode mode, string reviewedPlanHash)
+    public Transaction Begin(Plan plan, ExecutionMode mode, string reviewedPlanHash) =>
+        Create(plan, mode, reviewedPlanHash, TransactionKind.Apply, undoOf: null);
+
+    /// <summary>
+    /// Turns a reverse plan from <see cref="UndoPlanner"/> into an undo transaction.
+    /// </summary>
+    /// <remarks>
+    /// Spec 21.9: undo goes through exactly the same preview, apply and verify as the original
+    /// change. The transaction it produces runs through <see cref="RunAsync"/> and
+    /// <see cref="ResumeAsync"/> unchanged; the only difference is that each step asks its
+    /// executor to roll back, and its events land in the Rollback category.
+    /// </remarks>
+    public Transaction BeginUndo(Plan reversePlan, Transaction source, ExecutionMode mode, string reviewedPlanHash)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        if (source.Kind == TransactionKind.Undo)
+        {
+            throw new InvalidOperationException(
+                $"Transaction {source.Id} is itself an undo. To redo the change, plan the outcome again.");
+        }
+
+        return Create(reversePlan, mode, reviewedPlanHash, TransactionKind.Undo, source.Id);
+    }
+
+    private Transaction Create(
+        Plan plan,
+        ExecutionMode mode,
+        string reviewedPlanHash,
+        TransactionKind kind,
+        string? undoOf)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentException.ThrowIfNullOrWhiteSpace(reviewedPlanHash);
@@ -122,7 +152,9 @@ public sealed class TransactionEngine
             Mode: mode,
             CreatedAt: now,
             UpdatedAt: now,
-            StartBootId: _boot.CurrentBootId);
+            StartBootId: _boot.CurrentBootId,
+            Kind: kind,
+            UndoOf: undoOf);
     }
 
     /// <summary>
@@ -258,6 +290,102 @@ public sealed class TransactionEngine
     }
 
     /// <summary>
+    /// After an undo transaction finishes, records on the <em>source</em> transaction which of its
+    /// steps are now rolled back — and marks the whole transaction rolled back when nothing it
+    /// changed remains in effect.
+    /// </summary>
+    /// <remarks>
+    /// Only steps whose rollback was <em>verified against the machine</em> count, plus steps whose
+    /// rollback was skipped because the machine already read the restore value. A rollback the
+    /// executor merely claimed is not evidence, exactly as for a forward apply (spec 8.3.2).
+    /// Returns the updated source, or null when it is no longer in the store.
+    /// </remarks>
+    public async Task<Transaction?> ReconcileUndoAsync(
+        Transaction undo,
+        ITransactionStore store,
+        IEventLog events,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(undo);
+        ArgumentNullException.ThrowIfNull(store);
+        ArgumentNullException.ThrowIfNull(events);
+
+        if (undo.Kind != TransactionKind.Undo || undo.UndoOf is null)
+        {
+            throw new InvalidOperationException($"Transaction {undo.Id} is not an undo transaction.");
+        }
+
+        if (!undo.IsFinished)
+        {
+            throw new InvalidOperationException(
+                $"Undo transaction {undo.Id} is {undo.State}; reconcile it once it has finished.");
+        }
+
+        if (undo.Mode == ExecutionMode.DryRun)
+        {
+            // A dry run changed nothing and left no trace; there is nothing to reconcile.
+            return null;
+        }
+
+        Transaction? source = await store.LoadAsync(undo.UndoOf, cancellationToken).ConfigureAwait(false);
+
+        if (source is null)
+        {
+            return null;
+        }
+
+        HashSet<CapabilityId> undone =
+        [
+            .. undo.Steps
+                .Where(s => s.State is StepState.Verified or StepState.Skipped)
+                .Select(s => s.Capability),
+        ];
+
+        if (undone.Count == 0)
+        {
+            return source;
+        }
+
+        List<StepExecution> steps =
+        [
+            .. source.Steps.Select(s =>
+                undone.Contains(s.Capability) && s.State is StepState.Applied
+                    or StepState.Verified
+                    or StepState.AwaitingRestart
+                    or StepState.VerifyFailed
+                    ? s with { State = StepState.RolledBack }
+                    : s),
+        ];
+
+        // Rolled back as a whole only when nothing this transaction changed is still in effect —
+        // a partial undo keeps the source state, and the per-step records tell the exact story
+        // (spec 9.4: never one blanket verdict for a mixed result).
+        bool anythingStillApplied = steps.Any(s => s.State is StepState.Applied
+            or StepState.Verified
+            or StepState.AwaitingRestart
+            or StepState.AwaitingUserAction
+            or StepState.VerifyFailed);
+
+        Transaction updated = await Checkpoint(
+            source with
+            {
+                Steps = steps,
+                State = anythingStillApplied ? source.State : TransactionState.RolledBack,
+                PendingRestart = anythingStillApplied ? source.PendingRestart : RestartKind.None,
+            },
+            store,
+            cancellationToken).ConfigureAwait(false);
+
+        if (updated.State == TransactionState.RolledBack)
+        {
+            await LogTransactionEvent(updated, "transaction.undone", events, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return updated;
+    }
+
+    /// <summary>
     /// Whether this phase really has to end in a restart.
     /// </summary>
     /// <remarks>
@@ -336,7 +464,13 @@ public sealed class TransactionEngine
 
             try
             {
-                outcome = await executor.ApplyAsync(context, cancellationToken).ConfigureAwait(false);
+                // An undo transaction runs the same loop with one difference: the executor is
+                // asked to roll back. Its context reads the same way as a forward one — Before is
+                // what the machine says right now, Requested is the value to end up at (here, the
+                // value from before the original change).
+                outcome = current.Kind == TransactionKind.Undo
+                    ? await executor.RollbackAsync(context, cancellationToken).ConfigureAwait(false)
+                    : await executor.ApplyAsync(context, cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -380,7 +514,9 @@ public sealed class TransactionEngine
                     Id: _ids.NewId("ev"),
                     Timestamp: _clock.Now,
                     Source: EventSource.PcOrbit,
-                    Category: CategoryOf(step.Action),
+                    Category: current.Kind == TransactionKind.Undo
+                        ? EventCategory.Rollback
+                        : CategoryOf(step.Action),
                     Component: step.Capability.Value,
                     Before: before.Canonical,
                     After: step.DesiredValue.Canonical,

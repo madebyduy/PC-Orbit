@@ -75,6 +75,7 @@ public static class Program
                 "checkup" => await Commands.CheckupAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "plan" => await Commands.PlanAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "apply" => await Commands.ApplyAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
+                "undo" => await Commands.UndoAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "resume" => await Commands.ResumeAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "history" => await Commands.HistoryAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "outcomes" => Commands.Outcomes(host, options, output),
@@ -170,6 +171,8 @@ public static class Program
               outcomes      List the outcomes you can ask for.
               plan <id>     Work out what this specific PC still needs for an outcome. Changes nothing.
               apply <id>    Apply that plan as a transaction: preflight, apply, restart, verify.
+              undo [tx]     Undo a transaction's changes: a reverse plan through the same
+                            preview, apply and verify. Defaults to the most recent one.
               resume        Continue a transaction that was waiting for a restart.
               history       Recent changes, with before and after values.
               doctor        Validate the shipped data and the executor allowlist. Useful in CI.
@@ -194,6 +197,7 @@ public static class Program
               pco plan docker-wsl2-ready --verbose
               pco apply docker-wsl2-ready --dry-run
               pco apply docker-wsl2-ready --i-have-my-recovery-key
+              pco undo --dry-run
               pco resume
             """);
     }

@@ -72,10 +72,12 @@ public sealed class GuidedFirmwareExecutor(IReadOnlyDictionary<string, GuideData
         GuideEntry? entry = ResolveGuide(context.Action, context.Machine, out _);
 
         // Spec 21.9: when we cannot undo something ourselves, we show how — we do not hide the
-        // button and say nothing.
+        // button and say nothing. During an undo, Requested carries the value to set back to.
+        string target = context.Requested.IsKnown ? context.Requested.Canonical : "its previous value";
+
         string how = entry is null
-            ? "Set the option back in your firmware setup screen."
-            : $"Go back to {string.Join(" > ", entry.MenuPath)}, set '{entry.SettingName}' to its previous value, "
+            ? $"Set the option back to {target} in your firmware setup screen."
+            : $"Go back to {string.Join(" > ", entry.MenuPath)}, set '{entry.SettingName}' to {target}, "
               + $"and save ({string.Join(" or ", entry.SaveKeys ?? ["F10"])}).";
 
         return Task.FromResult(new ApplyOutcome(ApplyStatus.AwaitingUserAction, "action.guided.staged", how));

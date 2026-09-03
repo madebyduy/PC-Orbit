@@ -5,6 +5,22 @@ using PcOrbit.Core.Model;
 
 namespace PcOrbit.Core.Transactions;
 
+/// <summary>
+/// Which direction a transaction moves the machine in.
+/// </summary>
+/// <remarks>
+/// Spec 21.9: undo is not a special code path — it is a reverse transaction that goes through the
+/// same preview, apply and verify as the change it undoes. This flag is the only difference the
+/// engine sees: an <see cref="Undo"/> transaction asks each executor to roll back instead of apply.
+/// </remarks>
+public enum TransactionKind
+{
+    Apply = 0,
+
+    /// <summary>A reverse transaction. <see cref="Transaction.UndoOf"/> names what it undoes.</summary>
+    Undo,
+}
+
 /// <summary>Spec 9.2.</summary>
 public enum TransactionState
 {
@@ -127,7 +143,9 @@ public sealed record Transaction(
     string StartBootId,
     string? ResumeBootId = null,
     RestartKind PendingRestart = RestartKind.None,
-    string? OutcomeVerdictKey = null)
+    string? OutcomeVerdictKey = null,
+    TransactionKind Kind = TransactionKind.Apply,
+    string? UndoOf = null)
 {
     /// <summary>
     /// The plan travels with the transaction rather than being looked up again.

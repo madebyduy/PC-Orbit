@@ -253,6 +253,186 @@ public static class Commands
         return TransactionExitCode(result);
     }
 
+    // ---------------------------------------------------------------- undo
+
+    /// <summary>
+    /// Undoes a transaction: the CLI face of spec 21.9's Undo panel.
+    /// </summary>
+    /// <remarks>
+    /// Undo is a reverse transaction through the same preview → apply → verify as the original, so
+    /// this command is deliberately shaped like <see cref="ApplyAsync"/>: show what will change and
+    /// what it costs, run preflight, confirm, execute, report exact counts. What cannot be undone
+    /// automatically is listed with the reason rather than silently dropped (spec 9.4, 21.9).
+    /// </remarks>
+    public static async Task<int> UndoAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(output);
+
+        Transaction? source;
+
+        if (options.FirstArgument is { } id)
+        {
+            source = await host.Transactions.LoadAsync(id, ct).ConfigureAwait(false);
+
+            if (source is null)
+            {
+                Output.Error(output.Text("cli.undo.notFound", Output.Args(("id", id))));
+                return ExitCodes.Error;
+            }
+        }
+        else
+        {
+            // No id: the most recent transaction that still has changes in effect — the top line
+            // of the "Recently changed" panel (spec 21.9).
+            IReadOnlyList<Transaction> recent = await host.Transactions
+                .ListRecentAsync(50, ct)
+                .ConfigureAwait(false);
+
+            source = recent.FirstOrDefault(t =>
+                t.Kind == TransactionKind.Apply
+                && t.State != TransactionState.RolledBack
+                && t.Steps.Any(HasTakenEffect));
+
+            if (source is null)
+            {
+                Output.Line(output.Text("cli.undo.nothing"));
+                return ExitCodes.Ok;
+            }
+        }
+
+        if (source.Kind == TransactionKind.Undo)
+        {
+            Output.Error(output.Text("cli.undo.isUndo", Output.Args(("id", source.Id))));
+            return ExitCodes.Error;
+        }
+
+        if (source.State == TransactionState.RolledBack)
+        {
+            Output.Line(output.Text("cli.undo.alreadyRolledBack", Output.Args(("id", source.Id))));
+            return ExitCodes.Ok;
+        }
+
+        UndoPlan undo = new UndoPlanner(host.Clock).Plan(source);
+
+        Output.Heading(output.Text("cli.undo.heading", Output.Args(
+            ("id", source.Id),
+            ("title", output.Text(FindTitleKey(host, source.Plan))))));
+
+        if (undo.Excluded.Count > 0)
+        {
+            Output.Line("  " + output.Text("cli.undo.excluded.heading"));
+
+            foreach (UndoExclusion exclusion in undo.Excluded)
+            {
+                string key = exclusion.Reason switch
+                {
+                    UndoStepBlocker.ByHand => "cli.undo.excluded.byHand",
+                    UndoStepBlocker.NotAutomatic => "cli.undo.excluded.notAutomatic",
+                    _ => "cli.undo.excluded.previousUnknown",
+                };
+
+                Output.Line("    - " + output.Text(key, Output.Args(
+                    ("action", output.Text(exclusion.ActionTitleKey)))));
+            }
+
+            Output.Line();
+        }
+
+        if (undo.Plan is null)
+        {
+            Output.Line("  " + output.Text(undo.Excluded.Count > 0
+                ? "cli.undo.noAutomatic"
+                : "cli.undo.nothingChanged"));
+
+            return undo.Excluded.Count > 0 ? ExitCodes.NotReached : ExitCodes.Ok;
+        }
+
+        // A fresh scan, exactly as apply does: preflight decisions belong to the machine as it is
+        // now, not as it was when the original transaction ran.
+        StateSnapshot snapshot = await host.Scanner.ScanAsync(ct).ConfigureAwait(false);
+        await host.Snapshots.SaveAsync(snapshot, ct).ConfigureAwait(false);
+
+        PreflightReport preflight = RunPreflight(host, options, undo.Plan, snapshot);
+        PrintPlanDetails(host, undo.Plan, preflight, output);
+
+        ExecutionMode mode = options.DryRun ? ExecutionMode.DryRun : ExecutionMode.Apply;
+
+        if (preflight.IsBlocked && mode == ExecutionMode.Apply)
+        {
+            Output.Line();
+            Output.Error(output.Text("cli.apply.blocked"));
+            return ExitCodes.NotReached;
+        }
+
+        if (preflight.IsBlocked)
+        {
+            Output.Line();
+            Output.Line("  " + output.Text("cli.apply.dryRunDespiteBlockers"));
+        }
+
+        if (mode == ExecutionMode.Apply && !options.AssumeYes && !ConfirmUndo(undo.Plan, output))
+        {
+            Output.Line(output.Text("cli.apply.cancelled"));
+            return ExitCodes.Ok;
+        }
+
+        Transaction transaction = host.Engine.BeginUndo(undo.Plan, source, mode, undo.Plan.Hash);
+
+        Transaction result = await host.Engine
+            .RunAsync(transaction, host.Transactions, host.Events, ct)
+            .ConfigureAwait(false);
+
+        PrintTransactionResult(result, output, options);
+
+        if (result.IsFinished && mode == ExecutionMode.Apply)
+        {
+            await ReportReconciledSourceAsync(host, result, output, ct).ConfigureAwait(false);
+        }
+
+        return TransactionExitCode(result);
+    }
+
+    private static bool HasTakenEffect(StepExecution step) => step.State is StepState.Applied
+        or StepState.Verified
+        or StepState.AwaitingRestart
+        or StepState.AwaitingUserAction
+        or StepState.VerifyFailed;
+
+    private static bool ConfirmUndo(Plan plan, Output output)
+    {
+        Output.Line();
+        Console.Write("  " + output.Text("cli.undo.confirm", Output.Args(
+            ("count", Output.Number(plan.Cost.Changes)))) + " [y/N] ");
+
+        string? answer = Console.ReadLine();
+        return answer is not null && answer.Trim().StartsWith("y", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async Task ReportReconciledSourceAsync(
+        PcOrbitHost host,
+        Transaction undoTransaction,
+        Output output,
+        CancellationToken ct)
+    {
+        Transaction? reconciled = await host.Engine
+            .ReconcileUndoAsync(undoTransaction, host.Transactions, host.Events, ct)
+            .ConfigureAwait(false);
+
+        if (reconciled is null)
+        {
+            return;
+        }
+
+        Output.Line();
+        Output.Line("  " + output.Text(
+            reconciled.State == TransactionState.RolledBack
+                ? "cli.undo.sourceRolledBack"
+                : "cli.undo.sourcePartial",
+            Output.Args(("id", reconciled.Id))));
+    }
+
     // ---------------------------------------------------------------- resume
 
     public static async Task<int> ResumeAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
@@ -310,6 +490,13 @@ public static class Commands
                 .ConfigureAwait(false);
 
             PrintTransactionResult(result, output, options);
+
+            // A finished undo also settles the transaction it undoes (spec 21.9).
+            if (result is { Kind: TransactionKind.Undo, IsFinished: true })
+            {
+                await ReportReconciledSourceAsync(host, result, output, ct).ConfigureAwait(false);
+            }
+
             worst = Math.Max(worst, TransactionExitCode(result));
         }
 
@@ -572,6 +759,11 @@ public static class Commands
             Output.Line("  " + output.Text("plan.outcome.notReachable"));
         }
 
+        PrintPlanDetails(host, plan, preflight, output);
+    }
+
+    private static void PrintPlanDetails(PcOrbitHost host, Plan plan, PreflightReport preflight, Output output)
+    {
         output.PlanCostHeader(plan.Cost);
 
         foreach (PlanPhase phase in plan.Phases)

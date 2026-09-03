@@ -124,8 +124,9 @@ public sealed class DisplayRefreshRateExecutor(ISafeApplyConfirmation? confirmat
             return Task.FromResult(new ApplyOutcome(ApplyStatus.Skipped, "action.dry-run", "Would restore the previous refresh rate."));
         }
 
-        if (context.Before.Status != CapabilityStatus.Value
-            || !int.TryParse(context.Before.Raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int previous))
+        // During an undo, Requested carries the value from before the original change.
+        if (context.Requested.Status != CapabilityStatus.Value
+            || !int.TryParse(context.Requested.Raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int previous))
         {
             return Task.FromResult(ApplyOutcome.Failed(
                 "action.failed",

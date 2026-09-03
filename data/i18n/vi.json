@@ -188,6 +188,21 @@
     "cli.risk.medium": "rủi ro trung bình",
     "cli.risk.high": "rủi ro cao",
     "cli.risk.critical": "rủi ro rất cao",
-    "cli.apply.dryRunDespiteBlockers": "Vẫn chạy thử: dry run không thay đổi gì, nên các mục bị chặn ở trên là điều kiện cho lần áp dụng thật, không phải cho bản xem trước này."
+    "cli.apply.dryRunDespiteBlockers": "Vẫn chạy thử: dry run không thay đổi gì, nên các mục bị chặn ở trên là điều kiện cho lần áp dụng thật, không phải cho bản xem trước này.",
+    "transaction.undone": "Mọi thay đổi của transaction này đã được hoàn tác.",
+    "cli.undo.heading": "Hoàn tác {id} — {title}",
+    "cli.undo.notFound": "Không có transaction '{id}'. Chạy 'pco history --verbose' để xem danh sách id.",
+    "cli.undo.nothing": "Không có gì để hoàn tác: chưa có transaction nào còn thay đổi đang có hiệu lực trên máy này.",
+    "cli.undo.isUndo": "Transaction {id} chính là một lần hoàn tác. Muốn làm lại thay đổi đó, hãy lập kế hoạch cho trạng thái mong muốn một lần nữa.",
+    "cli.undo.alreadyRolledBack": "Transaction {id} đã được hoàn tác từ trước.",
+    "cli.undo.nothingChanged": "Transaction này chưa từng thay đổi gì, nên không có gì để hoàn tác.",
+    "cli.undo.noAutomatic": "Những thay đổi còn lại của transaction này đều không tự hoàn tác được. Danh sách ở trên nói rõ vì sao, và bạn nên làm gì thay thế.",
+    "cli.undo.excluded.heading": "Giữ nguyên như hiện tại",
+    "cli.undo.excluded.byHand": "{action} — bạn đã tự làm thay đổi này, nên bạn đổi lại theo đúng cách đó: cùng setting, trong cùng màn hình firmware.",
+    "cli.undo.excluded.notAutomatic": "{action} — không tự hoàn tác được.",
+    "cli.undo.excluded.previousUnknown": "{action} — giá trị trước khi đổi chưa từng đọc được, nên không có giá trị nào an toàn để khôi phục.",
+    "cli.undo.confirm": "Hoàn tác {count, plural, other {# thay đổi}} trên máy này?",
+    "cli.undo.sourceRolledBack": "Transaction {id} đã được hoàn tác toàn bộ.",
+    "cli.undo.sourcePartial": "Transaction {id} mới hoàn tác được một phần. Chi tiết từng bước ghi rõ phần nào còn lại."
   }
 }

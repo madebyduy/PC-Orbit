@@ -73,6 +73,15 @@ public interface IActionExecutor
 
     Task<ApplyOutcome> ApplyAsync(ActionExecutionContext context, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Restores the previous state. Called by an undo transaction (spec 21.9).
+    /// </summary>
+    /// <remarks>
+    /// The context reads exactly like a forward one: <see cref="ActionExecutionContext.Before"/> is
+    /// what the machine says right now, and <see cref="ActionExecutionContext.Requested"/> is the
+    /// value to end up at — the value recorded before the original change. An implementation that
+    /// needs the old value must therefore use <c>Requested</c>, never <c>Before</c>.
+    /// </remarks>
     Task<ApplyOutcome> RollbackAsync(ActionExecutionContext context, CancellationToken cancellationToken = default);
 }
 
