@@ -201,19 +201,30 @@
       </Setter>
     </Style>
 
+    <!-- A button on a pale background needs an edge, or it reads as a label. -->
     <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
       <Setter Property="Background" Value="{StaticResource White}" />
-      <Setter Property="Foreground" Value="#44546A" />
+      <Setter Property="Foreground" Value="#243B57" />
+      <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
             <Border x:Name="Bg" CornerRadius="10" Background="{TemplateBinding Background}"
-                    BorderBrush="#E3EAF3" BorderThickness="1" Padding="{TemplateBinding Padding}">
+                    BorderBrush="#B9CAE0" BorderThickness="1.2" Padding="{TemplateBinding Padding}">
+              <Border.Effect>
+                <DropShadowEffect Color="#1E4078" Opacity="0.10" BlurRadius="10" ShadowDepth="2" Direction="270" />
+              </Border.Effect>
               <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bg" Property="Background" Value="#F2F6FC" /></Trigger>
-              <Trigger Property="IsEnabled" Value="False"><Setter Property="Foreground" Value="#A9B6C6" /></Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bg" Property="Background" Value="#EDF3FC" />
+                <Setter TargetName="Bg" Property="BorderBrush" Value="{StaticResource Accent}" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="#93A3B6" />
+                <Setter TargetName="Bg" Property="BorderBrush" Value="#DCE3EC" />
+              </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -221,16 +232,21 @@
     </Style>
 
     <Style x:Key="SoftButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-      <Setter Property="Background" Value="{StaticResource AccentSoft}" />
-      <Setter Property="Foreground" Value="{StaticResource Accent}" />
+      <Setter Property="Background" Value="#DCE9FF" />
+      <Setter Property="Foreground" Value="#12448F" />
+      <Setter Property="FontWeight" Value="Bold" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Bg" CornerRadius="11" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+            <Border x:Name="Bg" CornerRadius="10" Background="{TemplateBinding Background}"
+                    BorderBrush="#8FB6F2" BorderThickness="1.2" Padding="{TemplateBinding Padding}">
               <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bg" Property="Background" Value="#DCE9FF" /></Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bg" Property="Background" Value="{StaticResource Accent}" />
+                <Setter Property="Foreground" Value="White" />
+              </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>

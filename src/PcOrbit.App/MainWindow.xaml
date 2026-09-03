@@ -162,10 +162,10 @@
               </Grid.ColumnDefinitions>
 
               <!-- hero -->
-              <Border Grid.Column="0" Style="{StaticResource Card}" Background="{StaticResource HeroBg}" Padding="24,20">
+              <Border Grid.Column="0" Style="{StaticResource Card}" Background="{StaticResource HeroBg}" Padding="20,14">
                 <StackPanel Orientation="Horizontal">
-                  <Grid Width="128" Height="128" VerticalAlignment="Center">
-                    <Ellipse Width="112" Height="112">
+                  <Grid Width="92" Height="92" VerticalAlignment="Center">
+                    <Ellipse Width="84" Height="84">
                       <Ellipse.Fill>
                         <RadialGradientBrush GradientOrigin="0.33,0.28">
                           <GradientStop Color="#E0E7FF" Offset="0" />
@@ -175,25 +175,25 @@
                         </RadialGradientBrush>
                       </Ellipse.Fill>
                     </Ellipse>
-                    <Ellipse Width="46" Height="26" Fill="#7AFFFFFF" Margin="18,26,0,0"
+                    <Ellipse Width="34" Height="19" Fill="#7AFFFFFF" Margin="14,20,0,0"
                              HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5">
                       <Ellipse.RenderTransform><RotateTransform Angle="-24" /></Ellipse.RenderTransform>
                     </Ellipse>
                   </Grid>
-                  <StackPanel Margin="20,0,0,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="HeroLabel" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource Muted}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                      <TextBlock x:Name="HeroState" FontSize="30" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" />
-                      <Border x:Name="HeroBadge" Width="22" Height="22" CornerRadius="11" Background="{StaticResource Good}"
+                  <StackPanel Margin="18,0,0,0" VerticalAlignment="Center">
+                    <TextBlock x:Name="HeroLabel" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Muted}" />
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                      <TextBlock x:Name="HeroState" FontSize="26" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" />
+                      <Border x:Name="HeroBadge" Width="21" Height="21" CornerRadius="11" Background="{StaticResource Good}"
                               Margin="10,0,0,0" VerticalAlignment="Center">
-                        <Path Data="{StaticResource IconCheck}" Width="12" Height="12" Stretch="Uniform"
+                        <Path x:Name="HeroBadgeGlyph" Data="{StaticResource IconCheck}" Width="11" Height="11" Stretch="Uniform"
                               Stroke="White" StrokeThickness="2" StrokeLineJoin="Round" />
                       </Border>
                     </StackPanel>
-                    <TextBlock x:Name="HeroDetail" Style="{StaticResource Sub}" Margin="0,6,0,0" MaxWidth="420" />
-                    <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                      <Button x:Name="HeroFixBtn" Style="{StaticResource PrimaryButton}" Click="OnHeroFix" />
-                      <Button x:Name="HeroDetailBtn" Style="{StaticResource SecondaryButton}" Margin="10,0,0,0" Click="OnHeroDetails" />
+                    <TextBlock x:Name="HeroDetail" Style="{StaticResource Sub}" Margin="0,5,0,0" MaxWidth="470" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                      <Button x:Name="HeroFixBtn" Style="{StaticResource PrimaryButton}" Height="34" Click="OnHeroFix" />
+                      <Button x:Name="HeroDetailBtn" Style="{StaticResource SecondaryButton}" Height="34" Margin="10,0,0,0" Click="OnHeroDetails" />
                     </StackPanel>
                   </StackPanel>
                 </StackPanel>
@@ -395,6 +395,100 @@
               </Border>
             </Grid>
 
+            <!-- storage · security · startup · network: four dense cards of read-only context -->
+            <Grid Margin="0,0,0,16">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.15*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+
+              <Border Grid.Column="0" Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock x:Name="StorageTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,9" />
+                  <ItemsControl x:Name="DriveList">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel Margin="0,0,0,9">
+                          <DockPanel>
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding Free}" FontSize="11.5" Foreground="{StaticResource Faint}" />
+                            <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource Ink}" />
+                          </DockPanel>
+                          <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent}"
+                                       Foreground="{Binding Accent}" Margin="0,5,0,0" />
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="2" Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock x:Name="SecurityTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,9" />
+                  <ItemsControl x:Name="SecurityRows">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <DockPanel Margin="0,0,0,7">
+                          <Border DockPanel.Dock="Left" Width="16" Height="16" CornerRadius="8" Background="{Binding Tone}">
+                            <Path Data="{Binding Glyph}" Width="9" Height="9" Stretch="Uniform" Stroke="White" StrokeThickness="1.8" StrokeLineJoin="Round" />
+                          </Border>
+                          <TextBlock DockPanel.Dock="Right" Text="{Binding State}" FontSize="11.5" Foreground="{StaticResource Faint}" VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="#44546A" Margin="9,0,8,0" VerticalAlignment="Center" />
+                        </DockPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="4" Style="{StaticResource Card}">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,9">
+                    <TextBlock x:Name="StartupCount" DockPanel.Dock="Right" FontSize="12" FontWeight="Bold" Foreground="{StaticResource Accent}" />
+                    <TextBlock x:Name="StartupTitle" Style="{StaticResource CardTitle}" />
+                  </DockPanel>
+                  <ItemsControl x:Name="StartupList">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <DockPanel Margin="0,0,0,6">
+                          <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" FontSize="10.5" Foreground="{StaticResource Faint}" VerticalAlignment="Center" />
+                          <Border Width="18" Height="18" CornerRadius="6" Background="{Binding Tone}" DockPanel.Dock="Left">
+                            <TextBlock Text="{Binding Initial}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding Accent}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <TextBlock Text="{Binding Name}" FontSize="12" Foreground="{StaticResource Ink}"
+                                     Margin="8,0,6,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                        </DockPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <TextBlock x:Name="StartupHint" Style="{StaticResource Tiny}" Margin="0,2,0,0" />
+                </StackPanel>
+              </Border>
+
+              <Border Grid.Column="6" Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock x:Name="NetTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,9" />
+                  <ItemsControl x:Name="NetRows">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <DockPanel Margin="0,0,0,7">
+                          <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" FontSize="11.5" Foreground="{StaticResource Faint}" Width="74" />
+                          <TextBlock Text="{Binding Value}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Ink}"
+                                     TextTrimming="CharacterEllipsis" />
+                        </DockPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </Grid>
+
             <TextBlock x:Name="OutcomesSect" Style="{StaticResource Sect}" Margin="0,6,0,8" />
             <ItemsControl x:Name="OutcomeCards">
               <ItemsControl.ItemsPanel>
@@ -402,12 +496,12 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Border Style="{StaticResource FlatCard}" Width="330" Height="118" Margin="0,0,12,12">
+                  <Border Style="{StaticResource FlatCard}" Width="360" MinHeight="130" Margin="0,0,12,12">
                     <StackPanel>
                       <TextBlock Text="{Binding Title}" FontSize="13.5" FontWeight="Bold" Foreground="{StaticResource Ink}" TextWrapping="Wrap" />
-                      <TextBlock Text="{Binding Description}" Style="{StaticResource Tiny}" Margin="0,4,0,0" MaxHeight="34" />
-                      <Button Content="{Binding OpenLabel}" Tag="{Binding Id}" Style="{StaticResource SoftButton}"
-                              Height="30" Padding="14,0" HorizontalAlignment="Left" Margin="0,8,0,0" Click="OnFindingFix" />
+                      <TextBlock Text="{Binding Description}" Style="{StaticResource Tiny}" Margin="0,5,0,0" TextWrapping="Wrap" />
+                      <Button Content="{Binding OpenLabel}" Tag="{Binding Id}" Style="{StaticResource PrimaryButton}"
+                              Height="32" Padding="16,0" HorizontalAlignment="Left" Margin="0,10,0,0" Click="OnFindingFix" />
                     </StackPanel>
                   </Border>
                 </DataTemplate>

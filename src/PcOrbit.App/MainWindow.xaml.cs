@@ -88,6 +88,12 @@ public sealed record DeviceRow(string Name, string Detail, Geometry Glyph, Brush
 
 public sealed record DeviceGroupRow(string Group, IReadOnlyList<DeviceRow> Items);
 
+public sealed record DriveRow(string Name, string Free, double Percent, Brush Accent);
+
+public sealed record StartupRow(string Name, string Detail, string Initial, Brush Tone, Brush Accent);
+
+public sealed record LabelRow(string Name, string Value);
+
 /// <summary>
 /// The desktop surface. Six views, one engine.
 /// </summary>
@@ -116,11 +122,13 @@ public partial class MainWindow : Window
     private readonly ILiveMetrics _liveMetrics = new WindowsLiveMetrics();
     private readonly IProcessMonitor _processes = new WindowsProcessMonitor();
     private readonly IHardwareInventory _hardware = new WindowsHardwareInventory();
+    private readonly ISystemSummary _summaryReader = new WindowsSystemSummary();
     private readonly List<double> _cpuHistory = [];
     private readonly List<double> _ramHistory = [];
     private readonly DispatcherTimer _liveTimer = new() { Interval = TimeSpan.FromSeconds(1) };
 
     private HardwareInventory _inventory = HardwareInventory.Empty;
+    private SystemSummary _summary = SystemSummary.Empty;
 
     private PcOrbitHost? _host;
 
@@ -216,14 +224,18 @@ public partial class MainWindow : Window
 
         PopulateOutcomes();
 
-        // The hardware inventory is a second, smaller PowerShell batch. Started alongside the
-        // state scan rather than after it, so the wait stays the length of the slower one.
+        // Two more read-only batches. Started alongside the state scan rather than after it, so
+        // the wait stays the length of the slowest one instead of their sum.
         Task<HardwareInventory> hardware = _hardware.ReadAsync();
+        Task<SystemSummary> summary = _summaryReader.ReadAsync();
 
         await RescanAsync();
 
         _inventory = await hardware;
+        _summary = await summary;
+
         RenderInventory();
+        RenderContextCards();
 
         await RefreshHistoryAsync();
 
@@ -258,6 +270,7 @@ public partial class MainWindow : Window
         RenderStatusView();
         RenderStatusStrip();
         RenderInventory();
+        RenderContextCards();
         RenderDashGauges();
         RenderProcesses();
         RenderPerf();
@@ -354,6 +367,11 @@ public partial class MainWindow : Window
         DevEmpty.Text = T("app.devices.none");
         InventoryTitle.Text = T("app.status.hardware");
         InventoryHint.Text = T("app.hw.reading");
+
+        StorageTitle.Text = T("app.storage.title");
+        SecurityTitle.Text = T("app.sec.title");
+        StartupTitle.Text = T("app.startup.title");
+        NetTitle.Text = T("app.net.title");
     }
 
     private void UpdateApplyButtonText()
@@ -446,10 +464,15 @@ public partial class MainWindow : Window
     private async void OnRescan(object sender, RoutedEventArgs e)
     {
         Task<HardwareInventory> hardware = _hardware.ReadAsync();
+        Task<SystemSummary> summary = _summaryReader.ReadAsync();
+
         await RescanAsync();
 
         _inventory = await hardware;
+        _summary = await summary;
+
         RenderInventory();
+        RenderContextCards();
     }
 
     private async Task RescanAsync()
@@ -581,6 +604,96 @@ public partial class MainWindow : Window
 
         ProcEmpty.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
+
+    /// <summary>
+    /// Storage, security, startup and network: the context cards under the findings.
+    /// </summary>
+    private void RenderContextCards()
+    {
+        if (!Ready)
+        {
+            return;
+        }
+
+        // ---- every fixed drive, worst first, because that is the one worth acting on
+        DriveList.ItemsSource = (_summary.Drives ?? [])
+            .OrderByDescending(d => d.UsedPercent)
+            .Select(d => new DriveRow(
+                Name: string.IsNullOrWhiteSpace(d.Label) ? d.Name : $"{d.Name}  {d.Label}",
+                Free: T("app.drive.free", Args(("free", Gb(d.FreeGb)), ("total", Gb(d.TotalGb)))),
+                Percent: d.UsedPercent,
+                Accent: d.UsedPercent >= 90 ? B("Bad") : d.UsedPercent >= 75 ? B("Orange") : B("Good")))
+            .ToList();
+
+        // ---- security, with "no answer" kept distinct from "off"
+        SecuritySummary security = _summary.Security ?? new SecuritySummary();
+
+        SecurityRows.ItemsSource = new List<CheckRow>
+        {
+            Check(T("app.sec.product"), security.Product, security.Product is not null),
+            Check(
+                T("app.sec.realtime"),
+                security.RealTimeProtection switch
+                {
+                    true => T("status.enabled"),
+                    false => T("status.disabled"),
+                    null => null,
+                },
+                security.RealTimeProtection == true),
+            Check(
+                T("app.sec.signatures"),
+                security.SignaturesUpdated?.LocalDateTime.ToString("dd/MM HH:mm", CultureInfo.CurrentCulture),
+                security.SignaturesUpdated is { } updated && (DateTimeOffset.Now - updated).TotalDays < 7),
+            Check(
+                T("app.sec.lastScan"),
+                security.LastScan?.LocalDateTime.ToString("dd/MM/yyyy", CultureInfo.CurrentCulture),
+                security.LastScan is not null),
+            Check(
+                T("app.sec.patch"),
+                _summary.Updates?.LatestPatch is { } patch
+                    ? patch + (_summary.Updates.InstalledOn is { } on
+                        ? " · " + on.LocalDateTime.ToString("dd/MM", CultureInfo.CurrentCulture)
+                        : string.Empty)
+                    : null,
+                _summary.Updates?.LatestPatch is not null),
+        };
+
+        // ---- what Windows starts for you
+        IReadOnlyList<StartupItem> startup = _summary.Startup ?? [];
+
+        StartupCount.Text = N(startup.Count);
+        StartupList.ItemsSource = startup
+            .Take(7)
+            .Select((s, index) => new StartupRow(
+                Name: s.Name,
+                Detail: T(s.Source == "machine" ? "app.startup.machine" : "app.startup.user"),
+                Initial: s.Name.Length > 0 ? s.Name[..1].ToUpperInvariant() : "?",
+                Tone: index % 2 == 0 ? B("AccentSoft") : B("VioletSoft"),
+                Accent: index % 2 == 0 ? B("Accent") : B("Violet")))
+            .ToList();
+
+        StartupHint.Text = startup.Count > 7
+            ? T("app.startup.more", Args(("count", N(startup.Count - 7))))
+            : T("app.startup.hint");
+
+        // ---- network detail
+        NetworkSummary network = _summary.Network ?? new NetworkSummary();
+
+        NetRows.ItemsSource = new List<LabelRow>
+        {
+            new(T("app.net.name"), network.HostName ?? T("status.unknown")),
+            new(T("app.net.adapter"), network.Adapter ?? T("status.unknown")),
+            new(T("app.net.ip"), network.IpAddress ?? T("status.unknown")),
+            new(T("app.net.gateway"), network.Gateway ?? T("status.unknown")),
+            new(T("app.net.dns"), network.DnsServers is { Count: > 0 } dns ? string.Join(", ", dns) : T("status.unknown")),
+        };
+    }
+
+    private CheckRow Check(string name, string? value, bool good) => new(
+        name,
+        value ?? T("status.unknown"),
+        value is null ? G("IconSearch") : good ? G("IconCheck") : G("IconSpark"),
+        value is null ? B("Faint") : good ? B("Good") : B("Warn"));
 
     /// <summary>
     /// The hardware inventory, grouped. A group the machine reported nothing for is left out
@@ -750,6 +863,9 @@ public partial class MainWindow : Window
 
         HeroState.Text = clean ? T("app.hero.stable") : T("app.hero.attention");
         HeroBadge.Background = clean ? B("Good") : B("Warn");
+
+        // A tick beside "needs a look" contradicts the words next to it.
+        HeroBadgeGlyph.Data = clean ? G("IconCheck") : G("IconSpark");
         HeroDetail.Text = clean ? T("cli.checkup.ok.body") : T("app.hero.attentionBody");
         HeroFixBtn.Content = clean ? T("app.rescan") : T("app.hero.fix");
         HeroDetailBtn.Content = T("app.hero.details");
@@ -942,11 +1058,19 @@ public partial class MainWindow : Window
                 },
                 _live.BatteryPercent is { } percent ? $"{percent}%" : T("app.tile.noBattery"),
                 B("Good")),
-            new(
-                T("app.tile.thermal"),
-                T("status.unknown"),
-                T("app.tile.thermalWhy"),
-                B("Faint")),
+            // Attempted for real: some firmware does publish an ACPI thermal zone. When this one
+            // does not, the tile carries the machine's own reason instead of a made-up number.
+            _summary.Thermal is { Celsius: { } celsius }
+                ? new TileRow(
+                    T("app.tile.thermal"),
+                    celsius.ToString("0.#", CultureInfo.CurrentCulture) + " °C",
+                    T("app.tile.thermalSource"),
+                    celsius >= 85 ? B("Bad") : celsius >= 70 ? B("Orange") : B("Good"))
+                : new TileRow(
+                    T("app.tile.thermal"),
+                    T("status.unknown"),
+                    _summary.Thermal?.Reason ?? T("app.tile.thermalWhy"),
+                    B("Faint")),
             new(
                 T("app.tile.fan"),
                 T("status.unknown"),
