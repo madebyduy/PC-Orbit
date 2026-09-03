@@ -4,9 +4,10 @@
     { "id": "page-2", "name": "Hallway test (spec 6b)" }
   ],
   "artboards": [
-    { "file": "Main.dc.html", "title": "1 · Hiệu năng", "page": "page-1", "x": 0, "y": 0, "w": 1672, "h": 941 },
-    { "file": "PlanApply.dc.html", "title": "2 · Kế hoạch thay đổi", "page": "page-1", "x": 1772, "y": 0, "w": 1672, "h": 941 },
-    { "file": "LichSu.dc.html", "title": "3 · Lịch sử & Khôi phục", "page": "page-1", "x": 3544, "y": 0, "w": 1672, "h": 941 },
+    { "file": "TinhTrang.dc.html", "title": "1 · Tình trạng máy", "page": "page-1", "x": 0, "y": 0, "w": 1672, "h": 941 },
+    { "file": "Main.dc.html", "title": "2 · Hiệu năng", "page": "page-1", "x": 1772, "y": 0, "w": 1672, "h": 941 },
+    { "file": "PlanApply.dc.html", "title": "3 · Kế hoạch thay đổi", "page": "page-1", "x": 3544, "y": 0, "w": 1672, "h": 941 },
+    { "file": "LichSu.dc.html", "title": "4 · Lịch sử & Khôi phục", "page": "page-1", "x": 5316, "y": 0, "w": 1672, "h": 941 },
 
     { "file": "FirstRun.dc.html", "title": "1 · First-run", "page": "page-2", "x": 0, "y": 0, "w": 1160, "h": 780 },
     { "file": "MayOn.dc.html", "title": "2 · Máy bạn đang ổn", "page": "page-2", "x": 1260, "y": 0, "w": 1160, "h": 780 },
@@ -27,7 +28,7 @@
       "x": 0,
       "y": -170,
       "w": 560,
-      "text": "GIAO DIỆN PC CONTROL — dựng theo đúng 3 ảnh tham chiếu đã cung cấp: Hiệu năng, Kế hoạch thay đổi, Lịch sử & Khôi phục.\nMọi số liệu là dữ liệu minh họa lấy nguyên từ ảnh gốc (điểm 92, 14 thay đổi, KB5037771...). Trang 2 của canvas vẫn giữ bộ màn hình hallway test theo spec 6b."
+      "text": "GIAO DIỆN PC CONTROL — dựng theo đúng 4 ảnh tham chiếu đã cung cấp: Tình trạng máy, Hiệu năng, Kế hoạch thay đổi, Lịch sử & Khôi phục.\nMọi số liệu là dữ liệu minh họa lấy nguyên từ ảnh gốc (điểm 92, 98/100, 14 thay đổi, KB5037771...). Trang 2 của canvas vẫn giữ bộ màn hình hallway test theo spec 6b."
     },
     {
       "id": "kich-ban-test",
