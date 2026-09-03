@@ -7,92 +7,300 @@
 <body>
 <x-dc>
 <helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
   <style>
-    body { margin: 0; font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: #1b1b1f; }
-    a { color: #0067c0; text-decoration: none; } a:hover { color: #004f93; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: #1e2b3c; -webkit-font-smoothing: antialiased; }
+    a { color: #2563eb; text-decoration: none; } a:hover { color: #1d4ed8; }
+    .app { width: 1672px; height: 941px; display: flex; flex-direction: column; background: linear-gradient(160deg, #eaf1fb 0%, #e7effa 45%, #e9f2f6 100%); overflow: hidden; }
+    .mid { display: flex; flex-grow: 1; min-height: 0; }
+    .side { width: 290px; flex-shrink: 0; background: rgba(255,255,255,0.55); border-right: 1px solid rgba(255,255,255,0.95); display: flex; flex-direction: column; padding: 20px 16px 12px; }
+    .logo { display: flex; align-items: center; gap: 12px; padding: 0 8px 18px; }
+    .logo .t1 { font-size: 18px; font-weight: 800; letter-spacing: -0.2px; }
+    .logo .t2 { font-size: 11.5px; color: #7b8a9e; }
+    .nav { display: flex; flex-direction: column; gap: 3px; }
+    .ni { display: flex; align-items: center; gap: 12px; height: 41px; padding: 0 14px; border-radius: 12px; color: #5b6b80; font-size: 14px; font-weight: 500; }
+    .ni svg { flex-shrink: 0; }
+    .ni.on { background: #eaf2ff; color: #2563eb; font-weight: 600; box-shadow: 0 8px 18px rgba(37,99,235,0.12); }
+    .pcCard { margin-top: auto; background: rgba(255,255,255,0.85); border: 1px solid #fff; border-radius: 16px; padding: 14px; box-shadow: 0 10px 26px rgba(30,64,120,0.08); display: flex; flex-direction: column; gap: 4px; }
+    .sideIcons { display: flex; gap: 26px; padding: 14px 10px 2px; color: #5b6b80; }
+    .top { height: 76px; display: flex; align-items: center; gap: 14px; padding: 0 26px 0 26px; flex-shrink: 0; }
+    .search { width: 560px; height: 46px; background: #fff; border-radius: 23px; display: flex; align-items: center; gap: 10px; padding: 0 18px; box-shadow: 0 8px 24px rgba(30,64,120,0.06); color: #8a99ad; font-size: 13.5px; }
+    .kbd { margin-left: auto; font-size: 12px; color: #7b8a9e; background: #f1f5fa; border-radius: 6px; padding: 3px 8px; }
+    .ibtn { width: 44px; height: 44px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(30,64,120,0.07); position: relative; color: #44546a; }
+    .badge { position: absolute; top: -3px; right: -3px; background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; border-radius: 9px; padding: 1px 5px; border: 2px solid #fff; }
+    .winc { display: flex; align-items: center; gap: 22px; color: #44546a; padding: 0 6px 0 12px; }
+    .content { flex-grow: 1; min-width: 0; padding: 2px 26px 14px 6px; display: flex; flex-direction: column; gap: 13px; overflow: hidden; }
+    .card { background: rgba(255,255,255,0.88); border: 1px solid #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(30,64,120,0.06); }
+    .h1 { font-size: 25px; font-weight: 800; letter-spacing: -0.3px; }
+    .sub { font-size: 13px; color: #6b7a8f; }
+    .pillrow { display: flex; align-items: center; background: #fff; border-radius: 22px; padding: 5px; gap: 2px; box-shadow: 0 8px 20px rgba(30,64,120,0.06); }
+    .pill { height: 32px; padding: 0 14px; border-radius: 16px; display: flex; align-items: center; font-size: 13px; color: #5b6b80; font-weight: 500; gap: 7px; }
+    .pill.on { background: #2563eb; color: #fff; font-weight: 600; }
+    .stat { flex: 1 1 0; padding: 13px 15px; display: flex; flex-direction: column; gap: 7px; }
+    .stat .row1 { display: flex; align-items: center; gap: 9px; }
+    .stat .ic { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+    .stat .name { font-size: 13px; font-weight: 600; color: #44546a; }
+    .stat .val { font-size: 19px; font-weight: 800; }
+    .stat .u { font-size: 11.5px; color: #8a99ad; font-weight: 500; }
+    .bars { display: flex; align-items: flex-end; gap: 2.5px; height: 26px; }
+    .bars span { width: 5px; border-radius: 2px; }
+    .ct { font-size: 15.5px; font-weight: 700; }
+    .mut { color: #6b7a8f; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 11.5px; font-weight: 600; }
+    .qa { flex: 1 1 0; background: #fff; border: 1px solid #eef2f8; border-radius: 14px; padding: 11px 14px; display: flex; align-items: center; gap: 11px; box-shadow: 0 6px 16px rgba(30,64,120,0.05); }
+    .qa .qi { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .mode { flex: 1 1 0; background: #fff; border: 1px solid #eef2f8; border-radius: 12px; padding: 9px 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #5b6b80; }
+    .mode.on { background: #eaf2ff; border-color: #bfd7fe; color: #2563eb; box-shadow: 0 6px 14px rgba(37,99,235,0.12); }
+    .status { height: 54px; flex-shrink: 0; background: rgba(255,255,255,0.6); border-top: 1px solid #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 60px; }
+    .st { display: flex; align-items: center; gap: 10px; }
+    .st .a { font-size: 12.5px; font-weight: 700; }
+    .st .b { font-size: 11.5px; color: #7b8a9e; }
+    .prow { display: flex; align-items: center; gap: 8px; padding: 4.5px 0; font-size: 11.5px; color: #44546a; }
+    .prow .cell { width: 62px; text-align: right; color: #5b6b80; }
+    .trow { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 12px; color: #44546a; }
+    .tbar { flex-grow: 1; height: 6px; border-radius: 3px; background: #eef2f8; overflow: hidden; }
+    .tbar span { display: block; height: 6px; border-radius: 3px; }
   </style>
 </helmet>
-<div style="width: 1160px; height: 820px; background: linear-gradient(135deg, #dfe7f2 0%, #e9e4ef 52%, #dce9e3 100%); display: flex; align-items: center; justify-content: center;">
-  <div style="width: 1060px; background: #f7f8fa; border: 1px solid #d5d5da; border-radius: 8px; box-shadow: 0 16px 44px rgba(0,30,60,0.18); overflow: hidden; display: flex; flex-direction: column;">
+<div class="app">
+  <div class="mid">
 
-    <div style="height: 40px; display: flex; align-items: center; justify-content: space-between; padding-left: 14px; background: #f1f2f6;">
-      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5a5a60;">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="#0067c0"></circle><ellipse cx="8" cy="8" rx="7" ry="3.2" stroke="#0067c0" stroke-width="1.2" transform="rotate(-24 8 8)"></ellipse></svg>
-        <span>PC Orbit</span>
+    <div class="side">
+      <div class="logo">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="9" fill="url(#lg1)"></rect><path d="M20 11l8 4.6v9L20 29l-8-4.4v-9L20 11z" fill="#fff" opacity="0.92"></path><path d="M20 11l8 4.6-8 4.4-8-4.4L20 11z" fill="#dbeafe"></path><defs><linearGradient id="lg1" x1="4" y1="4" x2="36" y2="36"><stop stop-color="#60a5fa"></stop><stop offset="1" stop-color="#2563eb"></stop></linearGradient></defs></svg>
+        <div><div class="t1">PC Control</div><div class="t2">Total Control. Perfect PC.</div></div>
       </div>
-      <div style="display: flex;">
-        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 5h10" stroke="#5a5a60" stroke-width="1"></path></svg></div>
-        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="none" stroke="#5a5a60" stroke-width="1"></rect></svg></div>
-        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10" stroke="#5a5a60" stroke-width="1"></path></svg></div>
+      <div class="nav">
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l7-6 7 6v8a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 17V9z"></path></svg>Tổng quan</div>
+        <div class="ni on"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l7-6 7 6v8a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 17V9z"></path><path d="M7 13l2-2.5 2 1.5 2.5-3"></path></svg>Hiệu năng</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="10" rx="1.5"></rect><path d="M7 17h6"></path></svg>Hệ thống</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"></circle><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.2 5.2l1.4 1.4M13.4 13.4l1.4 1.4M14.8 5.2l-1.4 1.4M6.6 13.4l-1.4 1.4"></path></svg>Cài đặt</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3l4 4L7 17l-4 .9L4 13 13 3z"></path></svg>Tối ưu hóa</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a6 6 0 0110.5-2.5M16 12a6 6 0 01-10.5 2.5"></path><path d="M14 3v3h3M6 17v-3H3"></path></svg>Cập nhật</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="10" height="10" rx="1.5"></rect><path d="M8 2v3M12 2v3M8 15v3M12 15v3M2 8h3M2 12h3M15 8h3M15 12h3"></path></svg>Phần cứng</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"></circle><path d="M10 3a10.5 10.5 0 010 14M10 3a10.5 10.5 0 000 14M3.5 8h13M3.5 12h13"></path></svg>Trình điều khiển</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.5"></rect><rect x="11" y="3" width="6" height="6" rx="1.5"></rect><rect x="3" y="11" width="6" height="6" rx="1.5"></rect><rect x="11" y="11" width="6" height="6" rx="1.5"></rect></svg>Ứng dụng &amp; Dịch vụ</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a6 6 0 0111-2M16 13a6 6 0 01-11 2"></path><path d="M15 2v3h-3M5 18v-3h3"></path></svg>Tự động hóa</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="5" rx="1.5"></rect><rect x="3" y="11" width="14" height="5" rx="1.5"></rect><path d="M6 6.5h.01M6 13.5h.01"></path></svg>Sao lưu &amp; Khôi phục</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"></circle><path d="M10 6v4l2.6 2"></path></svg>Lịch sử</div>
+        <div class="ni"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 6.5l-8 8L3 17l2.5-1.5 8-8M11 4l3-1.5L17 5l-1.5 3"></path></svg>Công cụ</div>
+      </div>
+      <div class="pcCard">
+        <svg width="100" height="62" viewBox="0 0 100 62" style="border-radius: 10px;"><rect width="100" height="62" rx="10" fill="#0a1b3a"></rect><g transform="translate(50 31)"><path d="M0 0C6 -14 18 -18 26 -10C16 -8 8 -2 0 0Z" fill="#3b82f6"></path><path d="M0 0C14 -6 18 6 10 16C8 8 4 4 0 0Z" fill="#60a5fa"></path><path d="M0 0C-6 14 -18 18 -26 10C-16 8 -8 2 0 0Z" fill="#2563eb"></path><path d="M0 0C-14 6 -18 -6 -10 -16C-8 -8 -4 -4 0 0Z" fill="#93c5fd"></path></g></svg>
+        <div style="font-size: 13.5px; font-weight: 700; margin-top: 6px;">DESKTOP-7G8H2KQ</div>
+        <div style="font-size: 11.5px; color: #7b8a9e;">Windows 11 Pro 23H2</div>
+        <div style="font-size: 11.5px; color: #7b8a9e;">Uptime: 2d 6h 28m</div>
+        <a href="#" style="font-size: 12px; font-weight: 600; margin-top: 3px;">Thông tin hệ thống ›</a>
+      </div>
+      <div class="sideIcons">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M16.5 12A7 7 0 018 3.5 7 7 0 1016.5 12z"></path></svg>
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="2.4"></circle><path d="M10 3.5v1.8M10 14.7v1.8M3.5 10h1.8M14.7 10h1.8M5.4 5.4l1.3 1.3M13.3 13.3l1.3 1.3M14.6 5.4l-1.3 1.3M6.7 13.3l-1.3 1.3"></path></svg>
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14V9a6 6 0 0112 0v5l1.5 2h-15L4 14z"></path><path d="M8.5 18a1.8 1.8 0 003 0"></path></svg>
       </div>
     </div>
 
-    <div style="padding: 22px 30px 28px; display: flex; flex-direction: column; gap: 14px;">
-
-      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div style="display: flex; flex-direction: column; gap: 3px;">
-          <div style="font-size: 21px; font-weight: 600;">Máy của bạn: ASUS TUF GAMING B650-PLUS WIFI</div>
-          <div style="font-size: 12.5px; color: #5f5f66;">Windows 11 Pro build 26100 · AMD Ryzen 7 7800X3D · Lần kiểm tra: 2 phút trước</div>
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column;">
+      <div class="top">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#8a99ad" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="9" r="5.5"></circle><path d="M13.5 13.5L17 17"></path></svg>
+          Tìm kiếm cài đặt, tệp, ứng dụng...
+          <span class="kbd">Ctrl K</span>
         </div>
-        <a href="#" style="font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">Advanced <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5L8 6l-3.5 3.5" stroke="#0067c0" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
-      </div>
-
-      <div style="background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 12px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="width: 9px; height: 9px; border-radius: 50%; background: #ffb900;"></span>
-          <span style="font-size: 15px; font-weight: 600;">2 điều đáng chú ý</span>
-        </div>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #fbfbfd; border: 1px solid #ececf1; border-radius: 6px;">
-            <span style="font-size: 13.5px;">Màn hình của bạn đang chạy 60 Hz nhưng hỗ trợ 165 Hz</span>
-            <span style="display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 5px; background: #0067c0; color: #fff; font-size: 12.5px; font-weight: 600;">Sửa ngay</span>
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #fbfbfd; border: 1px solid #ececf1; border-radius: 6px;">
-            <span style="font-size: 13.5px;">Docker / WSL 2 chưa sẵn sàng (thiếu 3 bước)</span>
-            <span style="display: inline-flex; align-items: center; height: 30px; padding: 0 14px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 12.5px; font-weight: 600;">Xem kế hoạch</span>
-          </div>
+        <div style="flex-grow: 1;"></div>
+        <div class="ibtn"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 10h3l2-5 3.5 10 2.5-7 1.5 2h2.5"></path></svg></div>
+        <div class="ibtn"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14V9a6 6 0 0112 0v5l1.5 2h-15L4 14z"></path><path d="M8.5 18a1.8 1.8 0 003 0"></path></svg><span class="badge">2</span></div>
+        <div class="ibtn"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"></circle><path d="M8 8a2 2 0 113.4 1.4c-.7.6-1.4 1-1.4 2"></path><circle cx="10" cy="14.4" r="0.4" fill="currentColor"></circle></svg></div>
+        <div class="winc">
+          <svg width="13" height="13" viewBox="0 0 12 12"><path d="M1 6h10" stroke="currentColor" stroke-width="1.2"></path></svg>
+          <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"></rect></svg>
+          <svg width="13" height="13" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.2"></path></svg>
         </div>
       </div>
 
-      <div style="background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 12px;">
-        <div style="font-size: 15px; font-weight: 600;">Chuẩn bị máy cho…</div>
-        <div style="display: flex; gap: 10px;">
-          <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 18px; border-radius: 17px; background: #eef4fb; border: 1px solid #cfe0f2; color: #00539b; font-size: 13px; font-weight: 600;">Chơi game</span>
-          <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 18px; border-radius: 17px; background: #eef4fb; border: 1px solid #cfe0f2; color: #00539b; font-size: 13px; font-weight: 600;">Lập trình</span>
-          <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 18px; border-radius: 17px; background: #eef4fb; border: 1px solid #cfe0f2; color: #00539b; font-size: 13px; font-weight: 600;">Họp / Stream</span>
-        </div>
-      </div>
-
-      <div style="background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 10px;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 15px; font-weight: 600;">Vừa thay đổi (3)</span>
-          <a href="#" style="font-size: 12.5px; font-weight: 600;">Toàn bộ lịch sử ▸</a>
-        </div>
-        <div style="display: flex; flex-direction: column;">
-          <div style="display: flex; align-items: center; gap: 12px; padding: 9px 4px; border-bottom: 1px solid #f0f0f4;">
-            <span style="width: 110px; font-size: 12px; color: #5f5f66;">Hôm nay 14:02</span>
-            <span style="flex-grow: 1; font-size: 13px;">Tần số quét hiện tại: 60 → 165 Hz</span>
-            <span style="display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 12px; font-weight: 600;">Hoàn tác</span>
+      <div class="content">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; padding-left: 20px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 10px;"><span class="h1">Hiệu năng</span><span style="width: 12px; height: 12px; border-radius: 50%; background: #dbeafe; border: 3px solid #3b82f6;"></span></div>
+            <div class="sub">Theo dõi hiệu năng thời gian thực &amp; tối ưu hệ thống của bạn</div>
           </div>
-          <div style="display: flex; align-items: center; gap: 12px; padding: 9px 4px; border-bottom: 1px solid #f0f0f4;">
-            <span style="width: 110px; font-size: 12px; color: #5f5f66;">Hôm nay 13:58</span>
-            <span style="flex-grow: 1; font-size: 13px;">Windows Subsystem for Linux: Đang tắt → Đang bật <span style="color: #9d5d00; font-size: 12px;">(cần khởi động lại)</span></span>
-            <span style="display: inline-flex; align-items: center; height: 28px; padding: 0 12px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 12px; font-weight: 600;">Hoàn tác</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 12px; padding: 9px 4px;">
-            <span style="width: 110px; font-size: 12px; color: #5f5f66;">Hôm qua</span>
-            <span style="flex-grow: 1; font-size: 13px;">Ảo hóa CPU trong firmware: Đang bật <span style="color: #5f5f66; font-size: 12px;">(bạn làm trong BIOS)</span></span>
-            <a href="#" style="font-size: 12px; font-weight: 600;">Hướng dẫn tắt ▸</a>
+          <div class="pillrow">
+            <span class="pill">1 giờ</span>
+            <span class="pill on">6 giờ</span>
+            <span class="pill">24 giờ</span>
+            <span class="pill">7 ngày</span>
+            <span class="pill">Tùy chỉnh <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4" width="14" height="13" rx="2"></rect><path d="M3 8h14M7 2.5V5M13 2.5V5"></path></svg></span>
           </div>
         </div>
-      </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 16px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 13px; font-weight: 600;">Kiểm tra lại</span>
-        <span style="font-size: 12px; color: #8a8a90;">Chưa thay đổi gì nếu bạn chưa bấm Áp dụng</span>
-      </div>
+        <div style="display: flex; gap: 12px; margin-left: 20px;">
+          <div class="card stat"><div class="row1"><span class="ic" style="background: #e7efff; color: #2563eb;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="10" height="10" rx="1.5"></rect><path d="M8 2v3M12 2v3M8 15v3M12 15v3M2 8h3M2 12h3M15 8h3M15 12h3"></path></svg></span><div><div class="name">CPU</div></div></div><div style="display: flex; align-items: baseline; gap: 8px;"><span class="val" style="color: #2563eb;">56%</span><span class="u">3.8 GHz</span></div><div class="bars"><span style="height: 10px; background: #93c5fd;"></span><span style="height: 15px; background: #93c5fd;"></span><span style="height: 8px; background: #93c5fd;"></span><span style="height: 18px; background: #60a5fa;"></span><span style="height: 12px; background: #93c5fd;"></span><span style="height: 22px; background: #60a5fa;"></span><span style="height: 14px; background: #93c5fd;"></span><span style="height: 25px; background: #3b82f6;"></span><span style="height: 17px; background: #60a5fa;"></span><span style="height: 11px; background: #93c5fd;"></span><span style="height: 20px; background: #60a5fa;"></span><span style="height: 14px; background: #93c5fd;"></span><span style="height: 24px; background: #3b82f6;"></span><span style="height: 16px; background: #60a5fa;"></span></div></div>
+          <div class="card stat"><div class="row1"><span class="ic" style="background: #e3f8ef; color: #10b981;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="1.5"></rect><circle cx="8" cy="10" r="2"></circle><path d="M13 8v4"></path></svg></span><div><div class="name">GPU</div></div></div><div style="display: flex; align-items: baseline; gap: 8px;"><span class="val" style="color: #10b981;">48%</span><span class="u">56 °C</span></div><div class="bars"><span style="height: 14px; background: #6ee7b7;"></span><span style="height: 9px; background: #a7f3d0;"></span><span style="height: 18px; background: #34d399;"></span><span style="height: 12px; background: #6ee7b7;"></span><span style="height: 21px; background: #34d399;"></span><span style="height: 15px; background: #6ee7b7;"></span><span style="height: 10px; background: #a7f3d0;"></span><span style="height: 19px; background: #34d399;"></span><span style="height: 24px; background: #10b981;"></span><span style="height: 13px; background: #6ee7b7;"></span><span style="height: 17px; background: #34d399;"></span><span style="height: 11px; background: #a7f3d0;"></span><span style="height: 20px; background: #34d399;"></span><span style="height: 15px; background: #6ee7b7;"></span></div></div>
+          <div class="card stat"><div class="row1"><span class="ic" style="background: #f0eaff; color: #8b5cf6;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="14" height="7" rx="1.5"></rect><path d="M6 7v-2M10 7V5M14 7V5M6 14v2M10 14v2M14 14v2"></path></svg></span><div><div class="name">RAM</div></div></div><div style="display: flex; align-items: baseline; gap: 8px;"><span class="val" style="color: #8b5cf6;">68%</span><span class="u">10.8 / 16 GB</span></div><div class="bars"><span style="height: 16px; background: #c4b5fd;"></span><span style="height: 20px; background: #a78bfa;"></span><span style="height: 13px; background: #c4b5fd;"></span><span style="height: 23px; background: #a78bfa;"></span><span style="height: 17px; background: #c4b5fd;"></span><span style="height: 25px; background: #8b5cf6;"></span><span style="height: 19px; background: #a78bfa;"></span><span style="height: 14px; background: #c4b5fd;"></span><span style="height: 22px; background: #a78bfa;"></span><span style="height: 18px; background: #c4b5fd;"></span><span style="height: 24px; background: #8b5cf6;"></span><span style="height: 16px; background: #c4b5fd;"></span><span style="height: 21px; background: #a78bfa;"></span><span style="height: 18px; background: #a78bfa;"></span></div></div>
+          <div class="card stat"><div class="row1"><span class="ic" style="background: #ffefe6; color: #f97316;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="3" width="12" height="14" rx="1.5"></rect><path d="M7 6.5h6M7 9.5h6"></path><circle cx="12.5" cy="13.5" r="1"></circle></svg></span><div><div class="name">SSD</div></div></div><div style="display: flex; align-items: baseline; gap: 8px;"><span class="val" style="color: #f97316;">32%</span><span class="u">168 MB/s</span></div><div class="bars"><span style="height: 9px; background: #fdba74;"></span><span style="height: 14px; background: #fb923c;"></span><span style="height: 7px; background: #fed7aa;"></span><span style="height: 12px; background: #fdba74;"></span><span style="height: 17px; background: #fb923c;"></span><span style="height: 10px; background: #fdba74;"></span><span style="height: 15px; background: #fb923c;"></span><span style="height: 8px; background: #fed7aa;"></span><span style="height: 13px; background: #fdba74;"></span><span style="height: 18px; background: #f97316;"></span><span style="height: 11px; background: #fdba74;"></span><span style="height: 15px; background: #fb923c;"></span><span style="height: 9px; background: #fed7aa;"></span><span style="height: 13px; background: #fdba74;"></span></div></div>
+          <div class="card stat"><div class="row1"><span class="ic" style="background: #e2f6fd; color: #06b6d4;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="2"></circle><path d="M10 3a12 12 0 017 7M10 3a12 12 0 00-7 7" opacity="0.5"></path><path d="M10 6.2a8.5 8.5 0 015 3.8M10 6.2a8.5 8.5 0 00-5 3.8"></path></svg></span><div><div class="name">Mạng</div></div></div><div style="display: flex; align-items: baseline; gap: 8px;"><span class="val" style="color: #06b6d4;">28%</span><span class="u">156 Mbps</span></div><div class="bars"><span style="height: 12px; background: #67e8f9;"></span><span style="height: 8px; background: #a5f3fc;"></span><span style="height: 16px; background: #22d3ee;"></span><span style="height: 10px; background: #67e8f9;"></span><span style="height: 14px; background: #22d3ee;"></span><span style="height: 7px; background: #a5f3fc;"></span><span style="height: 18px; background: #06b6d4;"></span><span style="height: 11px; background: #67e8f9;"></span><span style="height: 15px; background: #22d3ee;"></span><span style="height: 9px; background: #a5f3fc;"></span><span style="height: 13px; background: #67e8f9;"></span><span style="height: 17px; background: #22d3ee;"></span><span style="height: 10px; background: #67e8f9;"></span><span style="height: 14px; background: #22d3ee;"></span></div></div>
+          <div class="card stat"><div class="row1"><span class="ic" style="background: #e2f7f3; color: #14b8a6;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="1.8"></circle><path d="M10 8.2C11 4.5 15 4 16 6.5 16.8 8.5 14 9.6 11.8 9.4M11.8 10.6C15.5 11.6 16 15.5 13.5 16.5 11.5 17.3 10.4 14.5 10.6 12.3M8.2 10.6C4.5 11 4 15 6.5 16 8.5 16.8 9.6 14 9.4 11.8M8.2 9.4C4.5 8.4 4 4.5 6.5 3.5 8.5 2.7 9.6 5.5 9.4 7.7"></path></svg></span><div><div class="name">Quạt</div></div></div><div style="display: flex; align-items: baseline; gap: 8px;"><span class="val" style="color: #14b8a6;">1240 <span style="font-size: 12px; font-weight: 600;">RPM</span></span><span class="u">Ổn định</span></div><div class="bars"><span style="height: 13px; background: #5eead4;"></span><span style="height: 13px; background: #5eead4;"></span><span style="height: 14px; background: #2dd4bf;"></span><span style="height: 13px; background: #5eead4;"></span><span style="height: 14px; background: #2dd4bf;"></span><span style="height: 13px; background: #5eead4;"></span><span style="height: 13px; background: #5eead4;"></span><span style="height: 14px; background: #2dd4bf;"></span><span style="height: 13px; background: #5eead4;"></span><span style="height: 14px; background: #2dd4bf;"></span><span style="height: 13px; background: #5eead4;"></span><span style="height: 13px; background: #5eead4;"></span><span style="height: 14px; background: #2dd4bf;"></span><span style="height: 13px; background: #5eead4;"></span></div></div>
+        </div>
 
+        <div style="display: flex; gap: 12px; margin-left: 20px; min-height: 0;">
+          <div class="card" style="flex: 1 1 0; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span class="ct">Biểu đồ hiệu năng</span>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 8px; border: 1px solid #e3eaf3; font-size: 12px; color: #5b6b80;">% Sử dụng <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5L5 7l3-3.5" stroke="#5b6b80" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                <span class="chip" style="background: #e7efff; color: #2563eb;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #2563eb;"></span>Live</span>
+                <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#5b6b80" stroke-width="1.6" stroke-linecap="round"><path d="M3 7V3h4M17 7V3h-4M3 13v4h4M17 13v4h-4"></path></svg>
+              </div>
+            </div>
+            <div style="display: flex; gap: 16px; font-size: 12px; color: #5b6b80;">
+              <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #2563eb;"></span>CPU</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>GPU</span>
+              <span style="display: inline-flex; align-items: center; gap: 6px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8b5cf6;"></span>RAM</span>
+            </div>
+            <div style="flex-grow: 1; display: flex; gap: 8px; min-height: 0;">
+              <div style="display: flex; flex-direction: column; justify-content: space-between; font-size: 10.5px; color: #8a99ad; padding: 2px 0;"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div>
+              <svg viewBox="0 0 700 190" preserveAspectRatio="none" style="flex-grow: 1; height: 100%;">
+                <g stroke="#eef2f8" stroke-width="1"><path d="M0 1h700"></path><path d="M0 48h700"></path><path d="M0 95h700"></path><path d="M0 142h700"></path><path d="M0 189h700"></path></g>
+                <path d="M0 120 C40 100 60 70 100 78 S170 130 210 118 S270 60 320 72 S390 120 430 105 S490 55 540 70 S620 110 700 88 V190 H0 Z" fill="#2563eb" opacity="0.07"></path>
+                <path d="M0 120 C40 100 60 70 100 78 S170 130 210 118 S270 60 320 72 S390 120 430 105 S490 55 540 70 S620 110 700 88" fill="none" stroke="#2563eb" stroke-width="2"></path>
+                <path d="M0 140 C50 150 80 110 120 118 S190 155 240 140 S300 95 350 108 S420 150 470 135 S540 100 590 112 S660 140 700 128" fill="none" stroke="#10b981" stroke-width="2"></path>
+                <path d="M0 90 C40 70 80 105 120 88 S200 55 250 75 S320 120 370 98 S440 70 490 88 S570 125 620 100 S680 78 700 84" fill="none" stroke="#8b5cf6" stroke-width="2"></path>
+              </svg>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10.5px; color: #8a99ad; padding-left: 34px;"><span>30 phút trước</span><span>25 phút</span><span>20 phút</span><span>15 phút</span><span>10 phút</span><span>5 phút</span><span>Hiện tại</span></div>
+          </div>
+
+          <div class="card" style="width: 252px; flex-shrink: 0; padding: 16px 18px; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+            <div class="ct" style="align-self: flex-start;">Điểm hiệu năng</div>
+            <svg width="140" height="140" viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="58" fill="none" stroke="#e8eef7" stroke-width="11"></circle>
+              <circle cx="70" cy="70" r="58" fill="none" stroke="url(#gsc)" stroke-width="11" stroke-linecap="round" stroke-dasharray="335 364" transform="rotate(-90 70 70)"></circle>
+              <defs><linearGradient id="gsc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#60a5fa"></stop><stop offset="1" stop-color="#2563eb"></stop></linearGradient></defs>
+              <text x="70" y="72" text-anchor="middle" font-size="34" font-weight="800" fill="#1e2b3c" font-family="Inter, Segoe UI, sans-serif">92</text>
+              <text x="70" y="92" text-anchor="middle" font-size="12" fill="#8a99ad" font-family="Inter, Segoe UI, sans-serif">/100</text>
+            </svg>
+            <div style="font-size: 14px; font-weight: 700; color: #2563eb;">Xuất sắc</div>
+            <div style="font-size: 11.5px; color: #6b7a8f; text-align: center;">Hiệu năng cao hơn 87%<br>so với trung bình</div>
+            <span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 16px; border-radius: 10px; background: #eaf2ff; color: #2563eb; font-size: 12.5px; font-weight: 600; margin-top: 2px;">Phân tích chi tiết ›</span>
+          </div>
+
+          <div style="width: 290px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px;">
+            <div class="card" style="padding: 14px 16px; background: linear-gradient(135deg, #eef4ff 0%, #f3eeff 100%); display: flex; gap: 12px;">
+              <span style="width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, #60a5fa, #8b5cf6); display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3c3 1 6 4 6 6-2 .5-4 .3-5.5-.5M11 3c-2 1.5-4 4.5-4.5 7L4 12.5 3 17l4.5-1 2.5-2.5c2.5-.5 5.5-2.5 7-4.5"></path><circle cx="12.5" cy="7.5" r="1.2"></circle></svg></span>
+              <div style="display: flex; flex-direction: column; gap: 3px;">
+                <span style="font-size: 13.5px; font-weight: 700;">Tối ưu hiệu năng</span>
+                <span style="font-size: 11.5px; color: #6b7a8f; line-height: 1.4;">Hệ thống của bạn có thể hoạt động mượt mà hơn nữa.</span>
+                <span style="display: inline-flex; align-self: flex-start; align-items: center; height: 26px; padding: 0 13px; border-radius: 13px; background: #2563eb; color: #fff; font-size: 11.5px; font-weight: 600; margin-top: 2px;">Tối ưu ngay</span>
+              </div>
+              <svg width="14" height="14" viewBox="0 0 12 12" fill="none" style="align-self: center;"><path d="M4 2.5L8 6l-4 3.5" stroke="#5b6b80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            </div>
+            <div class="card" style="padding: 13px 16px; display: flex; gap: 12px; align-items: flex-start;">
+              <span style="width: 36px; height: 36px; border-radius: 11px; background: #e3f8ef; color: #10b981; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="1.8"></circle><path d="M10 8.2C11 4.5 15 4 16 6.5 16.8 8.5 14 9.6 11.8 9.4M11.8 10.6C15.5 11.6 16 15.5 13.5 16.5 11.5 17.3 10.4 14.5 10.6 12.3M8.2 10.6C4.5 11 4 15 6.5 16 8.5 16.8 9.6 14 9.4 11.8M8.2 9.4C4.5 8.4 4 4.5 6.5 3.5 8.5 2.7 9.6 5.5 9.4 7.7"></path></svg></span>
+              <div style="display: flex; flex-direction: column; gap: 3px;">
+                <span style="font-size: 13px; font-weight: 700;">Quạt hoạt động ổn định</span>
+                <span style="font-size: 11.5px; color: #6b7a8f; line-height: 1.4;">Tốc độ quạt nằm trong ngưỡng an toàn và tối ưu.</span>
+                <span class="chip" style="background: #e3f8ef; color: #0f9d6e; align-self: flex-start;"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5.5" fill="#10b981"></circle><path d="M3.6 6.2l1.7 1.7 3.1-3.4" stroke="#fff" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"></path></svg>Ổn định</span>
+              </div>
+            </div>
+            <div class="card" style="padding: 13px 16px; display: flex; gap: 12px; align-items: flex-start;">
+              <span style="width: 36px; height: 36px; border-radius: 11px; background: #e7efff; color: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M8.5 3.5a1.5 1.5 0 013 0v7.3a3.5 3.5 0 11-3 0V3.5z"></path><circle cx="10" cy="14" r="1.4" fill="currentColor" stroke="none"></circle></svg></span>
+              <div style="display: flex; flex-direction: column; gap: 3px;">
+                <span style="font-size: 13px; font-weight: 700;">Nhiệt độ an toàn</span>
+                <span style="font-size: 11.5px; color: #6b7a8f; line-height: 1.4;">Hệ thống đang mát và hoạt động trong ngưỡng an toàn.</span>
+                <span class="chip" style="background: #e7efff; color: #2563eb; align-self: flex-start;"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#2563eb" stroke-width="1.3" stroke-linecap="round"><path d="M5 2a1 1 0 012 0v4.6a2.2 2.2 0 11-2 0V2z"></path></svg>36 – 56 °C</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 12px; margin-left: 20px; min-height: 0; flex-grow: 1;">
+          <div style="flex: 1 1 0; display: flex; flex-direction: column; gap: 12px; min-width: 0;">
+            <div style="display: flex; gap: 12px; flex-grow: 1; min-height: 0;">
+              <div class="card" style="flex: 11 1 0; padding: 14px 18px; display: flex; flex-direction: column; gap: 6px;">
+                <span class="ct">Tổng quan nhiệt độ</span>
+                <div style="display: flex; gap: 16px; align-items: center; flex-grow: 1;">
+                  <svg width="128" height="118" viewBox="0 0 128 118">
+                    <path d="M18 96 A54 54 0 1 1 110 96" fill="none" stroke="#e8eef7" stroke-width="11" stroke-linecap="round"></path>
+                    <path d="M18 96 A54 54 0 0 1 78 12" fill="none" stroke="url(#gt1)" stroke-width="11" stroke-linecap="round"></path>
+                    <defs><linearGradient id="gt1" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#60a5fa"></stop><stop offset="1" stop-color="#2563eb"></stop></linearGradient></defs>
+                    <text x="64" y="70" text-anchor="middle" font-size="26" font-weight="800" fill="#1e2b3c" font-family="Inter, Segoe UI, sans-serif">46 °C</text>
+                    <text x="64" y="90" text-anchor="middle" font-size="11" fill="#8a99ad" font-family="Inter, Segoe UI, sans-serif">Trung bình</text>
+                  </svg>
+                  <div style="flex-grow: 1; display: flex; flex-direction: column;">
+                    <div class="trow"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#2563eb" stroke-width="1.6"><rect x="5" y="5" width="10" height="10" rx="1.5"></rect><path d="M8 2v3M12 2v3M8 15v3M12 15v3M2 8h3M2 12h3M15 8h3M15 12h3"></path></svg><span style="width: 74px;">CPU</span><span class="tbar"><span style="width: 70%; background: linear-gradient(90deg, #60a5fa, #2563eb);"></span></span><span style="width: 42px; text-align: right; font-weight: 600;">56 °C</span></div>
+                    <div class="trow"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#10b981" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="1.5"></rect><circle cx="8" cy="10" r="2"></circle></svg><span style="width: 74px;">GPU</span><span class="tbar"><span style="width: 70%; background: linear-gradient(90deg, #6ee7b7, #10b981);"></span></span><span style="width: 42px; text-align: right; font-weight: 600;">56 °C</span></div>
+                    <div class="trow"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#8b5cf6" stroke-width="1.6"><rect x="3" y="4" width="14" height="12" rx="1.5"></rect><path d="M6.5 7.5h3M6.5 10.5h2"></path><circle cx="13.5" cy="12.5" r="1.6"></circle></svg><span style="width: 74px;">Mainboard</span><span class="tbar"><span style="width: 47%; background: linear-gradient(90deg, #c4b5fd, #8b5cf6);"></span></span><span style="width: 42px; text-align: right; font-weight: 600;">38 °C</span></div>
+                    <div class="trow"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#f97316" stroke-width="1.6"><rect x="4" y="3" width="12" height="14" rx="1.5"></rect><path d="M7 6.5h6M7 9.5h6"></path><circle cx="12.5" cy="13.5" r="1"></circle></svg><span style="width: 74px;">SSD</span><span class="tbar"><span style="width: 49%; background: linear-gradient(90deg, #fdba74, #f97316);"></span></span><span style="width: 42px; text-align: right; font-weight: 600;">39 °C</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="card" style="flex: 10 1 0; padding: 14px 18px; display: flex; flex-direction: column; gap: 8px;">
+                <span class="ct">Mạng &amp; Ổ đĩa</span>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="width: 150px;">
+                    <div style="font-size: 12px; font-weight: 600; color: #44546a;">Mạng</div>
+                    <div style="display: flex; gap: 10px; font-size: 12px; color: #5b6b80; margin-top: 3px;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px;"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#06b6d4" stroke-width="1.4" stroke-linecap="round"><path d="M6 2v8M3 7l3 3 3-3"></path></svg><span style="font-weight: 700; color: #1e2b3c;">156 Mbps</span></span>
+                      <span style="display: inline-flex; align-items: center; gap: 4px;"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#10b981" stroke-width="1.4" stroke-linecap="round"><path d="M6 10V2M3 5l3-3 3 3"></path></svg>23 Mbps</span>
+                    </div>
+                  </div>
+                  <svg viewBox="0 0 300 46" preserveAspectRatio="none" style="flex-grow: 1; height: 44px;"><path d="M0 30 C20 22 35 36 55 28 S95 12 120 22 S165 38 195 26 S240 14 265 24 S290 30 300 26" fill="none" stroke="#06b6d4" stroke-width="2"></path><path d="M0 30 C20 22 35 36 55 28 S95 12 120 22 S165 38 195 26 S240 14 265 24 S290 30 300 26 V46 H0 Z" fill="#06b6d4" opacity="0.08"></path></svg>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="width: 150px;">
+                    <div style="font-size: 12px; font-weight: 600; color: #44546a;">Ổ đĩa</div>
+                    <div style="font-size: 11px; color: #8a99ad;">Đọc</div>
+                    <div style="display: flex; gap: 10px; font-size: 12px; color: #5b6b80;">
+                      <span style="display: inline-flex; align-items: center; gap: 4px;"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#10b981" stroke-width="1.4" stroke-linecap="round"><path d="M6 2v8M3 7l3 3 3-3"></path></svg><span style="font-weight: 700; color: #1e2b3c;">168 MB/s</span></span>
+                      <span style="display: inline-flex; align-items: center; gap: 4px;"><svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#10b981" stroke-width="1.4" stroke-linecap="round"><path d="M6 10V2M3 5l3-3 3 3"></path></svg>98 MB/s</span>
+                    </div>
+                  </div>
+                  <svg viewBox="0 0 300 46" preserveAspectRatio="none" style="flex-grow: 1; height: 44px;"><path d="M0 34 C25 28 45 38 70 30 S115 18 145 28 S195 40 225 28 S265 20 300 30" fill="none" stroke="#10b981" stroke-width="2"></path><path d="M0 34 C25 28 45 38 70 30 S115 18 145 28 S195 40 225 28 S265 20 300 30 V46 H0 Z" fill="#10b981" opacity="0.08"></path></svg>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="padding: 12px 18px 14px; display: flex; flex-direction: column; gap: 9px;">
+              <span class="ct">Hành động nhanh</span>
+              <div style="display: flex; gap: 10px;">
+                <div class="qa"><span class="qi" style="background: #e7efff; color: #2563eb;"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="14" height="7" rx="1.5"></rect><path d="M6 7v-2M10 7V5M14 7V5"></path></svg></span><div><div style="font-size: 12.5px; font-weight: 700;">Giải phóng RAM</div><div style="font-size: 11px; color: #7b8a9e;">Tăng bộ nhớ khả dụng</div></div></div>
+                <div class="qa"><span class="qi" style="background: #f0eaff; color: #8b5cf6;"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M13 3l4 4L7 17l-4 .9L4 13 13 3z"></path><path d="M15 9l2 2M3 5l2-2M17 3l-1 1"></path></svg></span><div><div style="font-size: 12.5px; font-weight: 700;">Dọn dẹp hệ thống</div><div style="font-size: 11px; color: #7b8a9e;">Xóa tệp tạm &amp; rác</div></div></div>
+                <div class="qa"><span class="qi" style="background: #e2f6fd; color: #06b6d4;"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2L4 11h5l-1 7 7-9h-5l1-7z"></path></svg></span><div><div style="font-size: 12.5px; font-weight: 700;">Chế độ hiệu năng</div><div style="font-size: 11px; color: #7b8a9e;">Tối ưu cho hiệu năng cao</div></div></div>
+                <div class="qa"><span class="qi" style="background: #e7efff; color: #2563eb;"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1.5"></rect><rect x="11" y="3" width="6" height="6" rx="1.5"></rect><rect x="3" y="11" width="6" height="6" rx="1.5"></rect><rect x="11" y="11" width="6" height="6" rx="1.5"></rect></svg></span><div><div style="font-size: 12.5px; font-weight: 700;">Quản lý ứng dụng</div><div style="font-size: 11px; color: #7b8a9e;">Quản lý ứng dụng chạy nền</div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div style="width: 466px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
+            <div class="card" style="padding: 13px 18px; display: flex; flex-direction: column; flex-grow: 1;">
+              <span class="ct">Tiến trình tiêu thụ nhiều tài nguyên</span>
+              <div class="prow" style="color: #8a99ad; font-weight: 600;"><span style="flex-grow: 1;">Tiến trình</span><span class="cell">CPU</span><span class="cell">RAM</span><span class="cell">Ổ đĩa</span><span class="cell">Mạng</span></div>
+              <div class="prow"><span style="width: 17px; height: 17px; border-radius: 5px; background: #efe6ff; display: inline-flex; align-items: center; justify-content: center; color: #8b5cf6; font-size: 9px; font-weight: 800;">Pr</span><span style="flex-grow: 1; font-weight: 600;">Adobe Premiere Pro</span><span class="cell">12.6%</span><span class="cell">1.2 GB</span><span class="cell">46 MB/s</span><span class="cell">12 Mbps</span></div>
+              <div class="prow"><span style="width: 17px; height: 17px; border-radius: 50%; background: conic-gradient(#ea4335 0 90deg, #fbbc05 90deg 180deg, #34a853 180deg 270deg, #4285f4 270deg 360deg); display: inline-block;"></span><span style="flex-grow: 1; font-weight: 600;">Google Chrome (18)</span><span class="cell">8.3%</span><span class="cell">924 MB</span><span class="cell">18 MB/s</span><span class="cell">8 Mbps</span></div>
+              <div class="prow"><span style="width: 17px; height: 17px; border-radius: 5px; background: #fff3cd; display: inline-flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 12 12" fill="#f4b400"><path d="M1 4l4.5-1v3.5H1V4zM6.5 2.8L11 2v4.5H6.5V2.8zM1 7.5h4.5V11L1 10V7.5zM6.5 7.5H11V12l-4.5-.8V7.5z"></path></svg></span><span style="flex-grow: 1; font-weight: 600;">Windows Explorer</span><span class="cell">3.1%</span><span class="cell">256 MB</span><span class="cell">2 MB/s</span><span class="cell">0.1 Mbps</span></div>
+              <div class="prow"><span style="width: 17px; height: 17px; border-radius: 50%; background: #1b2838; display: inline-flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="#c7d5e0" stroke-width="1.2"><circle cx="8" cy="4" r="2"></circle><path d="M2 9l4-3.5"></path><circle cx="3" cy="9.5" r="1.4"></circle></svg></span><span style="flex-grow: 1; font-weight: 600;">Steam Client WebHelper</span><span class="cell">2.8%</span><span class="cell">213 MB</span><span class="cell">1 MB/s</span><span class="cell">1 Mbps</span></div>
+              <div class="prow"><span style="width: 17px; height: 17px; border-radius: 5px; background: #5865f2; display: inline-flex; align-items: center; justify-content: center;"><svg width="11" height="11" viewBox="0 0 12 12" fill="#fff"><path d="M3.5 3.5C4.5 3 5.2 3 6 3s1.5 0 2.5.5c.8 1.2 1.3 2.7 1.3 4.2-.6.7-1.4 1.1-2.2 1.3l-.4-.8c.3-.1.6-.3.9-.5-1.4.6-2.8.6-4.2 0 .3.2.6.4.9.5l-.4.8c-.8-.2-1.6-.6-2.2-1.3 0-1.5.5-3 1.3-4.2z"></path></svg></span><span style="flex-grow: 1; font-weight: 600;">Discord</span><span class="cell">2.5%</span><span class="cell">193 MB</span><span class="cell">1 MB/s</span><span class="cell">0.2 Mbps</span></div>
+              <a href="#" style="font-size: 12px; font-weight: 600; align-self: flex-end; margin-top: auto;">Xem thêm ›</a>
+            </div>
+            <div class="card" style="padding: 12px 18px 14px; display: flex; flex-direction: column; gap: 9px;">
+              <span class="ct">Chế độ hệ thống</span>
+              <div style="display: flex; gap: 9px;">
+                <div class="mode"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l6 3.5v7L10 17l-6-3.5v-7L10 3z"></path></svg>Tiết kiệm pin</div>
+                <div class="mode"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7"></circle><path d="M7.5 11.5a2.5 2.5 0 015 0M10 9V6.5"></path></svg>Cân bằng</div>
+                <div class="mode on"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="2.5" y="6.5" width="12" height="7" rx="2"></rect><path d="M15 8.5h2v3h-2M5.5 9v2M8 9v2M10.5 9v2"></path></svg>Hiệu năng cao</div>
+                <div class="mode"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M4 6h12M4 10h12M4 14h12"></path><circle cx="8" cy="6" r="1.6" fill="#fff"></circle><circle cx="13" cy="10" r="1.6" fill="#fff"></circle><circle cx="6.5" cy="14" r="1.6" fill="#fff"></circle></svg>Tùy chỉnh</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <div class="status">
+    <div class="st"><span style="width: 30px; height: 30px; border-radius: 9px; background: #e3f8ef; color: #10b981; display: inline-flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 10h3l2-5 3.5 10 2.5-7 1.5 2h2.5"></path></svg></span><div><div class="a">Hiệu năng</div><div class="b">Xuất sắc</div></div></div>
+    <div class="st"><svg width="22" height="22" viewBox="0 0 20 20"><rect x="2" y="2" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="10.4" y="2" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="2" y="10.4" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="10.4" y="10.4" width="7.6" height="7.6" fill="#0078d4"></rect></svg><div><div class="a">Windows 11 Pro 23H2</div><div class="b">Bản dựng 22631.3593</div></div></div>
+    <div class="st"><span style="width: 30px; height: 30px; border-radius: 9px; background: #e3f8ef; color: #10b981; display: inline-flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6.5 2.5v5c0 3.8-2.8 6.6-6.5 7.5-3.7-.9-6.5-3.7-6.5-7.5v-5L10 2.5z"></path><path d="M7.2 10l2 2 3.6-4"></path></svg></span><div><div class="a">Hệ thống được bảo vệ</div><div class="b">Cập nhật đến 10 phút trước</div></div></div>
+    <div class="st"><span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.18);"></span><div><div class="a">PC Control Service</div><div class="b">Đang chạy</div></div></div>
   </div>
 </div>
 </x-dc>

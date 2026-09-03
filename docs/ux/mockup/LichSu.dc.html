@@ -1,0 +1,274 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: #1e2b3c; -webkit-font-smoothing: antialiased; }
+    a { color: #2563eb; text-decoration: none; } a:hover { color: #1d4ed8; }
+    .app { width: 1672px; height: 941px; display: flex; flex-direction: column; background: linear-gradient(160deg, #eaf1fb 0%, #e7effa 45%, #e9f2f6 100%); overflow: hidden; }
+    .mid { display: flex; flex-grow: 1; min-height: 0; }
+    .side { width: 290px; flex-shrink: 0; background: rgba(255,255,255,0.55); border-right: 1px solid rgba(255,255,255,0.95); display: flex; flex-direction: column; padding: 20px 16px 12px; }
+    .logo { display: flex; align-items: center; gap: 12px; padding: 0 8px 16px; }
+    .logo .t1 { font-size: 18px; font-weight: 800; letter-spacing: -0.2px; }
+    .logo .t2 { font-size: 11.5px; color: #7b8a9e; }
+    .nav { display: flex; flex-direction: column; gap: 2px; }
+    .ni { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 14px; border-radius: 12px; color: #5b6b80; font-size: 13.5px; font-weight: 500; }
+    .ni svg { flex-shrink: 0; }
+    .ni.on { background: #eaf2ff; color: #2563eb; font-weight: 600; box-shadow: 0 8px 18px rgba(37,99,235,0.12); }
+    .pcCard { margin-top: auto; background: rgba(255,255,255,0.85); border: 1px solid #fff; border-radius: 16px; padding: 14px; box-shadow: 0 10px 26px rgba(30,64,120,0.08); display: flex; flex-direction: column; gap: 4px; }
+    .sideIcons { display: flex; gap: 26px; padding: 14px 10px 2px; color: #5b6b80; }
+    .top { height: 76px; display: flex; align-items: center; gap: 14px; padding: 0 26px; flex-shrink: 0; }
+    .search { width: 560px; height: 46px; background: #fff; border-radius: 23px; display: flex; align-items: center; gap: 10px; padding: 0 18px; box-shadow: 0 8px 24px rgba(30,64,120,0.06); color: #8a99ad; font-size: 13.5px; }
+    .kbd { margin-left: auto; font-size: 12px; color: #7b8a9e; background: #f1f5fa; border-radius: 6px; padding: 3px 8px; }
+    .ibtn { width: 44px; height: 44px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 20px rgba(30,64,120,0.07); position: relative; color: #44546a; }
+    .badge { position: absolute; top: -3px; right: -3px; background: #ef4444; color: #fff; font-size: 10px; font-weight: 700; border-radius: 9px; padding: 1px 5px; border: 2px solid #fff; }
+    .winc { display: flex; align-items: center; gap: 22px; color: #44546a; padding: 0 6px 0 12px; }
+    .card { background: rgba(255,255,255,0.88); border: 1px solid #fff; border-radius: 16px; box-shadow: 0 10px 30px rgba(30,64,120,0.06); }
+    .h1 { font-size: 25px; font-weight: 800; letter-spacing: -0.3px; }
+    .sub { font-size: 13px; color: #6b7a8f; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 15px; border-radius: 10px; background: #fff; border: 1px solid #e3eaf3; font-size: 12.5px; font-weight: 600; color: #44546a; box-shadow: 0 6px 14px rgba(30,64,120,0.05); }
+    .day { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #5b6b80; padding: 2px 0 6px; }
+    .ev { display: flex; align-items: center; gap: 12px; background: #fff; border: 1px solid #eef2f8; border-radius: 14px; padding: 10px 14px; box-shadow: 0 5px 14px rgba(30,64,120,0.04); }
+    .ev.sel { border: 1.6px solid #93b8fb; background: #f4f8ff; box-shadow: 0 8px 20px rgba(37,99,235,0.12); }
+    .evt { width: 46px; font-size: 12px; color: #7b8a9e; font-weight: 600; flex-shrink: 0; }
+    .evi { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .chip { display: inline-flex; align-items: center; height: 24px; padding: 0 11px; border-radius: 12px; font-size: 11px; font-weight: 700; }
+    .tl { position: relative; display: flex; flex-direction: column; gap: 9px; padding-left: 24px; }
+    .tl::before { content: ""; position: absolute; left: 7px; top: 6px; bottom: 6px; width: 2px; background: #dce6f2; }
+    .nd { position: absolute; left: 0; width: 15px; height: 15px; border-radius: 50%; border: 3.5px solid #3b82f6; background: #fff; }
+    .snap { width: 176px; background: #fff; border: 1px solid #eef2f8; border-radius: 13px; padding: 9px; display: flex; gap: 9px; align-items: center; box-shadow: 0 5px 14px rgba(30,64,120,0.04); }
+    .stt { display: flex; align-items: center; gap: 9px; }
+    .ministat { flex: 1 1 0; border-radius: 11px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+    .cmp { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #44546a; padding: 4.5px 0; }
+    .status { height: 54px; flex-shrink: 0; background: rgba(255,255,255,0.6); border-top: 1px solid #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 46px; }
+    .st { display: flex; align-items: center; gap: 10px; }
+    .st .a { font-size: 12.5px; font-weight: 700; }
+    .st .b { font-size: 11.5px; color: #7b8a9e; }
+  </style>
+</helmet>
+<div class="app">
+  <div class="mid">
+
+    <div class="side">
+      <div class="logo">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="4" width="32" height="32" rx="9" fill="url(#lg3)"></rect><path d="M20 11l8 4.6v9L20 29l-8-4.4v-9L20 11z" fill="#fff" opacity="0.92"></path><path d="M20 11l8 4.6-8 4.4-8-4.4L20 11z" fill="#dbeafe"></path><defs><linearGradient id="lg3" x1="4" y1="4" x2="36" y2="36"><stop stop-color="#60a5fa"></stop><stop offset="1" stop-color="#2563eb"></stop></linearGradient></defs></svg>
+        <div><div class="t1">PC Control</div><div class="t2">Total Control. Perfect PC.</div></div>
+      </div>
+      <div class="nav">
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l7-6 7 6v8a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 013 17V9z"></path></svg>Bảng điều khiển</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="10" rx="1.5"></rect><path d="M7 17h6"></path></svg>Tổng quan hệ thống</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="7"></circle><path d="M10 10l3-3"></path></svg>Hiệu năng</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"></circle><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.2 5.2l1.4 1.4M13.4 13.4l1.4 1.4M14.8 5.2l-1.4 1.4M6.6 13.4l-1.4 1.4"></path></svg>Trung tâm cài đặt</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 6.5l-8 8L3 17l2.5-1.5 8-8M11 4l3-1.5L17 5l-1.5 3"></path></svg>Sửa chữa &amp; Tối ưu</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a6 6 0 0110.5-2.5M16 12a6 6 0 01-10.5 2.5"></path><path d="M14 3v3h3M6 17v-3H3"></path></svg>Cập nhật</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="10" height="10" rx="1.5"></rect><path d="M8 2v3M12 2v3M8 15v3M12 15v3M2 8h3M2 12h3M15 8h3M15 12h3"></path></svg>Phần cứng</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"></circle><path d="M3.5 8h13M3.5 12h13"></path></svg>Trình điều khiển</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="6" height="6" rx="1.5"></rect><rect x="11" y="3" width="6" height="6" rx="1.5"></rect><rect x="3" y="11" width="6" height="6" rx="1.5"></rect><rect x="11" y="11" width="6" height="6" rx="1.5"></rect></svg>Ứng dụng &amp; Dịch vụ</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a6 6 0 0111-2M16 13a6 6 0 01-11 2"></path><path d="M15 2v3h-3M5 18v-3h3"></path></svg>Tự động hóa</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="5" rx="1.5"></rect><rect x="3" y="11" width="14" height="5" rx="1.5"></rect><path d="M6 6.5h.01M6 13.5h.01"></path></svg>Sao lưu &amp; Khôi phục</div>
+        <div class="ni on"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"></circle><path d="M10 6v4l2.6 2"></path></svg>Lịch sử &amp; Khôi phục</div>
+        <div class="ni"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 6.5l-8 8L3 17l2.5-1.5 8-8M11 4l3-1.5L17 5l-1.5 3"></path></svg>Công cụ</div>
+      </div>
+      <div class="pcCard">
+        <svg width="100" height="62" viewBox="0 0 100 62" style="border-radius: 10px;"><rect width="100" height="62" rx="10" fill="#0a1b3a"></rect><g transform="translate(50 31)"><path d="M0 0C6 -14 18 -18 26 -10C16 -8 8 -2 0 0Z" fill="#3b82f6"></path><path d="M0 0C14 -6 18 6 10 16C8 8 4 4 0 0Z" fill="#60a5fa"></path><path d="M0 0C-6 14 -18 18 -26 10C-16 8 -8 2 0 0Z" fill="#2563eb"></path><path d="M0 0C-14 6 -18 -6 -10 -16C-8 -8 -4 -4 0 0Z" fill="#93c5fd"></path></g></svg>
+        <div style="font-size: 13.5px; font-weight: 700; margin-top: 6px;">DESKTOP-7G8H2KQ</div>
+        <div style="font-size: 11.5px; color: #7b8a9e;">Windows 11 Pro 23H2</div>
+        <div style="font-size: 11.5px; color: #7b8a9e;">Thời gian hoạt động: 2d 6h 28m</div>
+        <a href="#" style="font-size: 12px; font-weight: 600; margin-top: 3px;">Chi tiết hệ thống ›</a>
+      </div>
+      <div class="sideIcons">
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M16.5 12A7 7 0 018 3.5 7 7 0 1016.5 12z"></path></svg>
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="2.4"></circle><path d="M10 3.5v1.8M10 14.7v1.8M3.5 10h1.8M14.7 10h1.8M5.4 5.4l1.3 1.3M13.3 13.3l1.3 1.3M14.6 5.4l-1.3 1.3M6.7 13.3l-1.3 1.3"></path></svg>
+        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14V9a6 6 0 0112 0v5l1.5 2h-15L4 14z"></path><path d="M8.5 18a1.8 1.8 0 003 0"></path></svg>
+      </div>
+    </div>
+
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column;">
+      <div class="top">
+        <div class="search">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#8a99ad" stroke-width="1.7" stroke-linecap="round"><circle cx="9" cy="9" r="5.5"></circle><path d="M13.5 13.5L17 17"></path></svg>
+          Tìm kiếm cài đặt, tệp, ứng dụng...
+          <span class="kbd">Ctrl K</span>
+        </div>
+        <div style="flex-grow: 1;"></div>
+        <div class="ibtn"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 10h3l2-5 3.5 10 2.5-7 1.5 2h2.5"></path></svg></div>
+        <div class="ibtn"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14V9a6 6 0 0112 0v5l1.5 2h-15L4 14z"></path><path d="M8.5 18a1.8 1.8 0 003 0"></path></svg><span class="badge">2</span></div>
+        <div class="ibtn"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="10" r="7.2"></circle><path d="M8 8a2 2 0 113.4 1.4c-.7.6-1.4 1-1.4 2"></path><circle cx="10" cy="14.4" r="0.4" fill="currentColor"></circle></svg></div>
+        <div class="winc">
+          <svg width="13" height="13" viewBox="0 0 12 12"><path d="M1 6h10" stroke="currentColor" stroke-width="1.2"></path></svg>
+          <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1" y="1" width="10" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.2"></rect></svg>
+          <svg width="13" height="13" viewBox="0 0 12 12"><path d="M1 1l10 10M11 1L1 11" stroke="currentColor" stroke-width="1.2"></path></svg>
+        </div>
+      </div>
+
+      <div style="flex-grow: 1; min-height: 0; display: flex; gap: 16px; padding: 2px 26px 14px 20px;">
+
+        <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 11px;">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+            <div>
+              <div class="h1">Lịch sử thay đổi</div>
+              <div class="sub">Theo dõi mọi thay đổi quan trọng và khôi phục hệ thống về trạng thái ổn định.</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 9px;">
+              <span class="btn"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h14l-5.5 6.5V16l-3 1.5v-7L3 4z"></path></svg>Bộ lọc</span>
+              <span class="btn" style="padding: 0 11px;"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="3" y="4" width="14" height="13" rx="2"></rect><path d="M3 8h14M7 2.5V5M13 2.5V5"></path></svg></span>
+            </div>
+          </div>
+
+          <div style="flex-grow: 1; min-height: 0; display: flex; flex-direction: column; gap: 9px; overflow: hidden;">
+            <div class="day"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#8a99ad" stroke-width="1.4"><circle cx="7" cy="7" r="5.6"></circle><path d="M7 4v3l2 1.5" stroke-linecap="round"></path></svg>Hôm nay – 24/05/2024</div>
+            <div class="tl">
+              <div style="position: relative;"><span class="nd" style="left: -24px; top: 18px;"></span>
+                <div class="ev sel"><span class="evt">10:42</span><span class="evi" style="background: #e7efff;"><svg width="18" height="18" viewBox="0 0 20 20"><rect x="2" y="2" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="10.4" y="2" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="2" y="10.4" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="10.4" y="10.4" width="7.6" height="7.6" fill="#0078d4"></rect></svg></span>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 700;">Cập nhật Windows</div><div style="font-size: 11.5px; color: #7b8a9e;">Windows 11, version 23H2 (KB5037771)</div></div>
+                  <span class="chip" style="background: #e3f8ef; color: #0f9d6e;">Thành công</span>
+                  <div style="width: 130px; text-align: right;"><div style="font-size: 12px; font-weight: 600; color: #44546a;">2.1 GB</div><div style="font-size: 11px; color: #ea580c;">Yêu cầu khởi động lại</div></div>
+                </div>
+              </div>
+              <div style="position: relative;"><span class="nd" style="left: -24px; top: 16px;"></span>
+                <div class="ev"><span class="evt">09:15</span><span class="evi" style="background: #e3f8ef; color: #10b981;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="14" height="10" rx="1.5"></rect><circle cx="8" cy="10" r="2"></circle><path d="M13 8v4"></path></svg></span>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 700;">Cập nhật trình điều khiển</div><div style="font-size: 11.5px; color: #7b8a9e;">NVIDIA GeForce RTX 4060 Ti – 552.22</div></div>
+                  <span class="chip" style="background: #e3f8ef; color: #0f9d6e;">Thành công</span>
+                  <div style="width: 130px; text-align: right;"><div style="font-size: 12px; font-weight: 600; color: #44546a;">642 MB</div></div>
+                </div>
+              </div>
+              <div style="position: relative;"><span class="nd" style="left: -24px; top: 16px;"></span>
+                <div class="ev"><span class="evt">08:01</span><span class="evi" style="background: #f0eaff; color: #8b5cf6;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="10" height="10" rx="1.5"></rect><rect x="8" y="8" width="4" height="4" rx="1"></rect><path d="M8 2v3M12 2v3M8 15v3M12 15v3M2 8h3M2 12h3M15 8h3M15 12h3"></path></svg></span>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 700;">Cập nhật BIOS</div><div style="font-size: 11.5px; color: #7b8a9e;">ASUS ROG STRIX B760-F GAMING WIFI</div></div>
+                  <span class="chip" style="background: #fff3e4; color: #d97706;">Cần khởi động lại</span>
+                  <div style="width: 130px; text-align: right;"><div style="font-size: 12px; font-weight: 600; color: #44546a;">1.8 MB</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="day" style="margin-top: 4px;"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#8a99ad" stroke-width="1.4"><circle cx="7" cy="7" r="5.6"></circle><path d="M7 4v3l2 1.5" stroke-linecap="round"></path></svg>Hôm qua – 23/05/2024</div>
+            <div class="tl">
+              <div style="position: relative;"><span class="nd" style="left: -24px; top: 16px;"></span>
+                <div class="ev"><span class="evt">16:30</span><span class="evi" style="background: #e7efff; color: #2563eb;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"></circle><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.2 5.2l1.4 1.4M13.4 13.4l1.4 1.4M14.8 5.2l-1.4 1.4M6.6 13.4l-1.4 1.4"></path></svg></span>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 700;">Điểm khôi phục hệ thống</div><div style="font-size: 11.5px; color: #7b8a9e;">Trước khi cài đặt Visual Studio 2022</div></div>
+                  <span class="chip" style="background: #e7efff; color: #2563eb;">Điểm khôi phục</span>
+                  <div style="width: 130px; text-align: right;"><div style="font-size: 12px; font-weight: 600; color: #44546a;">1.2 GB</div></div>
+                </div>
+              </div>
+              <div style="position: relative;"><span class="nd" style="left: -24px; top: 16px; border-color: #10b981;"></span>
+                <div class="ev"><span class="evt">11:22</span><span class="evi" style="background: #e3f8ef; color: #10b981;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="6" rx="1.5"></rect><rect x="11" y="3" width="6" height="6" rx="1.5"></rect><rect x="3" y="11" width="6" height="6" rx="1.5"></rect><rect x="11" y="11" width="6" height="6" rx="1.5"></rect></svg></span>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 700;">Cài đặt ứng dụng</div><div style="font-size: 11.5px; color: #7b8a9e;">Visual Studio 2022 Community</div></div>
+                  <span class="chip" style="background: #e3f8ef; color: #0f9d6e;">Thành công</span>
+                  <div style="width: 130px; text-align: right;"><div style="font-size: 12px; font-weight: 600; color: #44546a;">3.7 GB</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="day" style="margin-top: 4px;"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="#8a99ad" stroke-width="1.4"><circle cx="7" cy="7" r="5.6"></circle><path d="M7 4v3l2 1.5" stroke-linecap="round"></path></svg>22/05/2024</div>
+            <div class="tl">
+              <div style="position: relative;"><span class="nd" style="left: -24px; top: 16px; border-color: #f59e0b;"></span>
+                <div class="ev"><span class="evt">21:45</span><span class="evi" style="background: #fff3e4; color: #ea580c;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"></circle><path d="M10 3v2M10 15v2M3 10h2M15 10h2M5.2 5.2l1.4 1.4M13.4 13.4l1.4 1.4M14.8 5.2l-1.4 1.4M6.6 13.4l-1.4 1.4"></path></svg></span>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 700;">Thay đổi cài đặt hệ thống</div><div style="font-size: 11.5px; color: #7b8a9e;">Bật Virtualization trong BIOS</div></div>
+                  <span class="chip" style="background: #e3f8ef; color: #0f9d6e;">Thành công</span>
+                  <div style="width: 130px;"></div>
+                </div>
+              </div>
+              <div style="position: relative;"><span class="nd" style="left: -24px; top: 16px; border-color: #10b981;"></span>
+                <div class="ev"><span class="evt">14:10</span><span class="evi" style="background: #e3f8ef; color: #10b981;"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6.5 2.5v5c0 3.8-2.8 6.6-6.5 7.5-3.7-.9-6.5-3.7-6.5-7.5v-5L10 2.5z"></path><path d="M7.2 10l2 2 3.6-4"></path></svg></span>
+                  <div style="flex-grow: 1;"><div style="font-size: 13.5px; font-weight: 700;">Quét &amp; Tối ưu hệ thống</div><div style="font-size: 11.5px; color: #7b8a9e;">Dọn dẹp tệp rác, tối ưu registry</div></div>
+                  <span class="chip" style="background: #e3f8ef; color: #0f9d6e;">Thành công</span>
+                  <div style="width: 130px;"></div>
+                </div>
+              </div>
+            </div>
+
+            <span class="btn" style="align-self: center; border-radius: 18px; margin-top: 2px;">Tải thêm lịch sử <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="#44546a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          </div>
+
+          <div class="card" style="padding: 12px 16px; display: flex; align-items: center; gap: 14px;">
+            <span style="width: 44px; height: 44px; border-radius: 13px; background: linear-gradient(135deg, #60a5fa, #8b5cf6); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3l7 4v8l-7 4-7-4V7l7-4z"></path><path d="M12 11l7-4M12 11L5 7M12 11v8"></path></svg></span>
+            <div style="width: 190px;">
+              <div style="font-size: 13px; font-weight: 700;">Ảnh chụp hệ thống</div>
+              <div style="font-size: 11px; color: #7b8a9e; line-height: 1.4;">Lưu trạng thái hiện tại của hệ thống để có thể khôi phục nhanh chóng khi cần.</div>
+              <span style="display: inline-flex; align-items: center; height: 26px; padding: 0 13px; border-radius: 8px; background: #2563eb; color: #fff; font-size: 11.5px; font-weight: 600; margin-top: 5px;">Tạo ảnh chụp</span>
+            </div>
+            <div class="snap"><svg width="42" height="34" viewBox="0 0 42 34" style="border-radius: 8px;"><rect width="42" height="34" rx="8" fill="#141034"></rect><path d="M10 26C14 12 26 8 34 14 26 16 16 20 10 26Z" fill="#8b5cf6"></path><path d="M14 27C20 18 30 17 36 22 29 23 20 24 14 27Z" fill="#c084fc" opacity="0.7"></path></svg><div><div style="font-size: 10.5px; font-weight: 700;">Snapshot_2024-05-24_1042</div><div style="font-size: 10px; color: #7b8a9e;">24/05/2024 10:42</div><div style="font-size: 10px; color: #8a99ad;">Tự động</div></div></div>
+            <div class="snap"><svg width="42" height="34" viewBox="0 0 42 34" style="border-radius: 8px;"><rect width="42" height="34" rx="8" fill="#101c38"></rect><path d="M8 25C14 10 28 8 35 15 26 16 15 19 8 25Z" fill="#a855f7"></path><path d="M13 27C19 19 30 18 37 23 29 24 19 25 13 27Z" fill="#f0abfc" opacity="0.6"></path></svg><div><div style="font-size: 10.5px; font-weight: 700;">Snapshot_2024-05-23_1630</div><div style="font-size: 10px; color: #7b8a9e;">23/05/2024 16:30</div><div style="font-size: 10px; color: #8a99ad;">Thủ công</div></div></div>
+            <div class="snap"><svg width="42" height="34" viewBox="0 0 42 34" style="border-radius: 8px;"><rect width="42" height="34" rx="8" fill="#1a1030"></rect><path d="M9 26C13 13 27 9 34 15 25 17 15 20 9 26Z" fill="#7c3aed"></path><path d="M15 28C21 20 31 19 37 24 30 25 21 26 15 28Z" fill="#c4b5fd" opacity="0.7"></path></svg><div><div style="font-size: 10.5px; font-weight: 700;">Snapshot_2024-05-22_2100</div><div style="font-size: 10px; color: #7b8a9e;">22/05/2024 21:00</div><div style="font-size: 10px; color: #8a99ad;">Tự động</div></div></div>
+            <span style="width: 30px; height: 30px; border-radius: 50%; background: #fff; box-shadow: 0 5px 14px rgba(30,64,120,0.1); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2.5L8 6l-4 3.5" stroke="#44546a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+          </div>
+        </div>
+
+        <div style="width: 420px; flex-shrink: 0; display: flex; flex-direction: column; gap: 11px;">
+          <div class="card" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 14.5px; font-weight: 700;">Khôi phục đã chọn</span><a href="#" style="font-size: 11.5px; font-weight: 600;">Xóa chọn</a></div>
+            <div style="display: flex; align-items: center; gap: 12px; background: linear-gradient(120deg, #eef4ff, #f3f0ff); border-radius: 13px; padding: 11px 13px;">
+              <span style="width: 44px; height: 44px; border-radius: 12px; background: #fff; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 5px 12px rgba(30,64,120,0.08);"><svg width="21" height="21" viewBox="0 0 20 20"><rect x="2" y="2" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="10.4" y="2" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="2" y="10.4" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="10.4" y="10.4" width="7.6" height="7.6" fill="#0078d4"></rect></svg></span>
+              <div style="flex-grow: 1;">
+                <div style="font-size: 13.5px; font-weight: 700;">Cập nhật Windows</div>
+                <div style="font-size: 11.5px; color: #7b8a9e;">Windows 11, version 23H2 (KB5037771)</div>
+                <div style="font-size: 11px; color: #8a99ad;">24/05/2024 10:42</div>
+              </div>
+              <span class="chip" style="background: #e3f8ef; color: #0f9d6e;">Thành công</span>
+            </div>
+            <div style="display: flex; gap: 9px;">
+              <span style="display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 38px; padding: 0 18px; border-radius: 11px; background: #2563eb; color: #fff; font-size: 13px; font-weight: 700; box-shadow: 0 8px 18px rgba(37,99,235,0.28);"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4L4.5 7.5 8 11"></path><path d="M4.5 7.5H13a3.5 3.5 0 010 7H8"></path></svg>Khôi phục</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 38px; padding: 0 16px; border-radius: 11px; background: #fff; border: 1px solid #e3eaf3; font-size: 12.5px; font-weight: 600; color: #44546a;">Tùy chọn nâng cao <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 4.5L6 8l3.5-3.5" stroke="#44546a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 14.5px; font-weight: 700;">Điểm ổn định</span><a href="#" style="font-size: 11.5px; font-weight: 600;">Xem tất cả</a></div>
+            <div style="background: linear-gradient(120deg, #eef4ff, #f5f1ff); border-radius: 13px; padding: 12px 14px; display: flex; flex-direction: column; gap: 7px;">
+              <div style="display: flex; align-items: center; gap: 11px;">
+                <span style="width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6, #6366f1); display: inline-flex; align-items: center; justify-content: center;"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6.5 2.5v5c0 3.8-2.8 6.6-6.5 7.5-3.7-.9-6.5-3.7-6.5-7.5v-5L10 2.5z"></path></svg></span>
+                <div>
+                  <div style="font-size: 13.5px; font-weight: 700;">Trạng thái ổn định gần nhất</div>
+                  <div style="font-size: 11.5px; color: #7b8a9e;">23/05/2024 16:30</div>
+                  <div style="font-size: 11.5px; color: #7b8a9e;">Trước khi cài Visual Studio 2022</div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11.5px; color: #6b7a8f;"><span>Hiệu năng hệ thống</span><span style="font-weight: 800; color: #1e2b3c; font-size: 13px;">96%</span></div>
+              <div style="height: 7px; border-radius: 4px; background: #e4e9f2; overflow: hidden;"><span style="display: block; width: 96%; height: 7px; border-radius: 4px; background: linear-gradient(90deg, #60a5fa, #2563eb);"></span></div>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <div class="ministat" style="background: #eef4ff;"><span class="stt"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#2563eb" stroke-width="1.6"><rect x="5" y="5" width="10" height="10" rx="1.5"></rect><path d="M8 2v3M12 2v3M8 15v3M12 15v3M2 8h3M2 12h3M15 8h3M15 12h3"></path></svg><span style="font-size: 10.5px; color: #6b7a8f;">CPU</span></span><span style="font-size: 14px; font-weight: 800;">18%</span></div>
+              <div class="ministat" style="background: #f3efff;"><span class="stt"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#8b5cf6" stroke-width="1.6"><rect x="3" y="7" width="14" height="7" rx="1.5"></rect><path d="M6 7v-2M10 7V5M14 7V5"></path></svg><span style="font-size: 10.5px; color: #6b7a8f;">RAM</span></span><span style="font-size: 14px; font-weight: 800;">41%</span></div>
+              <div class="ministat" style="background: #edf8f3;"><span class="stt"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#10b981" stroke-width="1.6"><rect x="4" y="3" width="12" height="14" rx="1.5"></rect><path d="M7 6.5h6M7 9.5h6"></path></svg><span style="font-size: 10.5px; color: #6b7a8f;">Ổ đĩa</span></span><span style="font-size: 14px; font-weight: 800;">28%</span></div>
+              <div class="ministat" style="background: #fff4ea;"><span class="stt"><svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="#f97316" stroke-width="1.6" stroke-linecap="round"><path d="M8.5 3.5a1.5 1.5 0 013 0v7.3a3.5 3.5 0 11-3 0V3.5z"></path></svg><span style="font-size: 10.5px; color: #6b7a8f;">Nhiệt độ</span></span><span style="font-size: 14px; font-weight: 800;">42°C</span></div>
+            </div>
+          </div>
+
+          <div class="card" style="padding: 14px 16px; display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-size: 14.5px; font-weight: 700;">So sánh với trạng thái ổn định</span>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; gap: 14px; font-size: 11.5px; color: #6b7a8f;">
+                <span style="display: inline-flex; align-items: center; gap: 5px;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #2563eb;"></span>Hiện tại</span>
+                <span style="display: inline-flex; align-items: center; gap: 5px;"><span style="width: 10px; border-top: 2px dashed #8a99ad;"></span>Ổn định (23/05)</span>
+              </div>
+              <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 12px; border-radius: 12px; background: #eaf2ff; color: #2563eb; font-size: 11px; font-weight: 700;">Chi tiết</span>
+            </div>
+            <div class="cmp"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#5b6b80" stroke-width="1.5" stroke-linecap="round"><path d="M2.5 10h3l2-5 3.5 10 2.5-7 1.5 2h2.5"></path></svg><span style="flex-grow: 1;">Hiệu năng tổng thể <span style="color: #b6c2d1;">ⓘ</span></span><svg viewBox="0 0 90 22" style="width: 90px; height: 22px;"><path d="M0 14 C12 10 20 16 32 12 S55 6 68 10 S84 14 90 10" fill="none" stroke="#2563eb" stroke-width="1.8"></path></svg><span style="width: 58px; text-align: right; font-weight: 700; color: #0f9d6e;">+ 6%</span></div>
+            <div class="cmp"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#5b6b80" stroke-width="1.5" stroke-linecap="round"><circle cx="10" cy="10" r="7"></circle><path d="M10 6v4l2.6 2"></path></svg><span style="flex-grow: 1;">Thời gian khởi động <span style="color: #b6c2d1;">ⓘ</span></span><svg viewBox="0 0 90 22" style="width: 90px; height: 22px;"><path d="M0 8 C15 12 25 8 38 12 S60 16 72 12 S84 10 90 13" fill="none" stroke="#2563eb" stroke-width="1.8"></path></svg><span style="width: 58px; text-align: right; font-weight: 700; color: #0f9d6e;">- 8s</span></div>
+            <div class="cmp"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#5b6b80" stroke-width="1.5"><rect x="3" y="7" width="14" height="7" rx="1.5"></rect><path d="M6 7v-2M10 7V5M14 7V5"></path></svg><span style="flex-grow: 1;">Mức sử dụng RAM <span style="color: #b6c2d1;">ⓘ</span></span><svg viewBox="0 0 90 22" style="width: 90px; height: 22px;"><path d="M0 14 C12 12 22 16 34 13 S56 8 68 12 S82 16 90 12" fill="none" stroke="#2563eb" stroke-width="1.8"></path></svg><span style="width: 58px; text-align: right; font-weight: 700; color: #ea580c;">+ 512 MB</span></div>
+            <div class="cmp"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="#5b6b80" stroke-width="1.5" stroke-linecap="round"><path d="M8.5 3.5a1.5 1.5 0 013 0v7.3a3.5 3.5 0 11-3 0V3.5z"></path></svg><span style="flex-grow: 1;">Nhiệt độ trung bình <span style="color: #b6c2d1;">ⓘ</span></span><svg viewBox="0 0 90 22" style="width: 90px; height: 22px;"><path d="M0 12 C14 10 24 14 36 11 S58 8 70 12 S84 14 90 11" fill="none" stroke="#2563eb" stroke-width="1.8"></path></svg><span style="width: 58px; text-align: right; font-weight: 700; color: #ea580c;">+ 3°C</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="status">
+    <div class="st"><svg width="20" height="20" viewBox="0 0 20 20"><rect x="2" y="2" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="10.4" y="2" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="2" y="10.4" width="7.6" height="7.6" fill="#0078d4"></rect><rect x="10.4" y="10.4" width="7.6" height="7.6" fill="#0078d4"></rect></svg><div><div class="a">Windows 11 Pro 23H2</div><div class="b">Bản dựng 22631.3593</div></div></div>
+    <div class="st"><span style="width: 10px; height: 10px; border-radius: 50%; background: #10b981;"></span><div><div class="a">Hiệu suất: <span style="color: #0f9d6e;">Rất tốt</span></div><div class="b">Điểm Windows: 9.2</div></div></div>
+    <div class="st"><span style="width: 30px; height: 30px; border-radius: 9px; background: #e3f8ef; color: #10b981; display: inline-flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6.5 2.5v5c0 3.8-2.8 6.6-6.5 7.5-3.7-.9-6.5-3.7-6.5-7.5v-5L10 2.5z"></path><path d="M7.2 10l2 2 3.6-4"></path></svg></span><div><div class="a">Bảo mật: <span style="color: #0f9d6e;">Tốt</span></div><div class="b">Windows Defender hoạt động</div></div></div>
+    <div class="st"><span style="width: 30px; height: 30px; border-radius: 9px; background: #e7efff; color: #2563eb; display: inline-flex; align-items: center; justify-content: center;"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a6 6 0 0110.5-2.5M16 12a6 6 0 01-10.5 2.5"></path><path d="M14 3v3h3M6 17v-3H3"></path></svg></span><div><div class="a">Sao lưu: <span style="color: #2563eb;">Mới nhất</span></div><div class="b">23/05/2024 16:30</div></div></div>
+    <div class="st"><span style="width: 12px; height: 12px; border-radius: 50%; background: #10b981; box-shadow: 0 0 0 4px rgba(16,185,129,0.18);"></span><div><div class="a">PC Control Service</div><div class="b">Đang chạy</div></div></div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

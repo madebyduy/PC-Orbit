@@ -1,20 +1,37 @@
 {
+  "pages": [
+    { "id": "page-1", "name": "PC Control UI" },
+    { "id": "page-2", "name": "Hallway test (spec 6b)" }
+  ],
   "artboards": [
-    { "file": "FirstRun.dc.html", "title": "1 · First-run", "x": 0, "y": 0, "w": 1160, "h": 780 },
-    { "file": "MayOn.dc.html", "title": "2 · Máy bạn đang ổn", "x": 1260, "y": 0, "w": 1160, "h": 780 },
-    { "file": "Main.dc.html", "title": "3 · Overview (Simple)", "x": 2520, "y": 0, "w": 1160, "h": 820 },
-    { "file": "CheckupCard.dc.html", "title": "4 · Checkup card (21.6)", "x": 3780, "y": 0, "w": 1160, "h": 780 },
-    { "file": "ChangeBasket.dc.html", "title": "5 · Change Basket (21.7)", "x": 5040, "y": 0, "w": 1160, "h": 1010 },
-    { "file": "GuidedBios.dc.html", "title": "6a · Guided BIOS — trước restart", "x": 0, "y": 1170, "w": 1160, "h": 900 },
-    { "file": "PhoneGuide.dc.html", "title": "6b · Trên điện thoại (QR)", "x": 1260, "y": 1170, "w": 390, "h": 844 },
-    { "file": "SauKhiBoot.dc.html", "title": "6c · Sau khi boot + nhánh chưa đạt", "x": 1790, "y": 1170, "w": 1160, "h": 940 },
-    { "file": "KetQua.dc.html", "title": "7 · Kết quả + Hoàn tác (9.4)", "x": 3090, "y": 1170, "w": 1160, "h": 860 },
-    { "file": "OverviewEN.dc.html", "title": "EN · Overview", "x": 0, "y": 2270, "w": 1160, "h": 820 },
-    { "file": "CheckupCardEN.dc.html", "title": "EN · Checkup card", "x": 1260, "y": 2270, "w": 1160, "h": 780 }
+    { "file": "Main.dc.html", "title": "1 · Hiệu năng", "page": "page-1", "x": 0, "y": 0, "w": 1672, "h": 941 },
+    { "file": "PlanApply.dc.html", "title": "2 · Kế hoạch thay đổi", "page": "page-1", "x": 1772, "y": 0, "w": 1672, "h": 941 },
+    { "file": "LichSu.dc.html", "title": "3 · Lịch sử & Khôi phục", "page": "page-1", "x": 3544, "y": 0, "w": 1672, "h": 941 },
+
+    { "file": "FirstRun.dc.html", "title": "1 · First-run", "page": "page-2", "x": 0, "y": 0, "w": 1160, "h": 780 },
+    { "file": "MayOn.dc.html", "title": "2 · Máy bạn đang ổn", "page": "page-2", "x": 1260, "y": 0, "w": 1160, "h": 780 },
+    { "file": "Overview.dc.html", "title": "3 · Overview (Simple)", "page": "page-2", "x": 2520, "y": 0, "w": 1160, "h": 820 },
+    { "file": "CheckupCard.dc.html", "title": "4 · Checkup card (21.6)", "page": "page-2", "x": 3780, "y": 0, "w": 1160, "h": 780 },
+    { "file": "ChangeBasket.dc.html", "title": "5 · Change Basket (21.7)", "page": "page-2", "x": 5040, "y": 0, "w": 1160, "h": 1010 },
+    { "file": "GuidedBios.dc.html", "title": "6a · Guided BIOS — trước restart", "page": "page-2", "x": 0, "y": 1170, "w": 1160, "h": 900 },
+    { "file": "PhoneGuide.dc.html", "title": "6b · Trên điện thoại (QR)", "page": "page-2", "x": 1260, "y": 1170, "w": 390, "h": 844 },
+    { "file": "SauKhiBoot.dc.html", "title": "6c · Sau khi boot + nhánh chưa đạt", "page": "page-2", "x": 1790, "y": 1170, "w": 1160, "h": 940 },
+    { "file": "KetQua.dc.html", "title": "7 · Kết quả + Hoàn tác (9.4)", "page": "page-2", "x": 3090, "y": 1170, "w": 1160, "h": 860 },
+    { "file": "OverviewEN.dc.html", "title": "EN · Overview", "page": "page-2", "x": 0, "y": 2270, "w": 1160, "h": 820 },
+    { "file": "CheckupCardEN.dc.html", "title": "EN · Checkup card", "page": "page-2", "x": 1260, "y": 2270, "w": 1160, "h": 780 }
   ],
   "annotations": [
     {
+      "id": "giao-dien-chinh",
+      "page": "page-1",
+      "x": 0,
+      "y": -170,
+      "w": 560,
+      "text": "GIAO DIỆN PC CONTROL — dựng theo đúng 3 ảnh tham chiếu đã cung cấp: Hiệu năng, Kế hoạch thay đổi, Lịch sử & Khôi phục.\nMọi số liệu là dữ liệu minh họa lấy nguyên từ ảnh gốc (điểm 92, 14 thay đổi, KB5037771...). Trang 2 của canvas vẫn giữ bộ màn hình hallway test theo spec 6b."
+    },
+    {
       "id": "kich-ban-test",
+      "page": "page-2",
       "x": 0,
       "y": -230,
       "w": 560,
@@ -22,6 +39,7 @@
     },
     {
       "id": "luong-bios",
+      "page": "page-2",
       "x": 0,
       "y": 1040,
       "w": 460,
@@ -29,11 +47,12 @@
     },
     {
       "id": "en-variants",
+      "page": "page-2",
       "x": 0,
       "y": 2150,
       "w": 420,
       "text": "Hai màn hình tiếng Anh cho người test English — copy lấy nguyên văn từ data/i18n/en.json, không dịch lại."
     }
   ],
-  "launch": { "view": "canvas" }
+  "launch": { "view": "canvas", "page": "page-1" }
 }
