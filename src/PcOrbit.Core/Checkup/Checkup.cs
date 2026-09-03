@@ -267,6 +267,7 @@ public sealed class SystemRestoreRule : ICheckupRule
             Evidence: restore.Evidence,
             Capability: CoreCapabilities.SystemRestore,
             SuggestedActionId: fix?.Id,
+            SuggestedOutcomeId: "outcome.system-restore-on",
             EstimatedSeconds: fix?.EstimatedSeconds ?? 30);
     }
 }

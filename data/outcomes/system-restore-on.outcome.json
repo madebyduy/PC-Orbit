@@ -1,0 +1,14 @@
+{
+  "$schema": "../../schemas/outcome.schema.json",
+  "id": "outcome.system-restore-on",
+  "version": "1.0.0",
+  "titleKey": "outcome.system-restore-on.title",
+  "descriptionKey": "outcome.system-restore-on.description",
+  "category": "security",
+  "requires": [
+    { "capability": "windows.system-restore", "state": "enabled" }
+  ],
+  "verify": [
+    { "check": "windows.system-restore", "expected": "enabled" }
+  ]
+}

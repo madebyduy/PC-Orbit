@@ -288,6 +288,31 @@ public sealed class StateCompilerGoldenTests
                 $"Step for '{step.Capability}' cannot explain why it exists."));
     }
 
+    /// <summary>
+    /// Every checkup finding with a fix names an outcome the user can actually plan and apply —
+    /// this is the System Restore one, end to end through the compiler.
+    /// </summary>
+    [Fact]
+    public void SystemRestoreOutcomeGetsOneStepWhenItIsOff()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.AsusAmdDesktop)
+            .With("windows.system-restore", CapabilityValue.Disabled)
+            .Build();
+
+        Outcome outcome = ShippedData.Outcomes().Single(o => o.Id == "outcome.system-restore-on");
+        Plan plan = NewCompiler().Compile(snapshot, outcome);
+
+        Assert.Equal(
+            """
+            stage 1 -> restart None
+              windows.system-restore: disabled -> enabled  [windows.system-restore.enable / Auto]
+            """,
+            Describe(plan),
+            ignoreLineEndingDifferences: true);
+
+        Assert.Equal(PlanOutlook.Reachable, plan.Outlook);
+    }
+
     // ---------------------------------------------------------------- the "max" sentinel (spec 12.2)
 
     /// <summary>

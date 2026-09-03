@@ -48,6 +48,8 @@
     "cap.verification.firmware-virtualization": "Firmware virtualization verification",
     "outcome.docker-wsl2-ready.title": "Get this PC ready for Docker Desktop (WSL 2)",
     "outcome.docker-wsl2-ready.description": "Docker Desktop runs its engine inside WSL 2. This turns on the pieces WSL 2 needs and checks the result.",
+    "outcome.system-restore-on.title": "Keep restore points (System Restore on)",
+    "outcome.system-restore-on.description": "With restore points, a bad update or driver can be rolled back instead of reinstalling Windows. Uses a few GB of disk space.",
     "outcome.display-max-refresh.title": "Run the display at its highest refresh rate",
     "outcome.display-max-refresh.description": "Motion gets noticeably smoother at the rate the display was made for. The old rate comes back on its own unless you confirm you can still see the screen.",
     "action.windows.feature.enable.virtual-machine-platform.title": "Turn on Virtual Machine Platform",
