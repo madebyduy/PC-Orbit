@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcorbit.dev/schemas/capability-graph.schema.json",
+  "title": "PC Orbit Capability Graph",
+  "description": "Spec 11 — nodes, typed edges and evidence. Relations without strong evidence may explain, but must never authorise a privileged action (11.3).",
+  "type": "object",
+  "required": ["graphVersion", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "graphVersion": { "type": "string", "pattern": "^\d+\.\d+\.\d+$" },
+    "nodes": { "type": "array", "items": { "$ref": "#/$defs/node" } },
+    "edges": { "type": "array", "items": { "$ref": "#/$defs/edge" } }
+  },
+  "$defs": {
+    "capabilityId": {
+      "type": "string",
+      "description": "Immutable technical id. Never localised (spec 21.11).",
+      "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$",
+      "maxLength": 120
+    },
+    "confidence": { "enum": ["high", "medium", "low", "none"] },
+    "node": {
+      "type": "object",
+      "required": ["id", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/capabilityId" },
+        "kind": {
+          "description": "Spec 11.1",
+          "enum": [
+            "hardwareDevice", "hardwareCapability", "firmwareCapability", "driver",
+            "osFeature", "setting", "application", "workload", "connectionPath",
+            "constraint", "verificationRule"
+          ]
+        },
+        "displayKey": { "type": "string", "description": "i18n key; display name lives in the string catalog, not here." },
+        "aliases": {
+          "type": "array",
+          "description": "Multilingual search aliases (spec 21.2, 21.11).",
+          "items": { "type": "string" }
+        },
+        "valueKind": { "enum": ["state", "scalar", "version"], "default": "state" },
+        "unit": { "type": "string", "description": "Never localised: Hz, MT/s, Gbps." },
+        "observable": {
+          "type": "boolean",
+          "default": true,
+          "description": "false => reading is expected to be Unknown on every machine; do not raise findings from it."
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": ["from", "kind", "to"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "$ref": "#/$defs/capabilityId" },
+        "to": { "$ref": "#/$defs/capabilityId" },
+        "kind": {
+          "description": "Spec 11.2 — depends_on alone is not enough.",
+          "enum": [
+            "requires", "supports", "supportedBy", "configuredBy", "providedBy",
+            "conflictsWith", "limits", "connectedThrough", "verifiedBy",
+            "changedBy", "affects", "compatibleWith"
+          ]
+        },
+        "expected": {
+          "type": "string",
+          "description": "For 'requires': the value 'to' must hold. Defaults to 'enabled'."
+        },
+        "evidence": { "$ref": "#/$defs/evidence" },
+        "scope": { "$ref": "#/$defs/scope" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["sourceKind", "source", "confidence"],
+      "additionalProperties": false,
+      "properties": {
+        "sourceKind": { "enum": ["wmi", "registry", "powershell", "win32Api", "vendorApi", "documentation", "inference"] },
+        "source": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "firstSeen": { "type": "string", "format": "date" },
+        "lastVerified": { "type": "string", "format": "date" }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "osMinBuild": { "type": "integer" },
+        "osMaxBuild": { "type": "integer" },
+        "vendors": { "type": "array", "items": { "type": "string" } },
+        "models": { "type": "array", "items": { "type": "string" } },
+        "cpuVendors": { "type": "array", "items": { "enum": ["intel", "amd", "qualcomm", "other"] } }
+      }
+    }
+  }
+}

@@ -1,0 +1,159 @@
+[
+  {
+    "id": "windows.feature.enable.virtual-machine-platform",
+    "version": "1.0.0",
+    "titleKey": "action.windows.feature.enable.virtual-machine-platform.title",
+    "executor": "windows.optional-feature.enable",
+    "parameters": { "featureName": "VirtualMachinePlatform" },
+    "provides": [
+      { "capability": "windows.feature.virtual-machine-platform", "state": "enabled" }
+    ],
+    "requires": [
+      { "capability": "firmware.cpu.virtualization", "state": "enabled" }
+    ],
+    "writeMode": "auto",
+    "privilege": "administrator",
+    "risk": "medium",
+    "restart": "windows",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_feature_state",
+      "inverseActionId": "windows.feature.disable.virtual-machine-platform"
+    },
+    "estimatedSeconds": 75,
+    "preflight": ["elevation", "powerSource", "diskSpace"],
+    "compatibility": { "osMinBuild": 19041 },
+    "verify": [
+      { "capability": "windows.feature.virtual-machine-platform", "expected": "enabled", "afterRestart": true }
+    ]
+  },
+  {
+    "id": "windows.feature.disable.virtual-machine-platform",
+    "version": "1.0.0",
+    "titleKey": "action.windows.feature.disable.virtual-machine-platform.title",
+    "executor": "windows.optional-feature.disable",
+    "parameters": { "featureName": "VirtualMachinePlatform" },
+    "provides": [
+      { "capability": "windows.feature.virtual-machine-platform", "state": "disabled" }
+    ],
+    "writeMode": "auto",
+    "privilege": "administrator",
+    "risk": "medium",
+    "restart": "windows",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_feature_state",
+      "inverseActionId": "windows.feature.enable.virtual-machine-platform"
+    },
+    "estimatedSeconds": 75,
+    "preflight": ["elevation", "powerSource"],
+    "compatibility": { "osMinBuild": 19041 },
+    "verify": [
+      { "capability": "windows.feature.virtual-machine-platform", "expected": "disabled", "afterRestart": true }
+    ]
+  },
+  {
+    "id": "windows.feature.enable.wsl",
+    "version": "1.0.0",
+    "titleKey": "action.windows.feature.enable.wsl.title",
+    "executor": "windows.optional-feature.enable",
+    "parameters": { "featureName": "Microsoft-Windows-Subsystem-Linux" },
+    "provides": [
+      { "capability": "windows.feature.wsl", "state": "enabled" }
+    ],
+    "writeMode": "auto",
+    "privilege": "administrator",
+    "risk": "medium",
+    "restart": "windows",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_feature_state",
+      "inverseActionId": "windows.feature.disable.wsl"
+    },
+    "estimatedSeconds": 75,
+    "preflight": ["elevation", "powerSource", "diskSpace"],
+    "compatibility": { "osMinBuild": 19041 },
+    "verify": [
+      { "capability": "windows.feature.wsl", "expected": "enabled", "afterRestart": true }
+    ]
+  },
+  {
+    "id": "windows.feature.disable.wsl",
+    "version": "1.0.0",
+    "titleKey": "action.windows.feature.disable.wsl.title",
+    "executor": "windows.optional-feature.disable",
+    "parameters": { "featureName": "Microsoft-Windows-Subsystem-Linux" },
+    "provides": [
+      { "capability": "windows.feature.wsl", "state": "disabled" }
+    ],
+    "writeMode": "auto",
+    "privilege": "administrator",
+    "risk": "medium",
+    "restart": "windows",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_feature_state",
+      "inverseActionId": "windows.feature.enable.wsl"
+    },
+    "estimatedSeconds": 75,
+    "preflight": ["elevation", "powerSource"],
+    "compatibility": { "osMinBuild": 19041 },
+    "verify": [
+      { "capability": "windows.feature.wsl", "expected": "disabled", "afterRestart": true }
+    ]
+  },
+  {
+    "id": "wsl.set-default-version-2",
+    "version": "1.0.0",
+    "titleKey": "action.wsl.set-default-version-2.title",
+    "executor": "wsl.set-default-version",
+    "parameters": { "version": "2" },
+    "provides": [
+      { "capability": "wsl.default-version", "state": "2" }
+    ],
+    "requires": [
+      { "capability": "windows.feature.wsl", "state": "enabled" },
+      { "capability": "windows.feature.virtual-machine-platform", "state": "enabled" }
+    ],
+    "writeMode": "auto",
+    "privilege": "user",
+    "risk": "low",
+    "restart": "none",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "set_default_version_back",
+      "inverseActionId": "wsl.set-default-version-1"
+    },
+    "estimatedSeconds": 10,
+    "preflight": [],
+    "compatibility": { "osMinBuild": 19041 },
+    "verify": [
+      { "capability": "wsl.default-version", "expected": "2" }
+    ]
+  },
+  {
+    "id": "wsl.set-default-version-1",
+    "version": "1.0.0",
+    "titleKey": "action.wsl.set-default-version-1.title",
+    "executor": "wsl.set-default-version",
+    "parameters": { "version": "1" },
+    "provides": [
+      { "capability": "wsl.default-version", "state": "1" }
+    ],
+    "writeMode": "auto",
+    "privilege": "user",
+    "risk": "low",
+    "restart": "none",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "set_default_version_back",
+      "inverseActionId": "wsl.set-default-version-2"
+    },
+    "estimatedSeconds": 10,
+    "preflight": [],
+    "compatibility": { "osMinBuild": 19041 },
+    "verify": [
+      { "capability": "wsl.default-version", "expected": "1" }
+    ]
+  }
+]

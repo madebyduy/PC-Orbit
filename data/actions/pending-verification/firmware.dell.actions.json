@@ -1,0 +1,54 @@
+[
+  {
+    "id": "firmware.virtualization.enable.auto.dell",
+    "version": "0.1.0",
+    "titleKey": "action.firmware.virtualization.enable.auto.title",
+    "executor": "firmware.vendor.dell",
+    "parameters": {
+      "attribute": "VirtualizationEnable",
+      "targetValue": "Enabled"
+    },
+    "provides": [
+      {
+        "capability": "firmware.cpu.virtualization",
+        "state": "enabled"
+      }
+    ],
+    "requires": [
+      {
+        "capability": "cpu.virtualization",
+        "state": "supported"
+      }
+    ],
+    "writeMode": "auto",
+    "privilege": "administrator",
+    "risk": "high",
+    "restart": "windows",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "vendor_attribute_restore"
+    },
+    "estimatedSeconds": 120,
+    "preflight": [
+      "elevation",
+      "bitlocker",
+      "powerSource",
+      "unsavedWork",
+      "biosPassword"
+    ],
+    "compatibility": {
+      "osMinBuild": 19041,
+      "vendors": [
+        "Dell Inc."
+      ]
+    },
+    "guideId": "guide.firmware.virtualization",
+    "verify": [
+      {
+        "capability": "firmware.cpu.virtualization",
+        "expected": "enabled",
+        "afterRestart": true
+      }
+    ]
+  }
+]

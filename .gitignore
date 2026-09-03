@@ -1,0 +1,26 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+
+# Test / coverage
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# Local runtime data (snapshots, transactions, event log) — never commit machine state
+.local/
+*.db
+*.db-shm
+*.db-wal
+
+# Tooling
+.dotnet/
+nuget.config.user

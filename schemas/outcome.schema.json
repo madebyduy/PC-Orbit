@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcorbit.dev/schemas/outcome.schema.json",
+  "title": "PC Orbit Desired Outcome",
+  "description": "Spec 12.2 - an outcome declares required capability STATES, never actions. Picking the action is the State Compiler's job (spec 12.2, final paragraph).",
+  "type": "object",
+  "required": ["id", "version", "requires", "verify"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^outcome\\.[a-z0-9]+([.-][a-z0-9]+)*$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "titleKey": { "type": "string" },
+    "descriptionKey": { "type": "string" },
+    "category": { "enum": ["developer", "gaming", "meeting", "power", "security", "general"] },
+    "requires": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["capability", "state"],
+        "additionalProperties": false,
+        "properties": {
+          "capability": { "type": "string" },
+          "state": {
+            "type": "string",
+            "description": "enabled | disabled | supported | present | or a scalar value such as 2"
+          },
+          "optional": {
+            "type": "boolean",
+            "default": false,
+            "description": "true => a miss degrades the outcome but does not make it Not reached."
+          }
+        }
+      }
+    },
+    "verify": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["check", "expected"],
+        "additionalProperties": false,
+        "properties": {
+          "check": { "type": "string" },
+          "expected": { "type": "string" }
+        }
+      }
+    }
+  }
+}

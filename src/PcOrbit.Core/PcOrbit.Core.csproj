@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The domain. Deliberately targets plain net10.0 with zero dependencies:
+    if a Windows API ever needs to appear in here, that is the signal that a port
+    is missing (see Abstractions/). Keeps the compiler, graph and transaction
+    state machine unit-testable without touching a real machine (spec 28).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>PcOrbit.Core</RootNamespace>
+  </PropertyGroup>
+
+</Project>

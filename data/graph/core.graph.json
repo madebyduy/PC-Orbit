@@ -1,0 +1,408 @@
+{
+  "$schema": "../../schemas/capability-graph.schema.json",
+  "graphVersion": "0.1.0",
+  "nodes": [
+    {
+      "id": "os.build",
+      "kind": "setting",
+      "displayKey": "cap.os.build",
+      "valueKind": "scalar",
+      "aliases": ["windows build", "os build", "phien ban windows"]
+    },
+    {
+      "id": "os.edition",
+      "kind": "setting",
+      "displayKey": "cap.os.edition",
+      "valueKind": "scalar",
+      "aliases": ["windows edition", "home", "pro", "phien ban"]
+    },
+
+    {
+      "id": "hardware.cpu",
+      "kind": "hardwareDevice",
+      "displayKey": "cap.hardware.cpu",
+      "valueKind": "scalar",
+      "aliases": ["cpu", "processor", "vi xu ly", "bo xu ly"]
+    },
+    {
+      "id": "cpu.virtualization",
+      "kind": "hardwareCapability",
+      "displayKey": "cap.cpu.virtualization",
+      "aliases": ["vt-x", "svm", "amd-v", "virtualization support", "ao hoa", "ho tro ao hoa"]
+    },
+
+    {
+      "id": "firmware.cpu.virtualization",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.cpu.virtualization",
+      "aliases": ["svm mode", "intel virtualization technology", "vt-x", "ao hoa cpu", "bat ao hoa trong bios"]
+    },
+    {
+      "id": "firmware.secure-boot",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.secure-boot",
+      "aliases": ["secure boot", "khoi dong an toan"]
+    },
+    {
+      "id": "firmware.tpm.version",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.tpm.version",
+      "valueKind": "version",
+      "aliases": ["tpm", "tpm 2.0", "chip bao mat", "fTPM", "PTT"]
+    },
+    {
+      "id": "firmware.tpm.ready",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.tpm.ready",
+      "aliases": ["tpm ready", "tpm san sang"]
+    },
+    {
+      "id": "firmware.boot-mode",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.boot-mode",
+      "valueKind": "scalar",
+      "aliases": ["uefi", "legacy", "csm", "che do khoi dong"]
+    },
+    {
+      "id": "firmware.iommu",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.iommu",
+      "aliases": ["iommu", "vt-d", "amd-vi", "dma protection"]
+    },
+    {
+      "id": "firmware.bios.version",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.bios.version",
+      "valueKind": "version",
+      "aliases": ["bios version", "uefi version", "phien ban bios"]
+    },
+    {
+      "id": "firmware.rebar",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.rebar",
+      "observable": false,
+      "aliases": ["resizable bar", "rebar", "smart access memory", "sam"]
+    },
+
+    {
+      "id": "memory.rated-speed",
+      "kind": "hardwareCapability",
+      "displayKey": "cap.memory.rated-speed",
+      "valueKind": "scalar",
+      "unit": "MT/s",
+      "aliases": ["xmp", "expo", "ram rated speed", "toc do ram cong bo"]
+    },
+    {
+      "id": "memory.current-speed",
+      "kind": "hardwareCapability",
+      "displayKey": "cap.memory.current-speed",
+      "valueKind": "scalar",
+      "unit": "MT/s",
+      "aliases": ["ram speed", "toc do ram hien tai"]
+    },
+
+    {
+      "id": "display.max-refresh-rate",
+      "kind": "hardwareCapability",
+      "displayKey": "cap.display.max-refresh-rate",
+      "valueKind": "scalar",
+      "unit": "Hz",
+      "aliases": ["max refresh rate", "hz toi da", "tan so quet toi da"]
+    },
+    {
+      "id": "display.current-refresh-rate",
+      "kind": "setting",
+      "displayKey": "cap.display.current-refresh-rate",
+      "valueKind": "scalar",
+      "unit": "Hz",
+      "aliases": ["refresh rate", "hz", "tan so quet", "60hz", "144hz", "165hz"]
+    },
+
+    {
+      "id": "windows.feature.virtual-machine-platform",
+      "kind": "osFeature",
+      "displayKey": "cap.windows.feature.virtual-machine-platform",
+      "aliases": ["virtual machine platform", "vmp", "nen tang may ao"]
+    },
+    {
+      "id": "windows.feature.wsl",
+      "kind": "osFeature",
+      "displayKey": "cap.windows.feature.wsl",
+      "aliases": ["wsl", "windows subsystem for linux", "linux tren windows"]
+    },
+    {
+      "id": "windows.feature.hypervisor-platform",
+      "kind": "osFeature",
+      "displayKey": "cap.windows.feature.hypervisor-platform",
+      "aliases": ["windows hypervisor platform", "whp"]
+    },
+    {
+      "id": "windows.feature.hyper-v",
+      "kind": "osFeature",
+      "displayKey": "cap.windows.feature.hyper-v",
+      "aliases": ["hyper-v", "hyperv", "may ao hyper-v"]
+    },
+    {
+      "id": "windows.feature.sandbox",
+      "kind": "osFeature",
+      "displayKey": "cap.windows.feature.sandbox",
+      "aliases": ["windows sandbox", "sandbox"]
+    },
+    {
+      "id": "windows.system-restore",
+      "kind": "setting",
+      "displayKey": "cap.windows.system-restore",
+      "aliases": ["system restore", "restore point", "khoi phuc he thong", "diem khoi phuc"]
+    },
+
+    {
+      "id": "wsl.installed",
+      "kind": "application",
+      "displayKey": "cap.wsl.installed",
+      "aliases": ["wsl.exe", "wsl installed"]
+    },
+    {
+      "id": "wsl.default-version",
+      "kind": "setting",
+      "displayKey": "cap.wsl.default-version",
+      "valueKind": "scalar",
+      "aliases": ["wsl default version", "wsl 2", "wsl1", "wsl2"]
+    },
+
+    {
+      "id": "workload.wsl2-ready",
+      "kind": "workload",
+      "displayKey": "cap.workload.wsl2-ready",
+      "aliases": ["wsl 2 ready", "wsl2 san sang"]
+    },
+    {
+      "id": "workload.docker-wsl2-ready",
+      "kind": "workload",
+      "displayKey": "cap.workload.docker-wsl2-ready",
+      "aliases": ["docker", "docker desktop", "docker ready", "container"]
+    },
+
+    {
+      "id": "security.bitlocker.system-drive",
+      "kind": "setting",
+      "displayKey": "cap.security.bitlocker.system-drive",
+      "valueKind": "scalar",
+      "aliases": ["bitlocker", "device encryption", "ma hoa thiet bi", "ma hoa o dia"]
+    },
+    {
+      "id": "security.bitlocker.recovery-key-known",
+      "kind": "constraint",
+      "displayKey": "cap.security.bitlocker.recovery-key-known",
+      "observable": false,
+      "aliases": ["recovery key", "khoa phuc hoi", "48 so"]
+    },
+
+    {
+      "id": "power.on-battery",
+      "kind": "hardwareCapability",
+      "displayKey": "cap.power.on-battery",
+      "valueKind": "scalar",
+      "aliases": ["battery", "on battery", "dang dung pin", "pin"]
+    },
+    {
+      "id": "power.battery-percent",
+      "kind": "hardwareCapability",
+      "displayKey": "cap.power.battery-percent",
+      "valueKind": "scalar",
+      "unit": "%",
+      "aliases": ["battery level", "muc pin", "phan tram pin"]
+    },
+    {
+      "id": "storage.system-drive.free-gb",
+      "kind": "hardwareCapability",
+      "displayKey": "cap.storage.system-drive.free-gb",
+      "valueKind": "scalar",
+      "unit": "GB",
+      "aliases": ["free space", "dung luong trong", "o c con trong"]
+    },
+
+    {
+      "id": "verification.firmware-virtualization",
+      "kind": "verificationRule",
+      "displayKey": "cap.verification.firmware-virtualization",
+      "observable": false,
+      "aliases": ["hyper-v requirements", "virtualization firmware enabled"]
+    }
+  ],
+
+  "edges": [
+    {
+      "from": "workload.docker-wsl2-ready",
+      "kind": "requires",
+      "to": "workload.wsl2-ready",
+      "expected": "ready",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Docker Desktop system requirements (WSL 2 backend)",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "workload.wsl2-ready",
+      "kind": "requires",
+      "to": "windows.feature.wsl",
+      "expected": "enabled",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft Learn: Manual installation steps for older versions of WSL",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "workload.wsl2-ready",
+      "kind": "requires",
+      "to": "windows.feature.virtual-machine-platform",
+      "expected": "enabled",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft Learn: WSL 2 requires the Virtual Machine Platform optional component",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "workload.wsl2-ready",
+      "kind": "requires",
+      "to": "wsl.default-version",
+      "expected": "2",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft Learn: wsl --set-default-version 2",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "windows.feature.virtual-machine-platform",
+      "kind": "requires",
+      "to": "firmware.cpu.virtualization",
+      "expected": "enabled",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft Learn: Hyper-V / VMP require hardware virtualization enabled in firmware",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "windows.feature.hyper-v",
+      "kind": "requires",
+      "to": "firmware.cpu.virtualization",
+      "expected": "enabled",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft Learn: Hyper-V system requirements",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "firmware.cpu.virtualization",
+      "kind": "supportedBy",
+      "to": "cpu.virtualization",
+      "expected": "supported",
+      "evidence": {
+        "sourceKind": "wmi",
+        "source": "Win32_Processor.VirtualizationFirmwareEnabled requires a CPU that exposes VT-x/SVM",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "firmware.cpu.virtualization",
+      "kind": "verifiedBy",
+      "to": "verification.firmware-virtualization",
+      "evidence": {
+        "sourceKind": "wmi",
+        "source": "Win32_ComputerSystem.HypervisorPresent + Win32_Processor.VirtualizationFirmwareEnabled (same sources Task Manager uses)",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "windows.feature.hyper-v",
+      "kind": "affects",
+      "to": "firmware.cpu.virtualization",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "When a hypervisor owns the CPU, VirtualizationFirmwareEnabled can read false while firmware virtualization is in fact on (spec 8.3.4)",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "windows.feature.wsl",
+      "kind": "configuredBy",
+      "to": "wsl.default-version",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "wsl --set-default-version only has meaning once the WSL component is enabled",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "wsl.default-version",
+      "kind": "providedBy",
+      "to": "wsl.installed",
+      "evidence": {
+        "sourceKind": "powershell",
+        "source": "wsl.exe --status reports the default version",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "display.max-refresh-rate",
+      "kind": "limits",
+      "to": "display.current-refresh-rate",
+      "evidence": {
+        "sourceKind": "win32Api",
+        "source": "EnumDisplaySettingsEx enumerates the modes the current path actually supports",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "memory.rated-speed",
+      "kind": "limits",
+      "to": "memory.current-speed",
+      "evidence": {
+        "sourceKind": "wmi",
+        "source": "Win32_PhysicalMemory.Speed (rated, from SPD as reported by firmware) vs ConfiguredClockSpeed (running)",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "windows.feature.sandbox",
+      "kind": "requires",
+      "to": "windows.feature.virtual-machine-platform",
+      "expected": "enabled",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft Learn: Windows Sandbox prerequisites",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    },
+    {
+      "from": "security.bitlocker.system-drive",
+      "kind": "connectedThrough",
+      "to": "firmware.boot-mode",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Boot-mode / Secure Boot / TPM changes invalidate the TPM measurement and trigger BitLocker recovery (spec 10.3)",
+        "confidence": "high",
+        "lastVerified": "2026-09-03"
+      }
+    }
+  ]
+}

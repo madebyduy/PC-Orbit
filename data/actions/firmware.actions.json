@@ -1,0 +1,86 @@
+[
+  {
+    "id": "firmware.virtualization.enable.guided-generic",
+    "version": "1.0.0",
+    "titleKey": "action.firmware.virtualization.enable.guided.title",
+    "executor": "firmware.guided-change",
+    "parameters": {
+      "capability": "firmware.cpu.virtualization",
+      "targetState": "enabled"
+    },
+    "provides": [
+      {
+        "capability": "firmware.cpu.virtualization",
+        "state": "enabled"
+      }
+    ],
+    "requires": [
+      {
+        "capability": "cpu.virtualization",
+        "state": "supported"
+      }
+    ],
+    "writeMode": "guidedGeneric",
+    "privilege": "user",
+    "risk": "high",
+    "restart": "firmware",
+    "reversible": {
+      "mode": "manualGuided",
+      "strategy": "guided_revert_in_firmware_setup"
+    },
+    "estimatedSeconds": 240,
+    "preflight": [
+      "bitlocker",
+      "powerSource",
+      "unsavedWork",
+      "biosPassword"
+    ],
+    "compatibility": {
+      "osMinBuild": 19041
+    },
+    "guideId": "guide.firmware.virtualization",
+    "verify": [
+      {
+        "capability": "firmware.cpu.virtualization",
+        "expected": "enabled",
+        "afterRestart": true
+      }
+    ]
+  },
+  {
+    "id": "security.bitlocker.suspend-one-reboot",
+    "version": "1.0.0",
+    "titleKey": "action.security.bitlocker.suspend-one-reboot.title",
+    "executor": "security.bitlocker.suspend",
+    "parameters": {
+      "rebootCount": "1"
+    },
+    "provides": [
+      {
+        "capability": "security.bitlocker.system-drive",
+        "state": "suspended"
+      }
+    ],
+    "writeMode": "auto",
+    "privilege": "administrator",
+    "risk": "medium",
+    "restart": "none",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "resume_bitlocker"
+    },
+    "estimatedSeconds": 15,
+    "preflight": [
+      "elevation"
+    ],
+    "compatibility": {
+      "osMinBuild": 19041
+    },
+    "verify": [
+      {
+        "capability": "security.bitlocker.system-drive",
+        "expected": "suspended"
+      }
+    ]
+  }
+]

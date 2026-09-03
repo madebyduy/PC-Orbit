@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcorbit.dev/schemas/change-event.schema.json",
+  "title": "PC Orbit Change Event",
+  "description": "Spec 14.2 and step 7 - the single normalised history record. Frozen in v0.1 so Drift, Regression and Timeline never have to reconstruct history from inconsistent logs.",
+  "type": "object",
+  "required": ["id", "timestamp", "source", "category", "component", "initiator", "confidence"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "source": {
+      "enum": ["pcOrbit", "windowsUpdate", "driver", "firmware", "app", "device", "user", "eventLog", "restore", "unknown"]
+    },
+    "category": {
+      "enum": ["setting", "feature", "firmware", "driver", "update", "device", "profile", "transaction", "restart", "rollback", "crash", "preflight", "drift"]
+    },
+    "component": { "type": "string", "description": "Capability id or component identifier." },
+    "before": { "type": ["string", "null"] },
+    "after": { "type": ["string", "null"] },
+    "initiator": { "enum": ["user", "pcOrbit", "system", "externalApp", "unknown"] },
+    "evidence": { "type": ["object", "null"] },
+    "confidence": { "enum": ["high", "medium", "low", "none"] },
+    "relatedTransaction": { "type": ["string", "null"] },
+    "relatedRestart": {
+      "type": ["string", "null"],
+      "description": "Boot session correlation id - lets Timeline tie a change to the restart it survived."
+    },
+    "messageKey": { "type": ["string", "null"] }
+  }
+}

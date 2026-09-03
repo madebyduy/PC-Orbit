@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcorbit.dev/schemas/action-manifest.schema.json",
+  "title": "PC Orbit Action Manifest",
+  "description": "Spec 17 + 28 - every action must declare detect, preflight, apply, verify and rollback. A manifest never carries executable script: it names an allowlisted, code-reviewed executor (spec 17.1, 19.1).",
+  "type": "object",
+  "required": [
+    "id", "version", "executor", "provides", "writeMode",
+    "privilege", "risk", "restart", "reversible", "verify"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "titleKey": { "type": "string" },
+    "executor": {
+      "type": "string",
+      "description": "Id of a compiled, reviewed adapter. Resolved against the executor allowlist; an unknown id is a hard compile error, never a shell fallback."
+    },
+    "parameters": { "type": "object", "additionalProperties": { "type": "string" } },
+    "provides": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/capabilityState" }
+    },
+    "requires": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/capabilityState" }
+    },
+    "writeMode": {
+      "description": "Spec 8.3.2. auto requires a verified vendor adapter (8.3.5); the compiler must never upgrade a mode.",
+      "enum": ["auto", "guidedVerified", "guidedGeneric", "readOnly", "unsupported"]
+    },
+    "privilege": { "enum": ["user", "administrator"] },
+    "risk": { "description": "Spec 19.2", "enum": ["low", "medium", "high", "critical"] },
+    "restart": { "enum": ["none", "windows", "firmware"] },
+    "safeApply": {
+      "type": "object",
+      "description": "Spec 10.1 - for changes that can cost the user their screen, network or boot.",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "confirmWithinSeconds": { "type": "integer", "minimum": 5, "maximum": 120 },
+        "autoRevert": { "type": "boolean" }
+      }
+    },
+    "reversible": {
+      "type": "object",
+      "required": ["mode"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "description": "automatic = an inverse transaction exists; manualGuided = we can only instruct the user; none = must be shown as irreversible before Apply (spec 9.1).",
+          "enum": ["automatic", "manualGuided", "none"]
+        },
+        "strategy": { "type": "string" },
+        "inverseActionId": { "type": "string" }
+      }
+    },
+    "estimatedSeconds": { "type": "integer", "minimum": 0 },
+    "preflight": {
+      "type": "array",
+      "items": {
+        "enum": ["elevation", "bitlocker", "powerSource", "unsavedWork", "recoveryAvailable", "biosPassword", "diskSpace"]
+      }
+    },
+    "compatibility": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "osMinBuild": { "type": "integer" },
+        "osMaxBuild": { "type": "integer" },
+        "editions": { "type": "array", "items": { "type": "string" } },
+        "vendors": { "type": "array", "items": { "type": "string" } },
+        "models": { "type": "array", "items": { "type": "string" } },
+        "cpuVendors": { "type": "array", "items": { "enum": ["intel", "amd", "qualcomm", "other"] } }
+      }
+    },
+    "guideId": {
+      "type": "string",
+      "description": "For guided modes: which signed guide data set to render (spec 8.3.3)."
+    },
+    "verify": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["capability", "expected"],
+        "additionalProperties": false,
+        "properties": {
+          "capability": { "type": "string" },
+          "expected": { "type": "string" },
+          "afterRestart": { "type": "boolean", "default": false }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "capabilityState": {
+      "type": "object",
+      "required": ["capability", "state"],
+      "additionalProperties": false,
+      "properties": {
+        "capability": { "type": "string" },
+        "state": { "type": "string" }
+      }
+    }
+  }
+}

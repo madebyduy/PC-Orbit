@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>PcOrbit.Cli</RootNamespace>
+    <AssemblyName>pco</AssemblyName>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <InvariantGlobalization>false</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PcOrbit.Core\PcOrbit.Core.csproj" />
+    <ProjectReference Include="..\PcOrbit.Store\PcOrbit.Store.csproj" />
+    <ProjectReference Include="..\PcOrbit.Adapters.Windows\PcOrbit.Adapters.Windows.csproj" />
+  </ItemGroup>
+
+  <!-- Graph, outcomes, action manifests, guide data and string catalogs ship as data. -->
+  <ItemGroup>
+    <Content Include="..\..\data\**\*.json" LinkBase="data" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

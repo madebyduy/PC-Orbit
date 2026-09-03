@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Observation adapters (spec 18.3): always available, vendor independent.
+    Windows-specific by definition, so the TFM says so.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <RootNamespace>PcOrbit.Adapters.Windows</RootNamespace>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+
+    <!-- Required by [LibraryImport] source generation. Nothing in this assembly writes unsafe
+         code by hand; the generator does, for the P/Invoke stubs. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PcOrbit.Core\PcOrbit.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,176 @@
+# PC Orbit
+
+**A state and control layer for a Windows PC.** Know what your machine actually is, describe what
+you want it to be, see exactly what has to change, apply it as a transaction that survives a
+restart, and verify the result against the machine rather than against hope.
+
+This repository implements the v0.1 engine described in
+[`PC_CONTROL_PROJECT_SPEC_v3.md`](PC_CONTROL_PROJECT_SPEC_v3.md). It is deliberately **not** a
+dashboard of hundreds of toggles — spec step 1 says build one vertical slice first, and the slice
+is *get this PC ready for WSL 2 / Docker*.
+
+```text
+Discover → Understand → Compare → Plan → Stage → Apply → Restart → Verify → Observe → Restore
+```
+
+---
+
+## What works today
+
+Run against a real Windows 11 machine, with no elevation required for anything read-only:
+
+| Command | What it does |
+|---|---|
+| `pco scan` | Reads the machine and stores a snapshot. Every value shows where it came from; every unreadable value says *why*. |
+| `pco checkup` | Findings in plain language, in the four-line shape of spec 21.6: what, what you gain, why it is safe, what it costs. |
+| `pco outcomes` | The outcomes you can ask for. |
+| `pco plan <outcome>` | Compiles a **difference plan** for this specific machine: only what is still missing, ordered by dependency, split at restart boundaries, with a cost header and a plan hash. Changes nothing. |
+| `pco apply <outcome>` | Runs that plan as a transaction: preflight → apply → verify → restart boundary → resume → verify the outcome. `--dry-run` simulates the whole thing. |
+| `pco resume` | Picks a transaction back up after the restart and reads the real values from Windows. |
+| `pco history` | Normalised change events with before/after values and the boot session each one belongs to. |
+| `pco doctor` | Validates the shipped data and the executor allowlist. Meant for CI. |
+
+Both **English and Vietnamese** ship, as spec 21.11 requires — including plural handling, so
+`--lang vi` is a real translation and not English with substituted words.
+
+### The same outcome, two machines
+
+That is the whole point of a compiler rather than a preset. Given
+`pco plan docker-wsl2-ready`:
+
+```text
+# a machine with virtualization off in firmware and nothing enabled
+Stage 1  (then: restart into firmware setup)
+  1. Turn on CPU virtualization in firmware (you do one step)
+Stage 2  (then: restart Windows)
+  2. Turn on Virtual Machine Platform
+Stage 3
+  3. Set WSL default version to 2
+
+# a machine that only needs the last step
+Stage 1
+  1. Set WSL default version to 2
+```
+
+---
+
+## Getting started
+
+Needs the .NET 10 SDK and Windows 10 build 19041 or newer.
+
+```bash
+dotnet build
+```
+
+```bash
+dotnet test
+```
+
+```bash
+dotnet run --project src/PcOrbit.Cli -- checkup --lang vi
+```
+
+```bash
+dotnet run --project src/PcOrbit.Cli -- plan docker-wsl2-ready --verbose
+```
+
+Nothing is ever changed without an explicit `apply`, and `apply` refuses to proceed while preflight
+is blocked. Try `--dry-run` first; it exercises the entire plan and writes nothing, not even to
+history.
+
+Local state lives in `%LOCALAPPDATA%\PC Orbit\pcorbit.db`. Use `--db <path>` to keep it elsewhere.
+
+---
+
+## How it is put together
+
+```text
+data/                shipped, versioned, reviewable: graph, outcomes, action manifests, guides, strings
+  ↓
+PcOrbit.Core         the domain. No Windows APIs, no I/O, no clock of its own
+  ↓ ports
+PcOrbit.Adapters.Windows   WMI/CIM, registry, Win32, DISM, wsl.exe — everything platform-specific
+PcOrbit.Store        SQLite: snapshots, transaction checkpoints, append-only event log
+  ↓
+PcOrbit.Cli          the composition root and today's user interface
+```
+
+`PcOrbit.Core` targets plain `net10.0` on purpose. If a Windows API ever needs to appear in there,
+that is the signal a port is missing — and it keeps the compiler and the transaction state machine
+unit-testable without touching a real machine.
+
+### The seven shared cores (spec 7)
+
+| Core | Where | State |
+|---|---|---|
+| PC Capability Graph | `Core/Graph` + `data/graph` | done for the vertical slice |
+| PC State Compiler | `Core/Compiler` | done, with golden tests |
+| Transactional Action Engine | `Core/Transactions` | done: apply, checkpoint, restart, resume, verify, partial completion |
+| Change Basket | `Cli` (`plan` / `apply`) | the plan and cost header exist; the UI does not yet |
+| Desired State & Drift | — | schema-ready; not implemented (Phase 2) |
+| PC Change Timeline | `Core/Events` + `Store` | event schema frozen and written from v0.1; the Timeline UI comes later |
+| PC Blueprint | — | not started (Phase 5) |
+
+---
+
+## Design decisions you will run into immediately
+
+These are not stylistic. Each one is load-bearing, and each is enforced by a test.
+
+**`Unknown` is a first-class value.** A read that failed never becomes "off". Every unreadable
+value carries the reason, and no finding, plan step or verdict is derived from one
+(spec 6.6, 21.3, 27.13).
+
+**Verification never asks the executor.** After a change, the machine is read again through a
+separate port. An executor that reports success without changing anything produces a failed
+transaction — there is a test that asserts exactly that.
+
+**One plan, one restart.** Steps are grouped into restart tiers, so three Windows components that
+each need a reboot still cost one reboot. A restart is also skipped when every step in that stage
+failed, because asking someone to reboot to complete a change that did not happen is a small
+dishonesty that costs trust.
+
+**No automatic firmware writes ship yet.** Windows has no API for writing firmware settings, and
+this codebase will never write UEFI `Setup` variables by offset (spec decision 18). The Dell
+vendor-adapter contract exists, but its manifest is parked in
+[`data/actions/pending-verification/`](data/actions/pending-verification/README.md), which the
+loader does not read. Promotion requires evidence from real hardware. Every machine gets the
+**guided** route today — which spec 8.3.2 calls the default path anyway, and which is verified
+after boot exactly like an automatic one.
+
+**BitLocker preflight is a hard gate.** Anything touching firmware or boot is blocked until the
+user confirms they can reach their recovery key, or the plan itself suspends encryption for one
+restart. "We could not read the encryption state" blocks too: reading it needs administrator
+rights, so a failed read is not evidence the drive is unencrypted. This is the single most common
+way an ordinary person breaks their PC with a tool like this (spec 10.3).
+
+**A manifest names an executor; it never carries a script.** Executors are a hand-written
+allowlist in the composition root. An unknown executor id fails the plan before anything is
+touched — there is no shell fallback and no dynamic loading (spec 17.1, 19.1).
+
+**The plan the user reviewed is locked by hash.** Recompiling after a machine or data change
+produces a different hash, and applying then refuses rather than running something nobody
+approved. The hash deliberately excludes the snapshot id and the timestamp, so re-scanning an
+unchanged machine does not invalidate a pending plan.
+
+---
+
+## Documentation
+
+- [`docs/architecture.md`](docs/architecture.md) — the layers, the ports, and why the seams are
+  where they are.
+- [`docs/adr/`](docs/adr/) — the decisions that were genuinely open, and what settled them.
+- [`docs/capability-matrix.md`](docs/capability-matrix.md) — spec step 2: what can be observed and
+  written per machine, and the evidence for each claim. This file decides support tiers.
+- [`schemas/`](schemas/) — JSON Schema for every shipped data contract.
+- [`CLAUDE.md`](CLAUDE.md) — conventions for anyone (or anything) contributing.
+
+## What is deliberately not here
+
+Straight from spec 23.2: no plugin store, no universal BIOS flashing, no driver updater, no fan
+curves or undervolting, no cloud migration, hundreds of repair scripts, peripheral adapters for
+every brand, AI features, automatic performance optimisation, full drift auto-remediation, full
+regression intelligence, or cross-device blueprint restore.
+
+There is also no desktop UI yet. Spec step 6b asks for a paper UX test with three to five
+non-developers *before* the UI is built, and the engine is what makes that test meaningful.

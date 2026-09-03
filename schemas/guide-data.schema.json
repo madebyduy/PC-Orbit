@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcorbit.dev/schemas/guide-data.schema.json",
+  "title": "PC Orbit Guide Data",
+  "description": "Spec 8.3.3 - signed, per-model guidance for a firmware change the user performs themselves. Shipped and updated independently of the app. When no per-model entry matches, the vendor-level entry is used and the UI must say the menu may differ slightly.",
+  "type": "object",
+  "required": ["id", "version", "capability", "targetState", "entries", "fallback"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^guide\\.[a-z0-9]+([.-][a-z0-9]+)*$" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "capability": { "type": "string" },
+    "targetState": { "type": "string" },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/entry" } },
+    "fallback": { "$ref": "#/$defs/entry" }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "required": ["tier", "settingName", "menuPath"],
+      "additionalProperties": false,
+      "properties": {
+        "match": {
+          "type": "object",
+          "description": "Absent on the fallback entry. Most specific match wins: models beats vendors.",
+          "additionalProperties": false,
+          "properties": {
+            "vendors": { "type": "array", "items": { "type": "string" } },
+            "models": { "type": "array", "items": { "type": "string" } },
+            "biosFamilies": { "type": "array", "items": { "type": "string" } },
+            "cpuVendors": { "type": "array", "items": { "enum": ["intel", "amd", "qualcomm", "other"] } }
+          }
+        },
+        "tier": {
+          "description": "Spec 18.4. guidedVerified requires evidence from a real machine, never a vendor manual alone.",
+          "enum": ["guidedVerified", "guidedGeneric"]
+        },
+        "settingName": {
+          "type": "string",
+          "description": "The exact English label printed in that firmware. Never translated - the user has to find it on screen (spec 21.11)."
+        },
+        "alternateNames": { "type": "array", "items": { "type": "string" } },
+        "menuPath": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+        "enterKeys": { "type": "array", "items": { "type": "string" } },
+        "saveKeys": { "type": "array", "items": { "type": "string" } },
+        "searchKey": { "type": "string", "description": "Some vendors offer in-firmware search (F9 on several ASUS boards)." },
+        "noteKey": { "type": "string", "description": "i18n key for a short caveat." },
+        "imageRef": { "type": ["string", "null"] },
+        "verifiedOn": {
+          "type": "array",
+          "description": "Machines this entry was actually confirmed on. Empty => cannot claim guidedVerified.",
+          "items": {
+            "type": "object",
+            "required": ["model", "biosVersion", "date"],
+            "additionalProperties": false,
+            "properties": {
+              "model": { "type": "string" },
+              "biosVersion": { "type": "string" },
+              "date": { "type": "string", "format": "date" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

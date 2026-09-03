@@ -1,0 +1,119 @@
+{
+  "$schema": "../../schemas/guide-data.schema.json",
+  "id": "guide.firmware.virtualization",
+  "version": "0.1.0",
+  "capability": "firmware.cpu.virtualization",
+  "targetState": "enabled",
+  "entries": [
+    {
+      "match": { "vendors": ["Gigabyte Technology Co., Ltd.", "GIGABYTE"], "cpuVendors": ["amd"] },
+      "tier": "guidedGeneric",
+      "settingName": "SVM Mode",
+      "alternateNames": ["AMD-V", "Secure Virtual Machine"],
+      "menuPath": ["Tweaker", "Advanced CPU Settings", "SVM Mode"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.vendor-generic",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["ASUSTeK COMPUTER INC.", "ASUS"], "cpuVendors": ["amd"] },
+      "tier": "guidedGeneric",
+      "settingName": "SVM Mode",
+      "alternateNames": ["AMD-V", "Secure Virtual Machine"],
+      "menuPath": ["Advanced", "CPU Configuration", "SVM Mode"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "searchKey": "F9",
+      "noteKey": "guide.note.vendor-generic",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["ASUSTeK COMPUTER INC.", "ASUS"], "cpuVendors": ["intel"] },
+      "tier": "guidedGeneric",
+      "settingName": "Intel (VMX) Virtualization Technology",
+      "alternateNames": ["Intel Virtualization Technology", "VT-x"],
+      "menuPath": ["Advanced", "CPU Configuration", "Intel (VMX) Virtualization Technology"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "searchKey": "F9",
+      "noteKey": "guide.note.vendor-generic",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Micro-Star International Co., Ltd.", "MSI"], "cpuVendors": ["amd"] },
+      "tier": "guidedGeneric",
+      "settingName": "SVM Mode",
+      "alternateNames": ["AMD-V"],
+      "menuPath": ["OC", "CPU Features", "SVM Mode"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.vendor-generic",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Micro-Star International Co., Ltd.", "MSI"], "cpuVendors": ["intel"] },
+      "tier": "guidedGeneric",
+      "settingName": "Intel Virtualization Tech",
+      "alternateNames": ["Intel Virtualization Technology", "VT-x"],
+      "menuPath": ["OC", "CPU Features", "Intel Virtualization Tech"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.vendor-generic",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["ASRock", "ASRock Inc."], "cpuVendors": ["amd"] },
+      "tier": "guidedGeneric",
+      "settingName": "SVM Mode",
+      "menuPath": ["Advanced", "CPU Configuration", "SVM Mode"],
+      "enterKeys": ["F2", "Del"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.vendor-generic",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Dell Inc."] },
+      "tier": "guidedGeneric",
+      "settingName": "Virtualization",
+      "alternateNames": ["Enable Intel Virtualization Technology", "VT for Direct I/O"],
+      "menuPath": ["Virtualization Support", "Virtualization"],
+      "enterKeys": ["F2"],
+      "saveKeys": ["Apply", "Exit"],
+      "noteKey": "guide.note.vendor-generic",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["LENOVO"] },
+      "tier": "guidedGeneric",
+      "settingName": "Intel (R) Virtualization Technology",
+      "alternateNames": ["AMD-V", "SVM Mode", "Intel VT-x"],
+      "menuPath": ["Security", "Virtualization", "Intel (R) Virtualization Technology"],
+      "enterKeys": ["F1", "Enter then F1", "Fn+F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.vendor-generic",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["HP", "Hewlett-Packard", "HP Inc."] },
+      "tier": "guidedGeneric",
+      "settingName": "Virtualization Technology (VTx)",
+      "alternateNames": ["VTx", "VTd", "SVM"],
+      "menuPath": ["Advanced", "System Options", "Virtualization Technology (VTx)"],
+      "enterKeys": ["F10", "Esc then F10"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.vendor-generic",
+      "verifiedOn": []
+    }
+  ],
+  "fallback": {
+    "tier": "guidedGeneric",
+    "settingName": "Virtualization Technology",
+    "alternateNames": ["SVM Mode", "AMD-V", "Intel VT-x", "Intel Virtualization Technology", "VMX"],
+    "menuPath": ["Advanced", "CPU Configuration"],
+    "enterKeys": ["Del", "F2", "F10", "Esc"],
+    "saveKeys": ["F10"],
+    "noteKey": "guide.note.unknown-model",
+    "verifiedOn": []
+  }
+}

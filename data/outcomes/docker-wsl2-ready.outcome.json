@@ -1,0 +1,18 @@
+{
+  "$schema": "../../schemas/outcome.schema.json",
+  "id": "outcome.docker-wsl2-ready",
+  "version": "1.0.0",
+  "titleKey": "outcome.docker-wsl2-ready.title",
+  "descriptionKey": "outcome.docker-wsl2-ready.description",
+  "category": "developer",
+  "requires": [
+    { "capability": "cpu.virtualization", "state": "supported" },
+    { "capability": "firmware.cpu.virtualization", "state": "enabled" },
+    { "capability": "windows.feature.virtual-machine-platform", "state": "enabled" },
+    { "capability": "windows.feature.wsl", "state": "enabled" },
+    { "capability": "wsl.default-version", "state": "2" }
+  ],
+  "verify": [
+    { "check": "workload.docker-wsl2-ready", "expected": "ready" }
+  ]
+}

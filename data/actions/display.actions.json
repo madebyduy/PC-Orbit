@@ -1,0 +1,55 @@
+[
+  {
+    "id": "display.set-refresh-rate.max",
+    "version": "1.0.0",
+    "titleKey": "action.display.set-refresh-rate.max.title",
+    "executor": "display.set-refresh-rate",
+    "parameters": { "target": "max" },
+    "provides": [
+      { "capability": "display.current-refresh-rate", "state": "max" }
+    ],
+    "writeMode": "auto",
+    "privilege": "user",
+    "risk": "low",
+    "restart": "none",
+    "safeApply": {
+      "enabled": true,
+      "confirmWithinSeconds": 15,
+      "autoRevert": true
+    },
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_display_mode"
+    },
+    "estimatedSeconds": 20,
+    "preflight": [],
+    "compatibility": { "osMinBuild": 19041 },
+    "verify": [
+      { "capability": "display.current-refresh-rate", "expected": "max" }
+    ]
+  },
+  {
+    "id": "windows.system-restore.enable",
+    "version": "1.0.0",
+    "titleKey": "action.windows.system-restore.enable.title",
+    "executor": "windows.system-restore.enable",
+    "parameters": { "drive": "system" },
+    "provides": [
+      { "capability": "windows.system-restore", "state": "enabled" }
+    ],
+    "writeMode": "auto",
+    "privilege": "administrator",
+    "risk": "low",
+    "restart": "none",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "disable_system_restore"
+    },
+    "estimatedSeconds": 30,
+    "preflight": ["elevation", "diskSpace"],
+    "compatibility": { "osMinBuild": 19041 },
+    "verify": [
+      { "capability": "windows.system-restore", "expected": "enabled" }
+    ]
+  }
+]

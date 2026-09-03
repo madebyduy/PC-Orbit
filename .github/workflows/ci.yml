@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  build:
+    # Windows only, and not just because the adapters are Windows-specific: the display and power
+    # interop, the WMI queries and the DISM path can only be compiled and tested here.
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      # Warnings are errors (Directory.Build.props). A privileged app cannot afford
+      # "it was only a warning".
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      # Golden tests for the State Compiler, fault-injection tests for the transaction engine,
+      # and the i18n parity gate spec 21.11 asks for.
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+      # Validates the shipped data against the shipped code: graph integrity, every capability an
+      # action or outcome mentions, every display key present in the active locale, and the
+      # executor allowlist. Returns non-zero when data and code disagree.
+      - name: Validate shipped data (English)
+        run: dotnet run --project src/PcOrbit.Cli --configuration Release --no-build -- doctor --lang en
+
+      - name: Validate shipped data (Vietnamese)
+        run: dotnet run --project src/PcOrbit.Cli --configuration Release --no-build -- doctor --lang vi
+
+      # A scan on the runner is a smoke test for the whole read path. The runner is a virtual
+      # machine, so it should resolve to Tier 0 and report plenty of honest Unknowns — both of
+      # which are correct behaviour and worth catching if they ever stop happening.
+      - name: Smoke test the read path
+        run: |
+          dotnet run --project src/PcOrbit.Cli --configuration Release --no-build -- scan --json > scan.json
+          dotnet run --project src/PcOrbit.Cli --configuration Release --no-build -- checkup
+          dotnet run --project src/PcOrbit.Cli --configuration Release --no-build -- outcomes
+
+      # `plan` exits 2 when the outcome cannot be reached or preflight blocks it, which is a
+      # legitimate result on a CI runner rather than a failure.
+      - name: Smoke test the compiler
+        shell: pwsh
+        run: |
+          dotnet run --project src/PcOrbit.Cli --configuration Release --no-build -- plan docker-wsl2-ready --verbose
+          if ($LASTEXITCODE -notin 0, 2) { throw "plan exited $LASTEXITCODE" }
+
+      - name: Upload the runner scan
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runner-capability-scan
+          path: scan.json
+          if-no-files-found: warn
