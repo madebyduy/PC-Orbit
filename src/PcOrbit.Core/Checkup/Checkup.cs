@@ -70,6 +70,7 @@ public sealed class CheckupEngine(IEnumerable<ICheckupRule> rules)
         new SystemRestoreRule(),
         new FeatureDependencyRule(),
         new BitLockerRecoveryKeyRule(),
+        new DiskSpaceRule(),
     ]);
 
     public IReadOnlyList<Finding> Run(CheckupContext context)
@@ -319,6 +320,56 @@ public sealed class FeatureDependencyRule : ICheckupRule
                     Restart: RestartKind.Windows);
             }
         }
+    }
+}
+
+/// <summary>
+/// The Windows drive is nearly full.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Thresholds are not taste: Windows feature updates need roughly 20 GB of free space, and below
+/// about 10 GB Windows starts failing updates, hibernation and restore points outright. So the
+/// warning level is the one where things break, and the softer level is the one where the next
+/// feature update will not fit.
+/// </para>
+/// <para>
+/// This rule states the problem and stops. Deleting files is not something v0.1 does on someone's
+/// behalf, and a rule that cannot state the safety of its own fix has no business offering an
+/// Apply button (spec 21.6) — so it explains, and the finding carries no action.
+/// </para>
+/// </remarks>
+public sealed class DiskSpaceRule : ICheckupRule
+{
+    private const double CriticalGb = 10d;
+    private const double LowGb = 25d;
+
+    public string Code => "storage.system-drive-low";
+
+    public IEnumerable<Finding> Evaluate(CheckupContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        CapabilityReading? free = context.Snapshot.ReadingOf(CoreCapabilities.SystemDriveFreeGb);
+
+        if (free is null
+            || !RuleHelpers.TryNumber(free.Value, out double freeGb)
+            || freeGb >= LowGb)
+        {
+            yield break;
+        }
+
+        yield return new Finding(
+            Code: Code,
+            Severity: freeGb < CriticalGb ? FindingSeverity.Warning : FindingSeverity.Attention,
+            TitleKey: "finding.storage.system-drive-low.title",
+            BenefitKey: "finding.storage.system-drive-low.benefit",
+            SafetyKey: "finding.storage.system-drive-low.safety",
+            Arguments: RuleHelpers.Args(
+                ("free", RuleHelpers.Round(freeGb)),
+                ("needed", RuleHelpers.Round(LowGb))),
+            Evidence: free.Evidence,
+            Capability: CoreCapabilities.SystemDriveFreeGb);
     }
 }
 

@@ -64,6 +64,30 @@ public sealed record CheckRow(string Name, string State, Geometry Glyph, Brush T
 
 public sealed record StatusRow(string Name, string Value, Brush Tone, Brush Accent);
 
+public sealed record GaugeRow(
+    string Name,
+    string Value,
+    string Note,
+    double Percent,
+    Geometry Glyph,
+    Brush Tone,
+    Brush Accent);
+
+public sealed record ProcRow(
+    string Name,
+    string Pid,
+    string Initial,
+    string Cpu,
+    double CpuPercent,
+    string Ram,
+    Brush Tone,
+    Brush Accent,
+    Brush RowBg);
+
+public sealed record DeviceRow(string Name, string Detail, Geometry Glyph, Brush Tone, Brush Accent);
+
+public sealed record DeviceGroupRow(string Group, IReadOnlyList<DeviceRow> Items);
+
 /// <summary>
 /// The desktop surface. Six views, one engine.
 /// </summary>
@@ -90,9 +114,13 @@ public partial class MainWindow : Window
     private const int SparkSamples = 60;
 
     private readonly ILiveMetrics _liveMetrics = new WindowsLiveMetrics();
+    private readonly IProcessMonitor _processes = new WindowsProcessMonitor();
+    private readonly IHardwareInventory _hardware = new WindowsHardwareInventory();
     private readonly List<double> _cpuHistory = [];
     private readonly List<double> _ramHistory = [];
     private readonly DispatcherTimer _liveTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+
+    private HardwareInventory _inventory = HardwareInventory.Empty;
 
     private PcOrbitHost? _host;
 
@@ -187,7 +215,16 @@ public partial class MainWindow : Window
         _host = await Task.Run(() => PcOrbitHost.Create(options, new WpfSafeApplyConfirmation(catalog)));
 
         PopulateOutcomes();
+
+        // The hardware inventory is a second, smaller PowerShell batch. Started alongside the
+        // state scan rather than after it, so the wait stays the length of the slower one.
+        Task<HardwareInventory> hardware = _hardware.ReadAsync();
+
         await RescanAsync();
+
+        _inventory = await hardware;
+        RenderInventory();
+
         await RefreshHistoryAsync();
 
         _liveTimer.Start();
@@ -220,6 +257,9 @@ public partial class MainWindow : Window
         RenderDashboard();
         RenderStatusView();
         RenderStatusStrip();
+        RenderInventory();
+        RenderDashGauges();
+        RenderProcesses();
         RenderPerf();
 
         _plan = null;
@@ -299,6 +339,21 @@ public partial class MainWindow : Window
         EventsEmpty.Text = T("cli.history.empty");
 
         SoonBackBtn.Content = T("app.soon.back");
+
+        ProcTitle.Text = T("app.processes.title");
+        ProcHint.Text = T("app.processes.hint");
+        ProcColName.Text = T("app.processes.name");
+        ProcColCpu.Text = T("app.processes.cpu");
+        ProcColRam.Text = T("app.processes.ram");
+        ProcEmpty.Text = T("app.processes.none");
+        PerfProcTitle.Text = T("app.processes.title");
+        PerfProcHint.Text = T("app.processes.hint");
+
+        DevTitle.Text = T("app.devices.title");
+        DevHint.Text = T("app.status.readingsHint");
+        DevEmpty.Text = T("app.devices.none");
+        InventoryTitle.Text = T("app.status.hardware");
+        InventoryHint.Text = T("app.hw.reading");
     }
 
     private void UpdateApplyButtonText()
@@ -388,7 +443,14 @@ public partial class MainWindow : Window
 
     // ---------------------------------------------------------------- scan
 
-    private async void OnRescan(object sender, RoutedEventArgs e) => await RescanAsync();
+    private async void OnRescan(object sender, RoutedEventArgs e)
+    {
+        Task<HardwareInventory> hardware = _hardware.ReadAsync();
+        await RescanAsync();
+
+        _inventory = await hardware;
+        RenderInventory();
+    }
 
     private async Task RescanAsync()
     {
@@ -430,7 +492,147 @@ public partial class MainWindow : Window
 
         RenderMachineCard();
         RenderLiveCards();
+        RenderDashGauges();
+        RenderProcesses();
         RenderPerf();
+    }
+
+    /// <summary>The four gauges across the dashboard: what the machine is doing this second.</summary>
+    private void RenderDashGauges()
+    {
+        if (!Ready)
+        {
+            return;
+        }
+
+        DashGauges.ItemsSource = new List<GaugeRow>
+        {
+            new(
+                "CPU",
+                Pct(_live.CpuPercent),
+                _snapshot?.Machine.CpuName ?? string.Empty,
+                _live.CpuPercent ?? 0d,
+                G("IconChip"),
+                B("AccentSoft"),
+                B("Accent")),
+            new(
+                "RAM",
+                Pct(_live.RamPercent),
+                _live.RamTotalGb is null
+                    ? T("status.unknown")
+                    : T("app.ram.detail", Args(("used", Gb(_live.RamUsedGb)), ("total", Gb(_live.RamTotalGb)))),
+                _live.RamPercent ?? 0d,
+                G("IconRam"),
+                B("VioletSoft"),
+                B("Violet")),
+            new(
+                T("app.disk.title"),
+                Pct(_live.DiskPercent),
+                _live.DiskTotalGb is null
+                    ? T("status.unknown")
+                    : T("app.disk.detail", Args(("free", Gb(_live.DiskFreeGb)), ("total", Gb(_live.DiskTotalGb)))),
+                _live.DiskPercent ?? 0d,
+                G("IconDisk"),
+                B("OrangeSoft"),
+                B("Orange")),
+            new(
+                T("app.tile.network"),
+                Mbps(_live.NetworkDownMbps),
+                _live.NetworkAdapter ?? T("status.unknown"),
+
+                // A throughput bar needs a ceiling, and the link speed is the honest one.
+                _live.NetworkDownMbps is { } down && _live.NetworkLinkMbps is { } link && link > 0
+                    ? Math.Clamp(down / link * 100d, 0d, 100d)
+                    : 0d,
+                G("IconWifi"),
+                B("CyanSoft"),
+                B("Cyan")),
+        };
+    }
+
+    private void RenderProcesses()
+    {
+        if (!Ready)
+        {
+            return;
+        }
+
+        IReadOnlyList<ProcessUsage> top = _processes.Top(12);
+
+        List<ProcRow> rows = [.. top.Select((u, index) => new ProcRow(
+            Name: u.Name,
+            Pid: string.Create(CultureInfo.InvariantCulture, $"#{u.Id}"),
+            Initial: u.Name.Length > 0 ? u.Name[..1].ToUpperInvariant() : "?",
+            // A process rarely reaches whole percentages, and rounding every one of them to "0%"
+            // makes the whole column useless — so small shares keep a decimal.
+            Cpu: u.CpuPercent is { } cpu
+                ? cpu.ToString(cpu < 10 ? "0.0" : "0", CultureInfo.CurrentCulture) + "%"
+                : T("status.unknown"),
+            CpuPercent: u.CpuPercent ?? 0d,
+            Ram: u.MemoryMb >= 1024
+                ? (u.MemoryMb / 1024d).ToString("0.0", CultureInfo.CurrentCulture) + " GB"
+                : u.MemoryMb.ToString("0", CultureInfo.CurrentCulture) + " MB",
+            Tone: index < 3 ? B("AccentSoft") : B("Hair"),
+            Accent: index < 3 ? B("Accent") : B("Muted"),
+            RowBg: index % 2 == 0 ? B("RowBg") : Brushes.Transparent))];
+
+        ProcList.ItemsSource = rows.Take(6).ToList();
+        PerfProcList.ItemsSource = rows;
+
+        ProcEmpty.Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// The hardware inventory, grouped. A group the machine reported nothing for is left out
+    /// rather than shown empty — an empty "Displays" heading says something untrue.
+    /// </summary>
+    private void RenderInventory()
+    {
+        if (!Ready)
+        {
+            return;
+        }
+
+        List<DeviceGroupRow> Groups((string Key, IReadOnlyList<HardwarePart>? Parts, string Icon, string Tone, string Accent)[] source) =>
+        [
+            .. source
+                .Where(g => g.Parts is { Count: > 0 })
+                .Select(g => new DeviceGroupRow(
+                    T(g.Key),
+                    [.. g.Parts!.Select(p => new DeviceRow(
+                        p.Name,
+                        p.Detail ?? p.Extra ?? string.Empty,
+                        G(g.Icon),
+                        B(g.Tone),
+                        B(g.Accent)))])),
+        ];
+
+        IReadOnlyList<HardwarePart>? gpu = _inventory.Gpu is { } card ? [card] : null;
+
+        // The hint only describes the wait; once the read is in, the cards speak for themselves.
+        InventoryHint.Text = string.Empty;
+
+        InventoryGroups.ItemsSource = Groups(
+        [
+            ("app.hw.gpu", gpu, "IconGauge", "GoodSoft", "Good"),
+            ("app.hw.disks", _inventory.Disks, "IconDisk", "OrangeSoft", "Orange"),
+            ("app.hw.memory", _inventory.MemoryModules, "IconRam", "VioletSoft", "Violet"),
+            ("app.hw.monitors", _inventory.Monitors, "IconMonitor", "AccentSoft", "Accent"),
+            ("app.hw.network", _inventory.Network, "IconWifi", "CyanSoft", "Cyan"),
+            ("app.hw.audio", _inventory.Audio, "IconGrid", "VioletSoft", "Violet"),
+            ("app.hw.input", _inventory.Input, "IconGrid", "Hair", "Muted"),
+        ]);
+
+        List<DeviceGroupRow> attached = Groups(
+        [
+            ("app.hw.monitors", _inventory.Monitors, "IconMonitor", "AccentSoft", "Accent"),
+            ("app.hw.audio", _inventory.Audio, "IconGrid", "VioletSoft", "Violet"),
+            ("app.hw.input", _inventory.Input, "IconGrid", "GoodSoft", "Good"),
+            ("app.hw.network", _inventory.Network, "IconWifi", "CyanSoft", "Cyan"),
+        ]);
+
+        DeviceGroups.ItemsSource = attached;
+        DevEmpty.Visibility = attached.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private static void Push(List<double> history, double value)

@@ -268,6 +268,133 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
 
+            <!-- live strip: four gauges, straight from the machine -->
+            <ItemsControl x:Name="DashGauges" Margin="0,0,0,16">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Style="{StaticResource Card}" Margin="0,0,12,0">
+                    <StackPanel>
+                      <StackPanel Orientation="Horizontal">
+                        <Border Width="30" Height="30" CornerRadius="9" Background="{Binding Tone}">
+                          <Path Data="{Binding Glyph}" Width="15" Height="15" Stretch="Uniform"
+                                Stroke="{Binding Accent}" StrokeThickness="1.6" />
+                        </Border>
+                        <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" />
+                      </StackPanel>
+                      <TextBlock Text="{Binding Value}" FontSize="22" FontWeight="ExtraBold"
+                                 Foreground="{Binding Accent}" Margin="0,7,0,0" />
+                      <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent}"
+                                   Foreground="{Binding Accent}" Margin="0,6,0,0" />
+                      <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" Margin="0,5,0,0" />
+                    </StackPanel>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Grid Margin="0,0,0,16">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="14" />
+                <ColumnDefinition Width="1.15*" />
+              </Grid.ColumnDefinitions>
+
+              <!-- top processes -->
+              <Border Grid.Column="0" Style="{StaticResource Card}">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,8">
+                    <TextBlock x:Name="ProcTitle" Style="{StaticResource CardTitle}" />
+                    <TextBlock x:Name="ProcHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                  </DockPanel>
+                  <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*" />
+                      <ColumnDefinition Width="70" />
+                      <ColumnDefinition Width="90" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="ProcColName" Grid.Column="0" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Faint}" />
+                    <TextBlock x:Name="ProcColCpu" Grid.Column="1" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Faint}" TextAlignment="Right" />
+                    <TextBlock x:Name="ProcColRam" Grid.Column="2" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Faint}" TextAlignment="Right" />
+                  </Grid>
+                  <TextBlock x:Name="ProcEmpty" Style="{StaticResource Tiny}" Visibility="Collapsed" />
+                  <ItemsControl x:Name="ProcList">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Background="{Binding RowBg}" CornerRadius="8" Padding="9,6" Margin="0,2">
+                          <Grid>
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="*" />
+                              <ColumnDefinition Width="70" />
+                              <ColumnDefinition Width="90" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                              <Border Width="20" Height="20" CornerRadius="6" Background="{Binding Tone}">
+                                <TextBlock Text="{Binding Initial}" FontSize="10" FontWeight="Bold"
+                                           Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                              </Border>
+                              <TextBlock Text="{Binding Name}" FontSize="12.5" Foreground="{StaticResource Ink}"
+                                         Margin="9,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <TextBlock Grid.Column="1" Text="{Binding Cpu}" FontSize="12.5" FontWeight="SemiBold"
+                                       Foreground="{Binding Accent}" TextAlignment="Right" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="2" Text="{Binding Ram}" FontSize="12.5" Foreground="{StaticResource Muted}"
+                                       TextAlignment="Right" VerticalAlignment="Center" />
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
+              <!-- connected devices -->
+              <Border Grid.Column="2" Style="{StaticResource Card}">
+                <StackPanel>
+                  <DockPanel Margin="0,0,0,8">
+                    <TextBlock x:Name="DevTitle" Style="{StaticResource CardTitle}" />
+                    <TextBlock x:Name="DevHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                  </DockPanel>
+                  <ItemsControl x:Name="DeviceGroups">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <StackPanel Margin="0,0,0,9">
+                          <TextBlock Text="{Binding Group}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Faint}" Margin="0,0,0,3" />
+                          <ItemsControl ItemsSource="{Binding Items}">
+                            <ItemsControl.ItemsPanel>
+                              <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate>
+                                <Border Style="{StaticResource FlatCard}" Padding="10,7" Margin="0,0,8,8" MaxWidth="260">
+                                  <StackPanel Orientation="Horizontal">
+                                    <Border Width="26" Height="26" CornerRadius="8" Background="{Binding Tone}" VerticalAlignment="Center">
+                                      <Path Data="{Binding Glyph}" Width="13" Height="13" Stretch="Uniform"
+                                            Stroke="{Binding Accent}" StrokeThickness="1.6" />
+                                    </Border>
+                                    <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
+                                      <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
+                                                 Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" MaxWidth="200" />
+                                      <TextBlock Text="{Binding Detail}" FontSize="10.5" Foreground="{StaticResource Faint}"
+                                                 TextTrimming="CharacterEllipsis" MaxWidth="200" />
+                                    </StackPanel>
+                                  </StackPanel>
+                                </Border>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <TextBlock x:Name="DevEmpty" Style="{StaticResource Tiny}" Visibility="Collapsed" />
+                </StackPanel>
+              </Border>
+            </Grid>
+
             <TextBlock x:Name="OutcomesSect" Style="{StaticResource Sect}" Margin="0,6,0,8" />
             <ItemsControl x:Name="OutcomeCards">
               <ItemsControl.ItemsPanel>
@@ -442,6 +569,48 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
 
+            <!-- full hardware inventory, grouped -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="InventoryTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="InventoryHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="InventoryGroups">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <StackPanel Margin="0,0,0,10">
+                        <TextBlock Text="{Binding Group}" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource Faint}" Margin="0,0,0,4" />
+                        <ItemsControl ItemsSource="{Binding Items}">
+                          <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                          </ItemsControl.ItemsPanel>
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                              <Border Style="{StaticResource FlatCard}" Padding="12,9" Margin="0,0,10,10" MinWidth="240" MaxWidth="330">
+                                <StackPanel Orientation="Horizontal">
+                                  <Border Width="30" Height="30" CornerRadius="9" Background="{Binding Tone}" VerticalAlignment="Center">
+                                    <Path Data="{Binding Glyph}" Width="15" Height="15" Stretch="Uniform"
+                                          Stroke="{Binding Accent}" StrokeThickness="1.6" />
+                                  </Border>
+                                  <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
+                                    <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold"
+                                               Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                                    <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="{StaticResource Faint}"
+                                               TextTrimming="CharacterEllipsis" MaxWidth="260" />
+                                  </StackPanel>
+                                </StackPanel>
+                              </Border>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource Card}">
               <StackPanel>
                 <DockPanel Margin="0,0,0,8">
@@ -535,6 +704,47 @@
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+            <Border Style="{StaticResource Card}" Margin="0,14,0,0">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,8">
+                  <TextBlock x:Name="PerfProcTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="PerfProcHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="PerfProcList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Background="{Binding RowBg}" CornerRadius="8" Padding="10,7" Margin="0,2">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="240" />
+                            <ColumnDefinition Width="80" />
+                            <ColumnDefinition Width="100" />
+                          </Grid.ColumnDefinitions>
+                          <StackPanel Grid.Column="0" Orientation="Horizontal">
+                            <Border Width="22" Height="22" CornerRadius="7" Background="{Binding Tone}">
+                              <TextBlock Text="{Binding Initial}" FontSize="10.5" FontWeight="Bold"
+                                         Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="{Binding Name}" FontSize="13" Foreground="{StaticResource Ink}"
+                                       Margin="10,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Pid}" FontSize="11" Foreground="{StaticResource Faint}"
+                                       Margin="8,0,0,0" VerticalAlignment="Center" />
+                          </StackPanel>
+                          <ProgressBar Grid.Column="1" Style="{StaticResource ThinBar}" Value="{Binding CpuPercent}"
+                                       Foreground="{Binding Accent}" VerticalAlignment="Center" Margin="0,0,14,0" />
+                          <TextBlock Grid.Column="2" Text="{Binding Cpu}" FontSize="13" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" TextAlignment="Right" VerticalAlignment="Center" />
+                          <TextBlock Grid.Column="3" Text="{Binding Ram}" FontSize="13" Foreground="{StaticResource Muted}"
+                                     TextAlignment="Right" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
 
             <Border Style="{StaticResource Card}" Margin="0,14,0,0">
               <StackPanel>
