@@ -129,7 +129,7 @@
     "cli.scan.heading": "Những gì app đọc được",
     "cli.scan.saved": "Đã lưu snapshot {id} vào {path}",
     "cli.checkup.ok.title": "Máy bạn đang ổn",
-    "cli.checkup.ok.body": "Không có gì đáng chú ý. App đã kiểm tra ảo hóa, tốc độ RAM, tần số quét, Khôi phục hệ thống, dependency giữa các tính năng Windows và mã hóa ổ đĩa.",
+    "cli.checkup.ok.body": "Không có gì đáng chú ý. App đã kiểm tra ảo hóa, tốc độ RAM, tần số quét, Khôi phục hệ thống, quan hệ phụ thuộc giữa các tính năng Windows và mã hóa ổ đĩa.",
     "cli.checkup.heading": "{count, plural, other {# điều đáng chú ý}}",
     "cli.checkup.cost": "{restart} · khoảng {seconds} giây",
     "cli.checkup.fix": "Cách sửa: {how}",
