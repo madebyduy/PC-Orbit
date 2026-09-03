@@ -1,0 +1,39 @@
+{
+  "artboards": [
+    { "file": "FirstRun.dc.html", "title": "1 · First-run", "x": 0, "y": 0, "w": 1160, "h": 780 },
+    { "file": "MayOn.dc.html", "title": "2 · Máy bạn đang ổn", "x": 1260, "y": 0, "w": 1160, "h": 780 },
+    { "file": "Main.dc.html", "title": "3 · Overview (Simple)", "x": 2520, "y": 0, "w": 1160, "h": 820 },
+    { "file": "CheckupCard.dc.html", "title": "4 · Checkup card (21.6)", "x": 3780, "y": 0, "w": 1160, "h": 780 },
+    { "file": "ChangeBasket.dc.html", "title": "5 · Change Basket (21.7)", "x": 5040, "y": 0, "w": 1160, "h": 1010 },
+    { "file": "GuidedBios.dc.html", "title": "6a · Guided BIOS — trước restart", "x": 0, "y": 1170, "w": 1160, "h": 900 },
+    { "file": "PhoneGuide.dc.html", "title": "6b · Trên điện thoại (QR)", "x": 1260, "y": 1170, "w": 390, "h": 844 },
+    { "file": "SauKhiBoot.dc.html", "title": "6c · Sau khi boot + nhánh chưa đạt", "x": 1790, "y": 1170, "w": 1160, "h": 940 },
+    { "file": "KetQua.dc.html", "title": "7 · Kết quả + Hoàn tác (9.4)", "x": 3090, "y": 1170, "w": 1160, "h": 860 },
+    { "file": "OverviewEN.dc.html", "title": "EN · Overview", "x": 0, "y": 2270, "w": 1160, "h": 820 },
+    { "file": "CheckupCardEN.dc.html", "title": "EN · Checkup card", "x": 1260, "y": 2270, "w": 1160, "h": 780 }
+  ],
+  "annotations": [
+    {
+      "id": "kich-ban-test",
+      "x": 0,
+      "y": -230,
+      "w": 560,
+      "text": "HALLWAY TEST (spec 6b) — 3-5 người KHÔNG phải developer, ít nhất 1 người dùng tiếng Việt + 1 tiếng Anh.\nKịch bản: \"Bạn cài app này vì Docker không chạy / máy có vẻ chậm. Đây là màn hình đầu tiên — bạn làm gì tiếp?\" Người dẫn im lặng, chỉ đổi màn hình khi họ 'bấm'.\n4 câu phải trả lời được:\n1. Họ hiểu máy mình cần gì không? (màn 3-4)\n2. Họ dám bấm Áp dụng không? (màn 5)\n3. Họ biết cách hoàn tác không? (màn 3, 7)\n4. Họ làm được bước BIOS chỉ với điện thoại không? (màn 6b)\nChi tiết: docs/ux/v0.1-ux-onepager.md"
+    },
+    {
+      "id": "luong-bios",
+      "x": 0,
+      "y": 1040,
+      "w": 460,
+      "text": "Luồng Guided BIOS (spec 8.3.3): app làm mọi thứ trước và sau restart — người dùng chỉ làm đúng MỘT bước ở giữa. Màn 6b là trang tĩnh mở từ QR, xem trên điện thoại khi PC đang khởi động lại."
+    },
+    {
+      "id": "en-variants",
+      "x": 0,
+      "y": 2150,
+      "w": 420,
+      "text": "Hai màn hình tiếng Anh cho người test English — copy lấy nguyên văn từ data/i18n/en.json, không dịch lại."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

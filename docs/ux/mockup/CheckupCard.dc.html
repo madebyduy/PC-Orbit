@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: #1b1b1f; }
+    a { color: #0067c0; text-decoration: none; } a:hover { color: #004f93; }
+  </style>
+</helmet>
+<div style="width: 1160px; height: 780px; background: linear-gradient(135deg, #dfe7f2 0%, #e9e4ef 52%, #dce9e3 100%); display: flex; align-items: center; justify-content: center;">
+  <div style="width: 900px; background: #f7f8fa; border: 1px solid #d5d5da; border-radius: 8px; box-shadow: 0 16px 44px rgba(0,30,60,0.18); overflow: hidden; display: flex; flex-direction: column;">
+
+    <div style="height: 40px; display: flex; align-items: center; justify-content: space-between; padding-left: 14px; background: #f1f2f6;">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5a5a60;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="#0067c0"></circle><ellipse cx="8" cy="8" rx="7" ry="3.2" stroke="#0067c0" stroke-width="1.2" transform="rotate(-24 8 8)"></ellipse></svg>
+        <span>PC Orbit · Kiểm tra máy</span>
+      </div>
+      <div style="display: flex;">
+        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 5h10" stroke="#5a5a60" stroke-width="1"></path></svg></div>
+        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="none" stroke="#5a5a60" stroke-width="1"></rect></svg></div>
+        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10" stroke="#5a5a60" stroke-width="1"></path></svg></div>
+      </div>
+    </div>
+
+    <div style="padding: 24px 30px 30px; display: flex; flex-direction: column; gap: 16px;">
+
+      <div style="font-size: 17px; font-weight: 600;">2 điều đáng chú ý</div>
+
+      <div style="background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 20px 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="margin-top: 1px;"><path d="M11 2L20.5 19h-19L11 2z" fill="#ffb900"></path><path d="M11 9v4.5" stroke="#5c4a00" stroke-width="1.7" stroke-linecap="round"></path><circle cx="11" cy="16.2" r="1.05" fill="#5c4a00"></circle></svg>
+          <div style="display: flex; flex-direction: column; gap: 7px;">
+            <div style="font-size: 16px; font-weight: 600; line-height: 1.35;">Màn hình của bạn đang chạy 60 Hz nhưng hỗ trợ 165 Hz</div>
+            <div style="font-size: 13.5px; color: #33333a; line-height: 1.5;">Sửa xong: chuyển động mượt hơn rõ rệt khi kéo cửa sổ và khi chơi game</div>
+            <div style="font-size: 13.5px; color: #33333a; line-height: 1.5;">An toàn: tự quay lại 60 Hz sau 15 giây nếu bạn không xác nhận là vẫn nhìn được</div>
+            <div style="font-size: 12.5px; color: #5f5f66;">Không cần khởi động lại · khoảng 10 giây</div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; padding-left: 34px;">
+          <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 18px; border-radius: 5px; background: #0067c0; color: #fff; font-size: 13px; font-weight: 600;">Sửa ngay</span>
+          <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 16px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 13px; font-weight: 600;">Thêm vào danh sách</span>
+          <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 16px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 13px; font-weight: 600;">Vì sao?</span>
+          <a href="#" style="font-size: 13px; font-weight: 600; margin-left: 6px;">Chi tiết kỹ thuật ▸</a>
+        </div>
+        <div style="margin-left: 34px; padding: 12px 14px; background: #f6f7fa; border: 1px solid #ececf1; border-radius: 6px; display: flex; flex-direction: column; gap: 4px;">
+          <div style="font-size: 12px; color: #5f5f66;"><span style="font-weight: 600;">Nguồn:</span> chế độ hiển thị do driver màn hình công bố (EnumDisplaySettings) · độ tin cậy: cao</div>
+          <div style="font-size: 12px; color: #5f5f66;"><span style="font-weight: 600;">Không nên áp dụng khi:</span> bạn đang dùng cáp/hub không đủ băng thông cho 165 Hz — khi đó màn hình có thể nhấp nháy, và app sẽ tự trả về 60 Hz.</div>
+        </div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 18px 22px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 7px;">
+        <div style="display: flex; align-items: flex-start; gap: 12px;">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" style="margin-top: 1px;"><circle cx="11" cy="11" r="9.5" fill="#eef4fb" stroke="#0067c0" stroke-width="1.4"></circle><path d="M11 6.5v5.5" stroke="#0067c0" stroke-width="1.7" stroke-linecap="round"></path><circle cx="11" cy="15" r="1.05" fill="#0067c0"></circle></svg>
+          <div style="display: flex; flex-direction: column; gap: 7px; flex-grow: 1;">
+            <div style="font-size: 16px; font-weight: 600; line-height: 1.35;">Docker / WSL 2 chưa sẵn sàng trên máy này</div>
+            <div style="font-size: 13.5px; color: #33333a; line-height: 1.5;">Sửa xong: chạy được WSL 2, Docker, giả lập Android và Windows Sandbox</div>
+            <div style="font-size: 13.5px; color: #33333a; line-height: 1.5;">Bạn tự làm một bước trong màn hình firmware; sau khi khởi động lại app tự kiểm chứng kết quả cho bạn</div>
+            <div style="font-size: 12.5px; color: #5f5f66;">2 lần khởi động lại · khoảng 9 phút · 1 bước bạn tự làm</div>
+          </div>
+          <span style="display: inline-flex; align-items: center; height: 34px; padding: 0 16px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 13px; font-weight: 600; align-self: center;">Xem kế hoạch</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: #1b1b1f; }
+    a { color: #0067c0; text-decoration: none; } a:hover { color: #004f93; }
+  </style>
+</helmet>
+<div style="width: 1160px; height: 780px; background: linear-gradient(135deg, #dfe7f2 0%, #e9e4ef 52%, #dce9e3 100%); display: flex; align-items: center; justify-content: center;">
+  <div style="width: 720px; background: #f7f8fa; border: 1px solid #d5d5da; border-radius: 8px; box-shadow: 0 16px 44px rgba(0,30,60,0.18); overflow: hidden; display: flex; flex-direction: column;">
+
+    <div style="height: 40px; display: flex; align-items: center; justify-content: space-between; padding-left: 14px; background: #f1f2f6;">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5a5a60;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="#0067c0"></circle><ellipse cx="8" cy="8" rx="7" ry="3.2" stroke="#0067c0" stroke-width="1.2" transform="rotate(-24 8 8)"></ellipse></svg>
+        <span>PC Orbit</span>
+      </div>
+      <div style="display: flex;">
+        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 5h10" stroke="#5a5a60" stroke-width="1"></path></svg></div>
+        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="none" stroke="#5a5a60" stroke-width="1"></rect></svg></div>
+        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10" stroke="#5a5a60" stroke-width="1"></path></svg></div>
+      </div>
+    </div>
+
+    <div style="padding: 34px 40px 36px; display: flex; flex-direction: column; gap: 22px;">
+
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-size: 24px; font-weight: 600;">Chào bạn.</div>
+        <div style="font-size: 14px; color: #45454c; line-height: 1.5;">PC Orbit đang đọc trạng thái thật của máy — chỉ đọc, chưa thay đổi gì cả.</div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="#0f7b0f"></circle><path d="M4.5 8.2l2.3 2.3 4.7-4.8" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span>Phần cứng</span><span style="color: #8a8a90; font-size: 12px;">CPU, RAM, màn hình</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" fill="#0f7b0f"></circle><path d="M4.5 8.2l2.3 2.3 4.7-4.8" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <span>Windows</span><span style="color: #8a8a90; font-size: 12px;">tính năng, System Restore</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.2" stroke="#0067c0" stroke-width="1.6" stroke-dasharray="26 13" stroke-linecap="round"></circle></svg>
+            <span style="font-weight: 600;">Firmware</span><span style="color: #8a8a90; font-size: 12px;">ảo hóa, Secure Boot, TPM…</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #8a8a90;">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.2" stroke="#c9c9cf" stroke-width="1.6"></circle></svg>
+            <span>Thiết bị</span>
+          </div>
+        </div>
+        <div style="height: 4px; border-radius: 2px; background: #e8e8ee; overflow: hidden;">
+          <div style="width: 62%; height: 4px; border-radius: 2px; background: #0067c0;"></div>
+        </div>
+        <div style="font-size: 12px; color: #8a8a90;">Thường xong dưới 60 giây. Giá trị nào không đọc được sẽ ghi rõ là "Chưa đọc được", kèm lý do.</div>
+      </div>
+
+      <div style="background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 16px 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 13.5px; font-weight: 600;">Ngôn ngữ</span>
+            <span style="font-size: 12px; color: #8a8a90;">Đoán từ Windows — chỉ cần xác nhận</span>
+          </div>
+          <span style="display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 14px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 13px;">Tiếng Việt <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5L5 7l3-3.5" stroke="#5a5a60" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 13.5px; font-weight: 600;">Chạy nền để theo dõi thay đổi (drift)</span>
+            <span style="font-size: 12px; color: #8a8a90;">Mặc định tắt — bật lúc nào cũng được, trong Settings</span>
+          </div>
+          <span style="width: 40px; height: 20px; border-radius: 10px; border: 1px solid #8a8a90; background: #fff; display: flex; align-items: center; padding: 0 3px;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #5a5a60;"></span></span>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 12px; color: #8a8a90;">Không cần tài khoản. Không hỏi gì thêm.</span>
+        <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 18px; border-radius: 5px; background: #0067c0; color: #fff; font-size: 13px; font-weight: 600;">Xem kết quả kiểm tra</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

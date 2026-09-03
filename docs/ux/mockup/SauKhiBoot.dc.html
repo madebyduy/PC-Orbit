@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: #1b1b1f; }
+    a { color: #0067c0; text-decoration: none; } a:hover { color: #004f93; }
+  </style>
+</helmet>
+<div style="width: 1160px; height: 940px; background: linear-gradient(135deg, #dfe7f2 0%, #e9e4ef 52%, #dce9e3 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 26px;">
+
+  <div style="width: 1000px; background: #f7f8fa; border: 1px solid #d5d5da; border-radius: 8px; box-shadow: 0 16px 44px rgba(0,30,60,0.18); overflow: hidden; display: flex; flex-direction: column;">
+    <div style="height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; background: #eaf6ea;">
+      <span style="font-size: 11.5px; font-weight: 600; color: #0f7b0f; letter-spacing: 0.4px;">NHÁNH A — SAU KHI KHỞI ĐỘNG LẠI, KIỂM CHỨNG ĐẠT</span>
+    </div>
+    <div style="padding: 20px 26px 24px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <svg width="34" height="34" viewBox="0 0 34 34" fill="none"><circle cx="17" cy="17" r="15" fill="#0f7b0f"></circle><path d="M10.5 17.5l4.5 4.5 8.5-9" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        <div style="display: flex; flex-direction: column; gap: 2px;">
+          <span style="font-size: 18px; font-weight: 600;">Đã tiếp tục kế hoạch sau khi khởi động lại</span>
+          <span style="font-size: 12.5px; color: #5f5f66;">App đọc lại giá trị thật từ Windows — không hỏi "bạn đã bật chưa?"</span>
+        </div>
+      </div>
+      <div style="background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 12px 16px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 7px 2px; border-bottom: 1px solid #f0f0f4;">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="7" fill="#0f7b0f"></circle><path d="M4.3 7.7l2.1 2.1 4.4-4.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <span style="flex-grow: 1; font-size: 13.5px;">Ảo hóa CPU trong firmware</span>
+          <span style="font-size: 13px; font-weight: 600; color: #0f7b0f;">Đang bật</span>
+          <span style="font-size: 11.5px; color: #8a8a90;">nguồn: Win32_Processor · độ tin cậy: cao</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 7px 2px;">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6.5" stroke="#0067c0" stroke-width="1.5" stroke-dasharray="24 12" stroke-linecap="round"></circle></svg>
+          <span style="flex-grow: 1; font-size: 13.5px;">Tiếp theo: Giai đoạn 2 — Bật Virtual Machine Platform</span>
+          <span style="font-size: 12px; color: #5f5f66;">đang chạy tự động…</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="width: 1000px; background: #f7f8fa; border: 1px solid #d5d5da; border-radius: 8px; box-shadow: 0 16px 44px rgba(0,30,60,0.18); overflow: hidden; display: flex; flex-direction: column;">
+    <div style="height: 34px; display: flex; align-items: center; padding: 0 14px; background: #fdf3e7;">
+      <span style="font-size: 11.5px; font-weight: 600; color: #9d5d00; letter-spacing: 0.4px;">NHÁNH B — KIỂM CHỨNG CHƯA ĐẠT: KHÔNG BAO GIỜ LÀ MỘT CHỮ "FAILED" TRƠ TRỌI</span>
+    </div>
+    <div style="padding: 20px 26px 24px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="font-size: 16px; font-weight: 600;">App vẫn đọc thấy: Ảo hóa CPU trong firmware — Đang tắt</span>
+        <span style="font-size: 13px; color: #5f5f66;">Không sao cả. Bạn đã gặp gì trong màn hình firmware? Chọn đúng tình huống để app xử lý tiếp:</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: #fff; border: 1px solid #e4e4e9; border-radius: 6px;">
+          <span style="font-size: 13.5px;">Tôi không tìm thấy mục này</span>
+          <span style="font-size: 12px; color: #5f5f66;">→ tên gọi khác của hãng, cách tìm kiếm trong BIOS</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: #fff; border: 1px solid #e4e4e9; border-radius: 6px;">
+          <span style="font-size: 13.5px;">Tôi đã bật rồi mà app vẫn báo tắt</span>
+          <span style="font-size: 12px; color: #5f5f66;">→ kiểm tra evidence khác, kiểm tra đã lưu bằng F10 chưa</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: #fff; border: 1px solid #e4e4e9; border-radius: 6px;">
+          <span style="font-size: 13.5px;">Mục này bị mờ / không đổi được</span>
+          <span style="font-size: 12px; color: #5f5f66;">→ kiểm tra BIOS password / khóa của hãng, chuyển sang Chỉ đọc kèm lý do</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: #fff; border: 1px solid #e4e4e9; border-radius: 6px;">
+          <span style="font-size: 13.5px;">Tôi chưa vào BIOS</span>
+          <span style="font-size: 12px; color: #5f5f66;">→ giữ kế hoạch, thử lại hoặc hoãn đến lúc bạn chọn</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: #fff; border: 1px solid #e4e4e9; border-radius: 6px;">
+          <span style="font-size: 13.5px;">Bỏ qua bước này</span>
+          <span style="font-size: 12px; color: #5f5f66;">→ kết quả: Hoàn tất một phần; các bước khác vẫn được ghi nhận riêng</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <style>
+    body { margin: 0; font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; color: #1b1b1f; }
+    a { color: #0067c0; text-decoration: none; } a:hover { color: #004f93; }
+    .key { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 4px; background: #f0f0f4; border: 1px solid #d0d0d6; border-bottom-width: 2px; font-size: 12px; font-weight: 600; font-family: "Segoe UI", system-ui, sans-serif; }
+  </style>
+</helmet>
+<div style="width: 1160px; height: 900px; background: linear-gradient(135deg, #dfe7f2 0%, #e9e4ef 52%, #dce9e3 100%); display: flex; align-items: center; justify-content: center;">
+  <div style="width: 1080px; background: #f7f8fa; border: 1px solid #d5d5da; border-radius: 8px; box-shadow: 0 16px 44px rgba(0,30,60,0.18); overflow: hidden; display: flex; flex-direction: column;">
+
+    <div style="height: 40px; display: flex; align-items: center; justify-content: space-between; padding-left: 14px; background: #f1f2f6;">
+      <div style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #5a5a60;">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill="#0067c0"></circle><ellipse cx="8" cy="8" rx="7" ry="3.2" stroke="#0067c0" stroke-width="1.2" transform="rotate(-24 8 8)"></ellipse></svg>
+        <span>PC Orbit · Bước bạn tự làm trong BIOS</span>
+      </div>
+      <div style="display: flex;">
+        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 5h10" stroke="#5a5a60" stroke-width="1"></path></svg></div>
+        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" rx="1.5" fill="none" stroke="#5a5a60" stroke-width="1"></rect></svg></div>
+        <div style="width: 46px; height: 40px; display: flex; align-items: center; justify-content: center;"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10" stroke="#5a5a60" stroke-width="1"></path></svg></div>
+      </div>
+    </div>
+
+    <div style="padding: 22px 30px 28px; display: flex; flex-direction: column; gap: 14px;">
+
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="font-size: 20px; font-weight: 600;">Bạn làm đúng một bước trong màn hình firmware</div>
+        <div style="font-size: 13px; color: #5f5f66;">App đã chuẩn bị mọi thứ trước và sẽ tự kiểm chứng kết quả sau khi máy khởi động xong. Hướng dẫn dưới đây soạn cho bo mạch ASUS của bạn.</div>
+      </div>
+
+      <div style="display: flex; gap: 14px;">
+
+        <div style="flex-grow: 1; background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 13px;">
+          <div style="display: flex; gap: 12px; align-items: baseline;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: #0067c0; color: #fff; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">1</span>
+            <span style="font-size: 14px; line-height: 1.5;">Khi máy khởi động lại, nhấn <span class="key">Del</span> hoặc <span class="key">F2</span> liên tục để vào màn hình firmware.</span>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: baseline;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: #0067c0; color: #fff; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">2</span>
+            <span style="font-size: 14px; line-height: 1.5;">Vào: <span style="font-weight: 600;">Advanced&nbsp;›&nbsp;CPU Configuration</span></span>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: baseline;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: #0067c0; color: #fff; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">3</span>
+            <span style="font-size: 14px; line-height: 1.5;">Đặt <span style="font-weight: 600;">'SVM Mode'</span> thành <span style="font-weight: 600;">Enabled</span>.</span>
+          </div>
+          <div style="display: flex; gap: 12px; align-items: baseline;">
+            <span style="width: 22px; height: 22px; border-radius: 50%; background: #0067c0; color: #fff; font-size: 12.5px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;">4</span>
+            <span style="font-size: 14px; line-height: 1.5;">Lưu và thoát (<span class="key">F10</span>). Máy sẽ khởi động vào Windows và app tự mở lại.</span>
+          </div>
+          <div style="padding: 10px 12px; background: #f6f7fa; border: 1px solid #ececf1; border-radius: 6px; display: flex; flex-direction: column; gap: 4px;">
+            <div style="font-size: 12.5px; color: #5f5f66;">Tên gọi khác có thể gặp: <span style="font-weight: 600;">AMD-V, Virtualization, SVM Support</span>. Firmware có ô tìm kiếm (<span class="key">F9</span>) nếu bạn không thấy mục này.</div>
+            <div style="font-size: 12.5px; color: #5f5f66;">Đây là hướng dẫn chung cho hãng này. Menu trên máy bạn có thể khác một chút.</div>
+          </div>
+        </div>
+
+        <div style="width: 300px; flex-shrink: 0; background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 18px 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 12px; align-items: center;">
+          <div style="font-size: 13.5px; font-weight: 600; align-self: flex-start;">Mang hướng dẫn theo bạn</div>
+          <svg width="132" height="132" viewBox="0 0 33 33" style="image-rendering: pixelated;">
+            <rect width="33" height="33" fill="#fff"></rect>
+            <path fill="#1b1b1f" d="M2 2h7v7H2zM4 4h3v3H4zM24 2h7v7h-7zM26 4h3v3h-3zM2 24h7v7H2zM4 26h3v3H4zM11 2h2v2h-2zM15 2h2v3h-2zM19 3h2v2h-2zM12 5h3v2h-3zM17 6h3v2h-3zM11 9h2v2h-2zM14 9h2v3h-2zM19 9h3v2h-3zM2 11h2v2H2zM6 11h3v2H6zM11 12h3v3h-3zM16 13h2v2h-2zM20 12h2v3h-2zM24 11h2v2h-2zM28 11h3v2h-3zM3 15h3v2H3zM8 15h2v2H8zM13 16h2v2h-2zM18 16h3v2h-3zM23 15h2v3h-2zM27 15h2v2h-2zM30 16h1v2h-1zM2 19h2v3H2zM6 19h2v2H6zM10 19h3v2h-3zM15 19h2v3h-2zM19 20h2v2h-2zM24 19h3v2h-3zM29 19h2v2h-2zM11 23h2v2h-2zM14 24h3v2h-3zM19 23h2v3h-2zM23 22h2v2h-2zM26 23h3v3h-3zM30 22h1v3h-1zM11 27h3v2h-3zM16 28h2v2h-2zM20 27h2v2h-2zM23 27h2v3h-2zM27 28h3v2h-3zM12 30h2v1h-2z"></path>
+          </svg>
+          <div style="font-size: 12.5px; color: #5f5f66; text-align: center; line-height: 1.5;">Quét để mở hướng dẫn trên điện thoại — trang tĩnh, xem được cả khi máy bàn đang khởi động lại.</div>
+          <span style="display: inline-flex; align-items: center; height: 32px; padding: 0 16px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 12.5px; font-weight: 600;">In ra giấy</span>
+        </div>
+
+      </div>
+
+      <div style="background: #fff; border: 1px solid #e4e4e9; border-radius: 8px; padding: 14px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); display: flex; flex-direction: column; gap: 8px;">
+        <div style="font-size: 12.5px; font-weight: 600; color: #5f5f66;">ĐÃ KIỂM TRA TRƯỚC KHI KHỞI ĐỘNG LẠI</div>
+        <div style="display: flex; gap: 26px;">
+          <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" fill="#0f7b0f"></circle><path d="M4 7.2l2 2 4-4.2" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>Khóa phục hồi BitLocker: đã xác nhận</span>
+          <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6.5" fill="#0f7b0f"></circle><path d="M4 7.2l2 2 4-4.2" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>Nguồn điện: máy bàn</span>
+          <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: #9d5d00;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1.5L13 12H1L7 1.5z" fill="#ffb900"></path><path d="M7 5.5v3" stroke="#5c4a00" stroke-width="1.3" stroke-linecap="round"></path><circle cx="7" cy="10.2" r="0.8" fill="#5c4a00"></circle></svg>2 ứng dụng có tài liệu chưa lưu — hãy lưu trước</span>
+          <span style="display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: #5f5f66;"><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#8a8a90" stroke-width="1.3"></circle><path d="M7 4v3.5" stroke="#8a8a90" stroke-width="1.3" stroke-linecap="round"></path><circle cx="7" cy="9.8" r="0.8" fill="#8a8a90"></circle></svg>Nếu firmware hỏi mật khẩu, bạn cần mật khẩu đó</span>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; gap: 10px;">
+          <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 18px; border-radius: 5px; background: #0067c0; color: #fff; font-size: 13px; font-weight: 600;">Khởi động lại vào BIOS</span>
+          <span style="display: inline-flex; align-items: center; height: 36px; padding: 0 16px; border-radius: 5px; background: #fff; border: 1px solid #d0d0d6; font-size: 13px; font-weight: 600;">Để sau — nhắc tôi lúc 21:00</span>
+        </div>
+        <span style="font-size: 12px; color: #8a8a90;">Không có gì hết hạn. Kế hoạch này ngày mai vẫn còn.</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
