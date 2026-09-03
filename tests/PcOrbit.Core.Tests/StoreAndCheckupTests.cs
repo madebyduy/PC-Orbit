@@ -341,6 +341,9 @@ public sealed class CheckupTests
         Assert.Equal("165", finding.Arguments["max"]);
         Assert.Equal("display.set-refresh-rate.max", finding.SuggestedActionId);
 
+        // The fix the checkup offers must be plannable, so it names the outcome, not just an action.
+        Assert.Equal("outcome.display-max-refresh", finding.SuggestedOutcomeId);
+
         // Spec 23.1.H: the safety line promises auto-revert, so the countdown has to be real.
         Assert.Equal("15", finding.Arguments["seconds"]);
     }

@@ -186,6 +186,7 @@ public sealed class RefreshRateRule : ICheckupRule
             Evidence: current.Evidence,
             Capability: CoreCapabilities.DisplayCurrentRefreshRate,
             SuggestedActionId: fix?.Id,
+            SuggestedOutcomeId: "outcome.display-max-refresh",
             Restart: RestartKind.None,
             EstimatedSeconds: fix?.EstimatedSeconds ?? 20);
     }

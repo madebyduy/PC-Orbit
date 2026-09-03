@@ -1,0 +1,14 @@
+{
+  "$schema": "../../schemas/outcome.schema.json",
+  "id": "outcome.display-max-refresh",
+  "version": "1.0.0",
+  "titleKey": "outcome.display-max-refresh.title",
+  "descriptionKey": "outcome.display-max-refresh.description",
+  "category": "gaming",
+  "requires": [
+    { "capability": "display.current-refresh-rate", "state": "max" }
+  ],
+  "verify": [
+    { "check": "display.current-refresh-rate", "expected": "max" }
+  ]
+}

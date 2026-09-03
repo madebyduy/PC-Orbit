@@ -30,6 +30,9 @@ public sealed class StateCompilerGoldenTests
     private static Outcome DockerOutcome =>
         ShippedData.Outcomes().Single(o => o.Id == "outcome.docker-wsl2-ready");
 
+    private static Outcome DisplayOutcome =>
+        ShippedData.Outcomes().Single(o => o.Id == "outcome.display-max-refresh");
+
     private static StateCompiler NewCompiler(CompilerOptions? options = null) =>
         new(Graph, Catalog, options, new FakeClock(), new SequentialIds());
 
@@ -283,6 +286,82 @@ public sealed class StateCompilerGoldenTests
             Assert.True(
                 step.RequiredByOutcome || step.RequiredBy.Count > 0,
                 $"Step for '{step.Capability}' cannot explain why it exists."));
+    }
+
+    // ---------------------------------------------------------------- the "max" sentinel (spec 12.2)
+
+    /// <summary>
+    /// "max" is not a value until the compiler resolves it against this machine's ceiling via the
+    /// graph's limits edge. The reviewed plan, its hash and every verification then carry the real
+    /// number — 60 → 165 here, something else on another monitor.
+    /// </summary>
+    [Fact]
+    public void DisplayBelowItsMaximumGetsOneStepWithTheResolvedNumber()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.AsusAmdDesktop)
+            .With("display.current-refresh-rate", CapabilityValue.Scalar("60"))
+            .With("display.max-refresh-rate", CapabilityValue.Scalar("165"))
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, DisplayOutcome);
+
+        Assert.Equal(
+            """
+            stage 1 -> restart None
+              display.current-refresh-rate: 60 -> 165  [display.set-refresh-rate.max / Auto]
+            """,
+            Describe(plan),
+            ignoreLineEndingDifferences: true);
+
+        Assert.Equal(PlanOutlook.Reachable, plan.Outlook);
+        Assert.Equal(0, plan.Cost.Restarts);
+
+        // The resolution is visible, not silent: the plan can say where 165 came from.
+        Assert.Contains(plan.Issues, i => i.Code == "requirement.max-resolved" && i.Severity == PlanIssueSeverity.Info);
+
+        // Verification — the action's own and the outcome's — compares against the number,
+        // because the machine will never report the word "max".
+        PlanStep step = Assert.Single(plan.Steps);
+        Assert.Equal("165", Assert.Single(step.Action.Verify).Expected.Canonical);
+        Assert.Equal("165", Assert.Single(plan.FinalVerification).Expected.Canonical);
+    }
+
+    [Fact]
+    public void DisplayAlreadyAtItsMaximumIsAlreadySatisfied()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.AsusAmdDesktop)
+            .With("display.current-refresh-rate", CapabilityValue.Scalar("165"))
+            .With("display.max-refresh-rate", CapabilityValue.Scalar("165"))
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, DisplayOutcome);
+
+        Assert.Empty(plan.Phases);
+        Assert.Equal(PlanOutlook.AlreadySatisfied, plan.Outlook);
+    }
+
+    /// <summary>
+    /// No readable ceiling means no value to aim at and no way to verify the result. That is a
+    /// stated blocker, never a guessed number and never a silently dropped step (spec 6.6).
+    /// </summary>
+    [Fact]
+    public void AnUnreadableMaximumBlocksInsteadOfGuessing()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.AsusAmdDesktop)
+            .With("display.current-refresh-rate", CapabilityValue.Scalar("60"))
+            .WithUnknown("display.max-refresh-rate", "the display driver reported no modes")
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, DisplayOutcome);
+
+        Assert.Empty(plan.Steps);
+        Assert.Equal(PlanOutlook.NotReachable, plan.Outlook);
+
+        Assert.Contains(
+            plan.Issues,
+            i => i.Code == "capability.limit-unknown"
+                && i.Severity == PlanIssueSeverity.Blocker
+                && i.Capability?.Value == "display.current-refresh-rate");
     }
 
     /// <summary>Raw string literals carry whatever the source file uses; comparison should not care.</summary>

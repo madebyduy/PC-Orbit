@@ -459,6 +459,45 @@ public sealed class TransactionEngineTests
         Assert.Equal(h.Plan.SnapshotId, provenance.SnapshotId);
     }
 
+    // ---------------------------------------------------------------- the display slice (spec 23.1.H)
+
+    /// <summary>
+    /// The whole display fix end to end: the compiler resolves "max" to this machine's number, the
+    /// engine applies it, and verification compares what the machine now reports against that
+    /// number — never against the word "max".
+    /// </summary>
+    [Fact]
+    public async Task DisplayOutcomeAppliesAndVerifiesAgainstTheResolvedMaximum()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.AsusAmdDesktop)
+            .With("display.current-refresh-rate", CapabilityValue.Scalar("60"))
+            .With("display.max-refresh-rate", CapabilityValue.Scalar("165"))
+            .Build();
+
+        FakeReader reader = new FakeReader()
+            .Set("display.current-refresh-rate", CapabilityValue.Scalar("60"))
+            .Set("display.max-refresh-rate", CapabilityValue.Scalar("165"));
+
+        Harness h = Build(snapshot, reader);
+
+        Plan plan = new StateCompiler(Graph, Catalog, null, new FakeClock(), new SequentialIds())
+            .Compile(snapshot, ShippedData.Outcomes().Single(o => o.Id == "outcome.display-max-refresh"));
+
+        h.Executors["display.set-refresh-rate"].OnApply = _ =>
+            h.Reader.Set("display.current-refresh-rate", CapabilityValue.Scalar("165"));
+
+        Transaction result = await h.Engine.RunAsync(
+            h.Engine.Begin(plan, ExecutionMode.Apply, plan.Hash), h.Store, h.Events);
+
+        Assert.Equal(TransactionState.Completed, result.State);
+        Assert.Equal("verify.reached", result.OutcomeVerdictKey);
+
+        StepExecution step = Assert.Single(result.Steps);
+        Assert.Equal(StepState.Verified, step.State);
+        Assert.Equal("165", step.Actual?.Canonical);
+        Assert.Equal("60", step.Before.Canonical);
+    }
+
     /// <summary>
     /// The plan travels with the transaction, so a catalog update cannot change a pending plan
     /// the user already approved (spec 17.1).

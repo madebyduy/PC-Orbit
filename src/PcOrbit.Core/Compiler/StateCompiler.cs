@@ -70,6 +70,7 @@ public sealed class StateCompiler
         Requirements requirements = ExpandRequirements(outcome, machine, issues);
         List<PlanStep> steps = SelectActions(snapshot, requirements, issues);
         List<PlanPhase> phases = BuildPhases(steps, requirements, issues);
+        IReadOnlyList<VerificationCheck> finalVerification = ResolveVerification(outcome, snapshot, issues);
 
         PlanCost cost = MeasureCost(phases);
         PlanOutlook outlook = Decide(phases, issues);
@@ -86,12 +87,54 @@ public sealed class StateCompiler
             CompiledAt: _clock.Now,
             Phases: phases,
             Issues: issues,
-            FinalVerification: outcome.Verify,
+            FinalVerification: finalVerification,
             Cost: cost,
             Outlook: outlook,
             Hash: string.Empty);
 
         return plan with { Hash = PlanHasher.Hash(plan) };
+    }
+
+    /// <summary>
+    /// The outcome's own verification, with any <c>"max"</c> sentinel resolved to this machine's
+    /// ceiling — the engine compares readings against values, and "max" is not a value.
+    /// </summary>
+    private IReadOnlyList<VerificationCheck> ResolveVerification(
+        Outcome outcome,
+        StateSnapshot snapshot,
+        List<PlanIssue> issues)
+    {
+        List<VerificationCheck> checks = [];
+
+        foreach (VerificationCheck check in outcome.Verify)
+        {
+            if (!LimitResolver.IsMax(check.Expected))
+            {
+                checks.Add(check);
+                continue;
+            }
+
+            if (LimitResolver.TryResolveMax(_graph, snapshot, check.Check, out CapabilityValue resolved, out _))
+            {
+                checks.Add(check with { Expected = resolved });
+                continue;
+            }
+
+            // SelectActions usually reported this capability already; do not say it twice.
+            if (!issues.Any(i => i.Code == "capability.limit-unknown" && i.Capability is { } c && c.Equals(check.Check)))
+            {
+                issues.Add(new PlanIssue(
+                    PlanIssueSeverity.Blocker,
+                    "capability.limit-unknown",
+                    check.Check,
+                    $"The outcome verifies '{check.Check}' at its maximum, but the maximum could not be read "
+                    + "on this machine, so the result could never be confirmed."));
+            }
+
+            checks.Add(check);
+        }
+
+        return checks;
     }
 
     // ---------------------------------------------------------------- requirements
@@ -240,8 +283,38 @@ public sealed class StateCompiler
             CapabilityValue current = snapshot.ValueOf(capability);
             bool isOptional = requirements.Optional.Contains(capability);
 
+            // "max" means "as high as this machine allows" and has no value until the compiler
+            // reads the ceiling from the graph's limits edge (spec 12.2). An unreadable ceiling
+            // blocks rather than defaults: a step we cannot verify is a step we must not promise.
+            CapabilityValue target = desired;
+
+            if (LimitResolver.IsMax(desired))
+            {
+                if (LimitResolver.TryResolveMax(_graph, snapshot, capability, out CapabilityValue resolved, out CapabilityId limitedBy))
+                {
+                    target = resolved;
+
+                    issues.Add(new PlanIssue(
+                        PlanIssueSeverity.Info,
+                        "requirement.max-resolved",
+                        capability,
+                        $"'{capability}' asked for 'max', which is '{resolved.Canonical}' on this machine "
+                        + $"(ceiling read from '{limitedBy}')."));
+                }
+                else
+                {
+                    issues.Add(new PlanIssue(
+                        isOptional ? PlanIssueSeverity.Warning : PlanIssueSeverity.Blocker,
+                        "capability.limit-unknown",
+                        capability,
+                        $"'{capability}' is required to be at its maximum, but the maximum could not be read "
+                        + "on this machine, so the change can neither be planned nor verified."));
+                    continue;
+                }
+            }
+
             // Spec 12.3: no action when the machine is already there.
-            if (current.Satisfies(desired))
+            if (current.Satisfies(target))
             {
                 satisfied.Add(capability);
                 continue;
@@ -313,7 +386,7 @@ public sealed class StateCompiler
                     isOptional ? PlanIssueSeverity.Warning : PlanIssueSeverity.Blocker,
                     "capability.no-usable-action",
                     capability,
-                    $"'{capability}' has to change from '{current.Canonical}' to '{desired.Canonical}', "
+                    $"'{capability}' has to change from '{current.Canonical}' to '{target.Canonical}', "
                     + "but every route is excluded by policy."));
                 continue;
             }
@@ -324,11 +397,28 @@ public sealed class StateCompiler
                 continue;
             }
 
+            // The manifest's own verify steps may carry the sentinel too. The plan travels with
+            // its manifests, so the resolved value is baked in here and verification later
+            // compares the machine against a number, never against "max".
+            if (!target.Equals(desired))
+            {
+                chosen = chosen with
+                {
+                    Verify =
+                    [
+                        .. chosen.Verify.Select(v =>
+                            v.Capability.Equals(capability) && LimitResolver.IsMax(v.Expected)
+                                ? v with { Expected = target }
+                                : v),
+                    ],
+                };
+            }
+
             steps.Add(new PlanStep(
                 Ordinal: steps.Count,
                 Capability: capability,
                 CurrentValue: current,
-                DesiredValue: desired,
+                DesiredValue: target,
                 Action: chosen,
                 Group: GroupOf(chosen),
                 RequiredByOutcome: requirements.FromOutcome.Contains(capability),

@@ -48,6 +48,8 @@
     "cap.verification.firmware-virtualization": "Cách kiểm chứng ảo hóa firmware",
     "outcome.docker-wsl2-ready.title": "Chuẩn bị máy này cho Docker Desktop (WSL 2)",
     "outcome.docker-wsl2-ready.description": "Docker Desktop chạy engine bên trong WSL 2. Mục này bật đúng những thứ WSL 2 cần và kiểm chứng lại kết quả.",
+    "outcome.display-max-refresh.title": "Cho màn hình chạy ở tần số quét cao nhất",
+    "outcome.display-max-refresh.description": "Chuyển động mượt hơn rõ rệt ở đúng tần số màn hình được thiết kế. Tần số cũ tự quay lại nếu bạn không xác nhận là vẫn nhìn được màn hình.",
     "action.windows.feature.enable.virtual-machine-platform.title": "Bật Virtual Machine Platform",
     "action.windows.feature.disable.virtual-machine-platform.title": "Tắt Virtual Machine Platform",
     "action.windows.feature.enable.wsl.title": "Bật Windows Subsystem for Linux",
