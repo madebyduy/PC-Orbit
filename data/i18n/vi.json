@@ -743,7 +743,6 @@
     "app.bios.vendorNote": "Bản cập nhật firmware đến từ hãng, hoặc qua Windows Update khi hãng công bố ở đó. Nút này mở trang hỗ trợ của họ — không bao giờ là một đường dẫn đoán ra.",
     "app.bios.vendorGo": "Mở",
     "app.bios.vendorUnknown": "Không đọc được tên hãng",
-    "app.bios.writeNote": "Ứng dụng này không đổi thiết lập BIOS, và cũng không giả vờ đổi được. Muốn làm vậy cần một giao diện do hãng cung cấp, chỉ một số máy có, và ghi sai chỗ đó là loại sai khiến máy không khởi động lại được. Mọi thứ ở trên là đọc, không phải đặt.",
     "app.bios.state": "Firmware đang được đặt thế nào",
     "app.firmware.title": "Đổi thiết lập BIOS ngay tại đây",
     "app.firmware.hint": "Qua đúng giao diện hãng công bố và hỗ trợ. Không bao giờ ghi thẳng biến firmware — cách đó khác nhau giữa từng bản BIOS của cùng một model và có thể để lại một cái máy không khởi động được.",
@@ -839,6 +838,11 @@
     "app.apps.backupNothing": "Không có gì để lưu: chưa ứng dụng nào trong kho được cài trên máy này.",
     "app.apps.restoreNone": "Danh sách đó không có ứng dụng nào trong kho mà máy này chưa cài.",
     "app.apps.restoreBad": "Tệp đó không phải danh sách ứng dụng do ứng dụng này lưu.",
-    "app.apps.restorePlan": "Danh sách có {count} ứng dụng trong kho mà máy này chưa cài. Đã chọn sẵn — bấm “Cài đã chọn” để tiến hành. Thứ gì trong tệp không nằm trong kho thì bỏ qua; ứng dụng này chỉ cài những gì nó mang theo."
+    "app.apps.restorePlan": "Danh sách có {count} ứng dụng trong kho mà máy này chưa cài. Đã chọn sẵn — bấm “Cài đã chọn” để tiến hành. Thứ gì trong tệp không nằm trong kho thì bỏ qua; ứng dụng này chỉ cài những gì nó mang theo.",
+    "app.bios.writeNote": "Thay đổi ở đây đi qua đúng giao diện của hãng, từng mục một, mỗi mục nói rõ hậu quả trước — mục nghiêm trọng bắt gõ lại tên thiết lập. Điều ứng dụng này không bao giờ làm là ghi thẳng biến firmware hay nạp lại BIOS: đó là hai cách khiến máy không khởi động được.",
+    "app.alwaysElevate": "Luôn mở với quyền quản trị",
+    "app.alwaysElevate.hint": "Windows sẽ hỏi mỗi lần mở app. Cần cho việc đọc và đổi thiết lập BIOS; không việc gì khác cần.",
+    "app.lang.vi": "Tiếng Việt",
+    "app.lang.en": "English"
   }
 }

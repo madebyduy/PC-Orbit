@@ -101,38 +101,63 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// The same launch that produced this process, asked for again with administrator rights.
+    /// This app, asked for again with administrator rights, in a way that will actually start.
     /// </summary>
     /// <remarks>
-    /// Reusing <see cref="Environment.ProcessPath"/> rather than looking for the apphost beside the
-    /// assembly, because the apphost is not always usable: on a machine whose .NET lives in a
-    /// user-local folder that nothing has registered, <c>PcOrbit.exe</c> exits with
-    /// "You must install .NET" before a window appears. However this process was started, that way
-    /// demonstrably works — so repeat it, and hand the runtime our assembly back when the runtime
-    /// is what started us.
+    /// <para>
+    /// The first version repeated <see cref="Environment.ProcessPath"/>, on the theory that however
+    /// this process was started demonstrably works. It does not survive elevation. Under
+    /// <c>dotnet run</c> the apphost <c>PcOrbit.exe</c> finds the runtime through a
+    /// <c>DOTNET_ROOT</c> variable the SDK puts in its environment — and a <c>runas</c> launch goes
+    /// through Windows' own elevation service, which builds the new process's environment from the
+    /// elevated token, not from ours. So the relaunched apphost died with "You must install .NET"
+    /// on a machine that plainly had it, and the button appeared to do nothing.
+    /// </para>
+    /// <para>
+    /// So the relaunch names the runtime host explicitly: the <c>dotnet.exe</c> three folders above
+    /// the runtime directory this very process is executing from, handed our assembly. That path
+    /// needs no environment to resolve. The apphost is used only if that host cannot be found.
+    /// </para>
     /// </remarks>
     private static ProcessStartInfo? ElevatedRelaunch()
     {
-        if (Environment.ProcessPath is not { } host)
-        {
-            return null;
-        }
-
-        var start = new ProcessStartInfo(host) { UseShellExecute = true, Verb = "runas" };
-
-        if (!Path.GetFileName(host).Equals("dotnet.exe", StringComparison.OrdinalIgnoreCase))
-        {
-            return start;
-        }
-
         string assembly = Assembly.GetEntryAssembly()?.Location ?? string.Empty;
 
-        if (string.IsNullOrEmpty(assembly))
+        // shared\Microsoft.NETCore.App\<version>\ -> up three is the dotnet root.
+        string runtime = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
+        string? root = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(runtime.TrimEnd(Path.DirectorySeparatorChar))));
+        string? host = root is null ? null : Path.Combine(root, "dotnet.exe");
+
+        if (host is not null && File.Exists(host) && !string.IsNullOrEmpty(assembly))
+        {
+            var viaHost = new ProcessStartInfo(host)
+            {
+                UseShellExecute = true,
+                Verb = "runas",
+                WorkingDirectory = Path.GetDirectoryName(assembly) ?? string.Empty,
+            };
+
+            viaHost.ArgumentList.Add(assembly);
+
+            return viaHost;
+        }
+
+        if (Environment.ProcessPath is not { } process)
         {
             return null;
         }
 
-        start.ArgumentList.Add(assembly);
+        var start = new ProcessStartInfo(process)
+        {
+            UseShellExecute = true,
+            Verb = "runas",
+            WorkingDirectory = Path.GetDirectoryName(process) ?? string.Empty,
+        };
+
+        if (Path.GetFileName(process).Equals("dotnet.exe", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(assembly))
+        {
+            start.ArgumentList.Add(assembly);
+        }
 
         return start;
     }

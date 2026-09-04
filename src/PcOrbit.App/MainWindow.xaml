@@ -19,7 +19,7 @@
                         CornerRadius="8" UseAeroCaptionButtons="False" />
   </shell:WindowChrome.WindowChrome>
 
-  <Grid>
+  <Grid x:Name="Root">
     <!--
       One row now. The status bar that used to sit under everything is gone: of its five items,
       four were already on screen — the version and the elevation state in the sidebar, the
@@ -78,15 +78,24 @@
                          Margin="16,3,0,0" TextTrimming="CharacterEllipsis" />
               <Button x:Name="ElevateBtn" Style="{StaticResource RowButton}" Margin="0,10,0,0"
                       HorizontalAlignment="Stretch" Click="OnElevate" />
+              <!-- For someone who lives in the BIOS page. Off by default: a UAC prompt per launch is a cost. -->
+              <CheckBox x:Name="AlwaysElevateBox" Margin="2,9,0,0" FontSize="11.5"
+                        Foreground="{StaticResource SideMuted}" Click="OnAlwaysElevateChanged" />
             </StackPanel>
           </Border>
 
-          <StackPanel Orientation="Horizontal" Margin="2,10,0,0">
-            <Button x:Name="LangVi" Style="{StaticResource RowButton}" Content="VI" Click="OnLangVi" />
-            <Button x:Name="LangEn" Style="{StaticResource RowButton}" Content="EN" Margin="6,0,0,0" Click="OnLangEn" />
-            <TextBlock x:Name="AppVersionLabel" FontSize="10.5" Foreground="{StaticResource Faint}"
-                       VerticalAlignment="Center" Margin="10,0,0,0" />
-          </StackPanel>
+          <!--
+            Language as two chips, the active one lit. Radio semantics because the choice is one-of,
+            and a full name rather than a code: "VI" is what a developer calls it.
+          -->
+          <DockPanel Margin="2,10,0,0">
+            <TextBlock x:Name="AppVersionLabel" DockPanel.Dock="Right" FontSize="10.5"
+                       Foreground="{StaticResource Faint}" VerticalAlignment="Center" Margin="10,0,4,0" />
+            <StackPanel Orientation="Horizontal">
+              <RadioButton x:Name="LangVi" Style="{StaticResource FilterChip}" GroupName="Lang" Click="OnLangVi" />
+              <RadioButton x:Name="LangEn" Style="{StaticResource FilterChip}" GroupName="Lang" Click="OnLangEn" />
+            </StackPanel>
+          </DockPanel>
         </StackPanel>
 
         <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0" Margin="0,4,0,10">

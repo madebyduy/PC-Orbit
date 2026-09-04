@@ -167,6 +167,11 @@ public partial class MainWindow : Window
     /// </summary>
     private bool _switching;
 
+    /// <summary>What the app remembers between runs: language, window, whether to elevate.</summary>
+    private readonly AppSettings _settings = AppSettings.Load();
+
+    private string _locale = "vi";
+
     public MainWindow()
     {
         InitializeComponent();
@@ -250,7 +255,11 @@ public partial class MainWindow : Window
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        var options = CliOptions.Parse([]);
+        var options = CliOptions.Parse(_settings.Locale is { } remembered ? ["--lang", remembered] : []);
+
+        _locale = options.Locale;
+
+        RestoreWindow();
 
         IStringCatalog catalog = JsonStringCatalog.LoadForLocale(
             System.IO.Path.Combine(DataLocator.FindDataDirectory(null), "i18n"),
@@ -260,6 +269,23 @@ public partial class MainWindow : Window
         ApplyStrings();
 
         _host = await Task.Run(() => PcOrbitHost.Create(options, new WpfSafeApplyConfirmation(catalog)));
+
+        // Someone who lives in the BIOS page asked to skip the button. Windows still asks them.
+        if (_settings.AlwaysElevate && !_host.Elevation.IsElevated && ElevatedRelaunch() is { } elevated)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(elevated);
+                Close();
+                return;
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                // Declined at the prompt. Carry on as a standard user, which is a complete app too.
+            }
+        }
+
+        AlwaysElevateBox.IsChecked = _settings.AlwaysElevate;
 
         PopulateOutcomes();
 
@@ -284,7 +310,15 @@ public partial class MainWindow : Window
         _ = WarmPagesAsync();
     }
 
-    /// <summary>Nobody is looking and nothing needs to be fast: the cheapest moment to give memory back.</summary>
+    /// <summary>
+    /// Minimised: the cheapest moment to give memory back. Maximised: keep the edges on the screen.
+    /// </summary>
+    /// <remarks>
+    /// A <c>WindowStyle="None"</c> window maximises to the monitor <em>plus</em> its invisible resize
+    /// border on every side, so the bottom seven pixels of the sidebar — where the language chips
+    /// live — were painted below the screen. The border's thickness is padded back in while
+    /// maximised, so the content is where the window appears to be.
+    /// </remarks>
     protected override void OnStateChanged(EventArgs e)
     {
         base.OnStateChanged(e);
@@ -293,10 +327,93 @@ public partial class MainWindow : Window
         {
             WorkingSet.Trim();
         }
+
+        Root.Margin = WindowState == WindowState.Maximized
+            ? new Thickness(
+                SystemParameters.WindowResizeBorderThickness.Left + SystemParameters.WindowNonClientFrameThickness.Left - 1,
+                SystemParameters.WindowResizeBorderThickness.Top + SystemParameters.WindowNonClientFrameThickness.Top - 1,
+                SystemParameters.WindowResizeBorderThickness.Right + SystemParameters.WindowNonClientFrameThickness.Right - 1,
+                SystemParameters.WindowResizeBorderThickness.Bottom + SystemParameters.WindowNonClientFrameThickness.Bottom - 1)
+            : new Thickness(0);
+    }
+
+    /// <summary>Puts the window back where it was closed, as long as that is still on a screen.</summary>
+    private void RestoreWindow()
+    {
+        if (_settings.WindowWidth is { } w && _settings.WindowHeight is { } h && w >= MinWidth && h >= MinHeight)
+        {
+            Width = w;
+            Height = h;
+        }
+
+        if (_settings.WindowLeft is { } left && _settings.WindowTop is { } top
+            && left >= SystemParameters.VirtualScreenLeft
+            && top >= SystemParameters.VirtualScreenTop
+            && left < SystemParameters.VirtualScreenLeft + SystemParameters.VirtualScreenWidth - 200
+            && top < SystemParameters.VirtualScreenTop + SystemParameters.VirtualScreenHeight - 100)
+        {
+            WindowStartupLocation = WindowStartupLocation.Manual;
+            Left = left;
+            Top = top;
+        }
+
+        if (_settings.WindowMaximized)
+        {
+            WindowState = WindowState.Maximized;
+        }
+    }
+
+    /// <summary>
+    /// The two shortcuts every desktop app is expected to have: Ctrl+F finds, F5 refreshes.
+    /// </summary>
+    /// <remarks>
+    /// Ctrl+F goes to whichever search box the current page has, so it does the right thing on
+    /// BIOS and on the store and nothing elsewhere. F5 is the same as the button in the header.
+    /// </remarks>
+    protected override void OnPreviewKeyDown(System.Windows.Input.KeyEventArgs e)
+    {
+        base.OnPreviewKeyDown(e);
+
+        if (e.Key == System.Windows.Input.Key.F5)
+        {
+            OnRescan(this, new RoutedEventArgs());
+            e.Handled = true;
+            return;
+        }
+
+        if (e.Key == System.Windows.Input.Key.F
+            && (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) != 0
+            && _page is not null)
+        {
+            TextBox? search = ReferenceEquals(_page.View, ViewBios) ? FirmwareSearch
+                : ReferenceEquals(_page.View, ViewApps) ? AppsSearch
+                : null;
+
+            if (search is not null)
+            {
+                search.Focus();
+                search.SelectAll();
+                e.Handled = true;
+            }
+        }
     }
 
     private void OnClosed(object? sender, EventArgs e)
     {
+        _settings.Locale = _locale;
+        _settings.LastSection = _section?.TitleKey;
+        _settings.WindowMaximized = WindowState == WindowState.Maximized;
+
+        if (WindowState == WindowState.Normal)
+        {
+            _settings.WindowWidth = Width;
+            _settings.WindowHeight = Height;
+            _settings.WindowLeft = Left;
+            _settings.WindowTop = Top;
+        }
+
+        _settings.Save();
+
         _liveTimer.Stop();
         _host?.Dispose();
     }
@@ -305,12 +422,30 @@ public partial class MainWindow : Window
 
     private async void OnLangEn(object sender, RoutedEventArgs e) => await SwitchLanguageAsync("en");
 
+    private void OnAlwaysElevateChanged(object sender, RoutedEventArgs e)
+    {
+        _settings.AlwaysElevate = AlwaysElevateBox.IsChecked == true;
+        _settings.Save();
+    }
+
+    /// <summary>The chip for the language in use is the lit one. Set from the fact, not from the click.</summary>
+    private void ShowLanguage()
+    {
+        LangVi.IsChecked = _locale == "vi";
+        LangEn.IsChecked = _locale == "en";
+    }
+
     private async Task SwitchLanguageAsync(string locale)
     {
-        if (_host is null)
+        if (_host is null || locale == _locale)
         {
+            ShowLanguage();
             return;
         }
+
+        _locale = locale;
+        _settings.Locale = locale;
+        _settings.Save();
 
         _strings = JsonStringCatalog.LoadForLocale(System.IO.Path.Combine(_host.DataDirectory, "i18n"), locale);
         CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(locale);
@@ -350,16 +485,40 @@ public partial class MainWindow : Window
             section.Nav.Content = T(section.TitleKey);
         }
 
-        // First run lands on the section the rail already has checked. The views themselves start
-        // in the right visibility from XAML, so this only has to agree with them.
-        _section ??= Sections[0];
-        _page ??= _section.Pages[0];
+        // First run lands on the section the rail already has checked, or on the one the window was
+        // closed on last time. The page inside it is the first — the one that introduces it.
+        if (_section is null)
+        {
+            _section = Sections.FirstOrDefault(s => s.TitleKey == _settings.LastSection) ?? Sections[0];
+            _page = _section.Pages[0];
+
+            _switching = true;
+
+            try
+            {
+                _section.Nav.IsChecked = true;
+            }
+            finally
+            {
+                _switching = false;
+            }
+
+            foreach (Page other in AllPages)
+            {
+                other.View.Visibility = ReferenceEquals(other, _page) ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
 
         // The pivot's labels are built, not bound, so a language switch has to rebuild them.
         BuildSubNav(_section, _page);
 
         AppVersionLabel.Text = "v" + PcOrbitHost.AppVersion;
         TopRescan.Content = T("app.rescan");
+        LangVi.Content = T("app.lang.vi");
+        LangEn.Content = T("app.lang.en");
+        AlwaysElevateBox.Content = T("app.alwaysElevate");
+        AlwaysElevateBox.ToolTip = T("app.alwaysElevate.hint");
+        ShowLanguage();
         ApplyPageChrome();
 
         HeroLabel.Text = T("app.hero.label");

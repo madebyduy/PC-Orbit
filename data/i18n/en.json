@@ -743,7 +743,6 @@
     "app.bios.vendorNote": "Firmware updates come from the manufacturer, or through Windows Update when the manufacturer publishes them there. This opens their support site — never a guessed link.",
     "app.bios.vendorGo": "Open",
     "app.bios.vendorUnknown": "Manufacturer not readable",
-    "app.bios.writeNote": "This app does not change BIOS settings, and will not pretend to. Doing that needs an interface the manufacturer provides, only some machines have one, and a wrong write there is the kind that stops a PC from starting. Everything above is read, not set.",
     "app.bios.state": "How the firmware is set",
     "app.firmware.title": "Change a BIOS setting from here",
     "app.firmware.hint": "Through the manufacturer’s own interface — the one they publish and support. Never by writing firmware variables directly, which differs between BIOS builds of the same model and can leave a machine that will not start.",
@@ -839,6 +838,11 @@
     "app.apps.backupNothing": "Nothing to save: none of the catalogue’s apps is installed on this PC.",
     "app.apps.restoreNone": "That list names nothing from this catalogue that is not already installed.",
     "app.apps.restoreBad": "That file is not an app list this app saved.",
-    "app.apps.restorePlan": "The list names {count} apps from this catalogue that are not installed here. They have been selected — press “Install selected” to go ahead. Anything in the file that is not in this catalogue was ignored; this app only installs what it ships."
+    "app.apps.restorePlan": "The list names {count} apps from this catalogue that are not installed here. They have been selected — press “Install selected” to go ahead. Anything in the file that is not in this catalogue was ignored; this app only installs what it ships.",
+    "app.bios.writeNote": "Settings change here go through the manufacturer’s own interface, one at a time, each with its consequences stated first — serious ones make you type the setting’s name. What this app will never do is write firmware variables directly or flash a BIOS: those are the two ways a PC stops starting.",
+    "app.alwaysElevate": "Always open as administrator",
+    "app.alwaysElevate.hint": "Windows will ask each time the app starts. Needed to read or change BIOS settings; nothing else requires it.",
+    "app.lang.vi": "Tiếng Việt",
+    "app.lang.en": "English"
   }
 }
