@@ -21,7 +21,9 @@ public sealed record CliOptions(
     bool AssumeYes,
     bool RecoveryKeyConfirmed,
     bool Verbose,
-    int Limit)
+    int Limit,
+    int Days,
+    bool Apply)
 {
     public static CliOptions Parse(IReadOnlyList<string> argv)
     {
@@ -39,6 +41,8 @@ public sealed record CliOptions(
         bool recoveryKey = false;
         bool verbose = false;
         int limit = 20;
+        int days = 14;
+        bool apply = false;
 
         for (int i = command == "help" ? 0 : 1; i < argv.Count; i++)
         {
@@ -62,12 +66,22 @@ public sealed record CliOptions(
                     limit = int.TryParse(argv[++i], CultureInfo.InvariantCulture, out int parsed) ? parsed : limit;
                     break;
 
+                case "--days" when i + 1 < argv.Count:
+                    days = int.TryParse(argv[++i], CultureInfo.InvariantCulture, out int parsedDays) ? parsedDays : days;
+                    break;
+
                 case "--json":
                     json = true;
                     break;
 
                 case "--dry-run":
                     dryRun = true;
+                    break;
+
+                // With clean: actually move the files. Preview is the default, so the destructive
+                // reading of a bare 'pco clean' is the harmless one.
+                case "--apply":
+                    apply = true;
                     break;
 
                 case "--yes" or "-y":
@@ -108,7 +122,12 @@ public sealed record CliOptions(
             yes,
             recoveryKey,
             verbose,
-            Math.Clamp(limit, 1, 500));
+            Math.Clamp(limit, 1, 500),
+
+            // A year is the furthest back any of the sources reliably reaches, and one day is the
+            // shortest window in which "just before it broke" means anything.
+            Math.Clamp(days, 1, 365),
+            apply);
     }
 
     public string? FirstArgument => Arguments.Count > 0 ? Arguments[0] : null;

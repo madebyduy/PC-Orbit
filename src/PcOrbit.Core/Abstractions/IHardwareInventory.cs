@@ -6,6 +6,15 @@ namespace PcOrbit.Core.Abstractions;
 /// </param>
 public sealed record HardwarePart(string Kind, string Name, string? Detail = null, string? Extra = null);
 
+/// <param name="Letter">The drive letter, with its colon: <c>C:</c>.</param>
+/// <param name="Label">The user's own name for it, or null when Windows has none.</param>
+public sealed record VolumeInfo(string Letter, string? Label, string? FileSystem, double TotalGb, double FreeGb)
+{
+    public double UsedGb => Math.Max(0, TotalGb - FreeGb);
+
+    public double UsedPercent => TotalGb <= 0 ? 0 : Math.Clamp(UsedGb / TotalGb * 100d, 0d, 100d);
+}
+
 /// <summary>
 /// The inventory behind a Hardware Center (spec 8.2): what is physically in and attached to this
 /// machine, as opposed to what is configured.
@@ -24,7 +33,8 @@ public sealed record HardwareInventory(
     IReadOnlyList<HardwarePart>? Monitors = null,
     IReadOnlyList<HardwarePart>? Audio = null,
     IReadOnlyList<HardwarePart>? Input = null,
-    IReadOnlyList<HardwarePart>? Network = null)
+    IReadOnlyList<HardwarePart>? Network = null,
+    IReadOnlyList<VolumeInfo>? Volumes = null)
 {
     public static HardwareInventory Empty { get; } = new();
 

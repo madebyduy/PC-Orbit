@@ -75,6 +75,14 @@ public sealed class WindowsHardwareInventory(PowerShellRunner? powerShell = null
         $pointing = Safe { Get-CimInstance -ClassName Win32_PointingDevice | Select-Object Name }
         $keyboards = Safe { Get-CimInstance -ClassName Win32_Keyboard | Select-Object Name }
 
+        # Every mounted volume, not just the Windows drive. DriveType 3 is a fixed disk; USB sticks
+        # and card readers are 2 and are listed too, because "how many drives do I have" includes them.
+        $volumes = Safe {
+            Get-CimInstance -ClassName Win32_LogicalDisk |
+                Where-Object { ($_.DriveType -eq 3 -or $_.DriveType -eq 2) -and $_.Size -gt 0 } |
+                Select-Object DeviceID, VolumeName, FileSystem, Size, FreeSpace
+        }
+
         $network = Safe {
             Get-CimInstance -ClassName Win32_NetworkAdapter |
                 Where-Object { $_.PhysicalAdapter -eq $true -and $_.NetEnabled -eq $true } |
@@ -92,6 +100,7 @@ public sealed class WindowsHardwareInventory(PowerShellRunner? powerShell = null
             Pointing  = @($pointing)
             Keyboards = @($keyboards)
             Network   = @($network)
+            Volumes   = @($volumes)
         } | ConvertTo-Json -Depth 5 -Compress
         """;
 
@@ -119,7 +128,8 @@ public sealed class WindowsHardwareInventory(PowerShellRunner? powerShell = null
                 Monitors: ReadMonitors(root),
                 Audio: ReadNamed(root, "Audio", "audio"),
                 Input: [.. ReadNamed(root, "Pointing", "pointing"), .. ReadNamed(root, "Keyboards", "keyboard")],
-                Network: ReadNetwork(root));
+                Network: ReadNetwork(root),
+                Volumes: ReadVolumes(root));
         }
         catch (JsonException)
         {
@@ -169,6 +179,19 @@ public sealed class WindowsHardwareInventory(PowerShellRunner? powerShell = null
                         : slot,
                     Text(m, "PartNumber"));
             }),
+    ];
+
+    private static List<VolumeInfo> ReadVolumes(JsonElement root) =>
+    [
+        .. Array(root, "Volumes")
+            .Where(v => Text(v, "DeviceID") is not null && Bytes(v, "Size") is > 0)
+            .Select(v => new VolumeInfo(
+                Text(v, "DeviceID")!,
+                Text(v, "VolumeName") is { Length: > 0 } label ? label : null,
+                Text(v, "FileSystem"),
+                Bytes(v, "Size") ?? 0,
+                Bytes(v, "FreeSpace") ?? 0))
+            .OrderBy(v => v.Letter, StringComparer.Ordinal),
     ];
 
     private static List<HardwarePart> ReadDisks(JsonElement root) =>

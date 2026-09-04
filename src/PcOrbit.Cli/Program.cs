@@ -78,6 +78,12 @@ public static class Program
                 "undo" => await Commands.UndoAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "resume" => await Commands.ResumeAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "history" => await Commands.HistoryAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
+                "diff" => await Commands.DiffAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
+                "timeline" => await Commands.TimelineAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
+                "startup" => await Commands.StartupAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
+                "clean" => await Commands.CleanAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
+                "restore" => await Commands.RestoreAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
+                "drivers" => await Commands.DriversAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "outcomes" => Commands.Outcomes(host, options, output),
                 "doctor" => Commands.Doctor(host, options, output),
                 _ => Unknown(options.Command),
@@ -175,6 +181,20 @@ public static class Program
                             preview, apply and verify. Defaults to the most recent one.
               resume        Continue a transaction that was waiting for a restart.
               history       Recent changes, with before and after values.
+              diff [snap]   Scan, then show what has moved since the previous scan — or since the
+                            scan you name. Values we simply could not read this time are listed
+                            apart from values that actually changed.
+              timeline      Everything that changed recently, whoever changed it: Windows updates,
+                            driver installs, crashes, hardware errors, restore points and our own
+                            transactions on one axis.
+              startup       What starts with Windows, and whether each one is switched on.
+              startup on|off <name>
+                            Switch one entry on or off. The name must be one this machine is
+                            reporting right now; security entries are refused outright.
+              drivers       The driver behind every device, faulty ones first. Never sorted by age.
+              clean         Measure reclaimable space. Add --apply to move it to quarantine, where
+                            it stays restorable for 30 days. Nothing is deleted.
+              restore [id]  List quarantine batches, or put one back.
               doctor        Validate the shipped data and the executor allowlist. Useful in CI.
 
             Options
@@ -185,7 +205,9 @@ public static class Program
               --i-have-my-recovery-key    Confirm you can get to your BitLocker recovery key.
                                           Required before firmware or boot changes on an encrypted PC.
               --verbose, -v               Show evidence, action ids and technical detail.
-              --limit <n>                 With history: how many events.
+              --limit <n>                 With history and timeline: how many events.
+              --days <n>                  With timeline: how far back to look. Defaults to 14.
+              --apply                     With clean: move the files. Without it, clean only measures.
               --data <path>               Where the graph, outcomes, actions and strings live.
               --db <path>                 Local database file. Defaults to %LOCALAPPDATA%\PC Orbit.
 

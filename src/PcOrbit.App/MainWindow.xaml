@@ -24,119 +24,132 @@
     </Grid.ColumnDefinitions>
 
     <!-- ============================================================== SIDEBAR -->
-    <Border Grid.Row="0" Grid.Column="0" Background="{StaticResource SideBg}"
-            BorderBrush="{StaticResource White}" BorderThickness="0,0,1,0" Padding="16,20,16,12">
+    <!--
+      A dark rail against a bright canvas. The contrast is the point: it separates "where am I"
+      from "what does it say", and it keeps the readings the brightest thing on screen.
+
+      Fourteen flat destinations became twelve grouped ones, and every one of them now renders real
+      data. The seven that used to lead to a "not in this version" placeholder are gone rather than
+      greyed out — a menu that mostly does not work teaches people not to trust the menu.
+    -->
+    <Border Grid.Row="0" Grid.Column="0" Background="{StaticResource SideFill}" Padding="14,18,10,14">
       <DockPanel>
 
-        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="8,0,0,16">
-          <Border Width="40" Height="40" CornerRadius="10" Background="{StaticResource LogoBg}">
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="7,0,0,10">
+          <Border Width="38" Height="38" CornerRadius="11" Background="{StaticResource LogoBg}">
             <Path Data="M 20,10 L 30,15.8 L 30,25.2 L 20,31 L 10,25.2 L 10,15.8 Z"
-                  Fill="#F2F7FF" Stretch="Uniform" Margin="9" />
+                  Fill="#FFFFFF" Stretch="Uniform" Margin="9" />
           </Border>
           <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
-            <TextBlock x:Name="AppTitle" FontSize="18" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" />
-            <TextBlock x:Name="AppTagline" FontSize="11" Foreground="{StaticResource Faint}" />
+            <TextBlock x:Name="AppTitle" FontSize="16.5" FontWeight="SemiBold" Foreground="{StaticResource Ink}" />
+            <TextBlock x:Name="AppTagline" FontSize="10.5" Foreground="{StaticResource SideMuted}" />
           </StackPanel>
         </StackPanel>
 
         <StackPanel DockPanel.Dock="Bottom">
-          <Border Style="{StaticResource Card}" Padding="14" CornerRadius="16">
+          <!--
+            The machine, in the space a machine name needs. The previous card carried four lines of
+            explanation and a paragraph about administrator rights, which pushed the last two nav
+            items off the screen — the footer was competing with the navigation for the one thing
+            the navigation is for. The explanation now lives in a tooltip on the button that acts
+            on it.
+          -->
+          <Border Background="#FFFFFF" BorderBrush="{StaticResource SideHair}" BorderThickness="1"
+                  CornerRadius="8" Padding="12,10">
             <StackPanel>
-              <Border Height="58" CornerRadius="10" Background="#0A1B3A">
-                <Ellipse Width="46" Height="46">
-                  <Ellipse.Fill>
-                    <RadialGradientBrush GradientOrigin="0.35,0.3">
-                      <GradientStop Color="#93C5FD" Offset="0" />
-                      <GradientStop Color="#3B82F6" Offset="0.55" />
-                      <GradientStop Color="#1E40AF" Offset="1" />
-                    </RadialGradientBrush>
-                  </Ellipse.Fill>
-                </Ellipse>
-              </Border>
-              <TextBlock x:Name="MachineName" FontSize="13.5" FontWeight="Bold" Foreground="{StaticResource Ink}"
-                         TextWrapping="Wrap" Margin="0,9,0,0" />
-              <TextBlock x:Name="MachineOs" Style="{StaticResource Tiny}" Margin="0,3,0,0" />
-              <TextBlock x:Name="MachineUptime" Style="{StaticResource Tiny}" Margin="0,2,0,0" />
-              <TextBlock x:Name="MachineTier" Style="{StaticResource Tiny}" Margin="0,2,0,0" />
+              <DockPanel>
+                <Border DockPanel.Dock="Left" Width="8" Height="8" CornerRadius="4" Background="{StaticResource Good}"
+                        VerticalAlignment="Center" />
+                <TextBlock x:Name="MachineName" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource Ink}"
+                           Margin="8,0,0,0" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+              </DockPanel>
+              <TextBlock x:Name="MachineOs" FontSize="11" Foreground="{StaticResource SideMuted}"
+                         Margin="16,3,0,0" TextTrimming="CharacterEllipsis" />
+              <Button x:Name="ElevateBtn" Style="{StaticResource RowButton}" Margin="0,10,0,0"
+                      HorizontalAlignment="Stretch" Click="OnElevate" />
             </StackPanel>
           </Border>
-          <StackPanel Orientation="Horizontal" Margin="8,12,0,0">
-            <Button x:Name="LangVi" Style="{StaticResource SecondaryButton}" Height="30" Padding="14,0" Content="VI" Click="OnLangVi" />
-            <Button x:Name="LangEn" Style="{StaticResource SecondaryButton}" Height="30" Padding="14,0" Content="EN" Margin="8,0,0,0" Click="OnLangEn" />
-            <Path Data="{StaticResource IconMoon}" Width="17" Height="17" Stretch="Uniform" Margin="16,0,0,0"
-                  Stroke="#5B6B80" StrokeThickness="1.5" VerticalAlignment="Center" />
-            <Path Data="{StaticResource IconCog}" Width="17" Height="17" Stretch="Uniform" Margin="14,0,0,0"
-                  Stroke="#5B6B80" StrokeThickness="1.5" VerticalAlignment="Center" />
+
+          <StackPanel Orientation="Horizontal" Margin="2,10,0,0">
+            <Button x:Name="LangVi" Style="{StaticResource RowButton}" Content="VI" Click="OnLangVi" />
+            <Button x:Name="LangEn" Style="{StaticResource RowButton}" Content="EN" Margin="6,0,0,0" Click="OnLangEn" />
+            <TextBlock x:Name="AppVersionLabel" FontSize="10.5" Foreground="{StaticResource Faint}"
+                       VerticalAlignment="Center" Margin="10,0,0,0" />
           </StackPanel>
         </StackPanel>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0" Margin="0,4,0,10">
           <StackPanel>
-            <RadioButton x:Name="NavDashboard" Style="{StaticResource NavItem}" Tag="{StaticResource IconHome}" IsChecked="True" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavStatus" Style="{StaticResource NavItem}" Tag="{StaticResource IconShield}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavPerf" Style="{StaticResource NavItem}" Tag="{StaticResource IconGauge}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavPlan" Style="{StaticResource NavItem}" Tag="{StaticResource IconSpark}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavHistory" Style="{StaticResource NavItem}" Tag="{StaticResource IconClock}" Checked="OnNavChanged" />
-            <Border Height="1" Background="#33FFFFFF" Margin="12,8" />
-            <RadioButton x:Name="NavOptimize" Style="{StaticResource NavItem}" Tag="{StaticResource IconWrench}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavRepair" Style="{StaticResource NavItem}" Tag="{StaticResource IconTools}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavUpdates" Style="{StaticResource NavItem}" Tag="{StaticResource IconRefresh}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavHardware" Style="{StaticResource NavItem}" Tag="{StaticResource IconChip}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavDrivers" Style="{StaticResource NavItem}" Tag="{StaticResource IconDriver}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavApps" Style="{StaticResource NavItem}" Tag="{StaticResource IconGrid}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavAutomation" Style="{StaticResource NavItem}" Tag="{StaticResource IconAuto}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavBackup" Style="{StaticResource NavItem}" Tag="{StaticResource IconBackup}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavTools" Style="{StaticResource NavItem}" Tag="{StaticResource IconTools}" Checked="OnNavChanged" />
+            <TextBlock x:Name="NavGroupMachine" Style="{StaticResource NavGroup}" />
+            <RadioButton x:Name="NavDashboard" Style="{StaticResource NavItem}" BorderBrush="#2563EB" Tag="{StaticResource GlyphHome}" IsChecked="True" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavStatus" Style="{StaticResource NavItem}" BorderBrush="#0E7490" Tag="{StaticResource GlyphStatus}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavHardware" Style="{StaticResource NavItem}" BorderBrush="#4F46E5" Tag="{StaticResource GlyphHardware}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavPerf" Style="{StaticResource NavItem}" BorderBrush="#7C3AED" Tag="{StaticResource GlyphPerf}" Checked="OnNavChanged" />
+
+            <TextBlock x:Name="NavGroupSafety" Style="{StaticResource NavGroup}" />
+            <RadioButton x:Name="NavSecurity" Style="{StaticResource NavItem}" BorderBrush="#047857" Tag="{StaticResource GlyphSecurity}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavRecovery" Style="{StaticResource NavItem}" BorderBrush="#B45309" Tag="{StaticResource GlyphRecovery}" Checked="OnNavChanged" />
+
+            <TextBlock x:Name="NavGroupUpkeep" Style="{StaticResource NavGroup}" />
+            <RadioButton x:Name="NavCleanup" Style="{StaticResource NavItem}" BorderBrush="#0891B2" Tag="{StaticResource GlyphCleanup}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavStartup" Style="{StaticResource NavItem}" BorderBrush="#DB2777" Tag="{StaticResource GlyphStartup}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavDrivers" Style="{StaticResource NavItem}" BorderBrush="#475569" Tag="{StaticResource GlyphDrivers}" Checked="OnNavChanged" />
+
+            <TextBlock x:Name="NavGroupChange" Style="{StaticResource NavGroup}" />
+            <RadioButton x:Name="NavPlan" Style="{StaticResource NavItem}" BorderBrush="#D97706" Tag="{StaticResource GlyphPlan}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavTimeline" Style="{StaticResource NavItem}" BorderBrush="#2563EB" Tag="{StaticResource GlyphTimeline}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavCompare" Style="{StaticResource NavItem}" BorderBrush="#7C3AED" Tag="{StaticResource GlyphCompare}" Checked="OnNavChanged" />
           </StackPanel>
         </ScrollViewer>
       </DockPanel>
     </Border>
 
     <!-- ============================================================== MAIN -->
-    <Grid Grid.Row="0" Grid.Column="1">
+    <Grid Grid.Row="0" Grid.Column="1" ClipToBounds="True">
+      <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="76" />
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
 
-      <!-- top bar -->
+      <!--
+        top bar
+
+        The search box that used to live here searched nothing, and the "Ctrl K" badge beside it
+        did nothing either. Decorative affordances are the fastest way to make a real tool feel
+        like a mockup, so the space now carries what the user actually needs on every page: which
+        page they are on, and how fresh the reading behind it is.
+      -->
       <Grid Grid.Row="0" Background="Transparent" MouseLeftButtonDown="OnCaptionDrag">
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" Margin="26,0,0,0" VerticalAlignment="Center">
-          <Border Height="46" Width="560" CornerRadius="23" Background="{StaticResource White}">
-            <Border.Effect>
-              <DropShadowEffect Color="#1E4078" Opacity="0.07" BlurRadius="22" ShadowDepth="6" Direction="270" />
-            </Border.Effect>
-            <StackPanel Orientation="Horizontal" Margin="18,0" VerticalAlignment="Center">
-              <Path Data="{StaticResource IconSearch}" Width="16" Height="16" Stretch="Uniform"
-                    Stroke="#8A99AD" StrokeThickness="1.6" />
-              <TextBlock x:Name="SearchHint" FontSize="13.5" Foreground="#8A99AD" Margin="10,0,0,0" VerticalAlignment="Center" />
-              <Border Background="#F1F5FA" CornerRadius="6" Padding="8,3" Margin="14,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="Ctrl K" FontSize="11.5" Foreground="#7B8A9E" />
-              </Border>
-            </StackPanel>
-          </Border>
+        <StackPanel HorizontalAlignment="Left" Margin="30,0,0,0" VerticalAlignment="Center">
+          <TextBlock x:Name="PageTitle" Style="{StaticResource H2}" />
+          <TextBlock x:Name="PageSubtitle" Style="{StaticResource Tiny}" Margin="0,2,0,0" />
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,18,0">
-          <Border Style="{StaticResource RoundIcon}" Margin="0,0,10,0">
-            <Path Data="{StaticResource IconGauge}" Width="18" Height="18" Stretch="Uniform" Stroke="#44546A" StrokeThickness="1.6" />
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0">
+          <Border Background="{StaticResource White}" BorderBrush="{StaticResource Hair}" BorderThickness="1"
+                  CornerRadius="9" Padding="12,6" Margin="0,0,10,0" VerticalAlignment="Center">
+            <StackPanel Orientation="Horizontal">
+              <Path Data="{StaticResource IconClock}" Width="13" Height="13" Stretch="Uniform"
+                    Stroke="{StaticResource Faint}" StrokeThickness="1.5" VerticalAlignment="Center" />
+              <TextBlock x:Name="LastScanLabel" FontSize="11.5" Foreground="{StaticResource Muted}"
+                         Margin="7,0,0,0" VerticalAlignment="Center" />
+            </StackPanel>
           </Border>
-          <Grid Margin="0,0,10,0">
-            <Border Style="{StaticResource RoundIcon}">
-              <Path Data="{StaticResource IconBell}" Width="17" Height="17" Stretch="Uniform" Stroke="#44546A" StrokeThickness="1.6" />
-            </Border>
-            <Border x:Name="AlertBadge" Background="#EF4444" CornerRadius="9" Padding="5,1" HorizontalAlignment="Right"
-                    VerticalAlignment="Top" BorderBrush="White" BorderThickness="2" Visibility="Collapsed">
+
+          <Grid Margin="0,0,10,0" VerticalAlignment="Center">
+            <Button x:Name="TopRescan" Style="{StaticResource SecondaryButton}" Height="34" Padding="14,0"
+                    Click="OnRescan" />
+            <Border x:Name="AlertBadge" Background="{StaticResource Bad}" CornerRadius="9" Padding="5,1"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-6,0"
+                    BorderBrush="White" BorderThickness="2" Visibility="Collapsed">
               <TextBlock x:Name="AlertCount" FontSize="10" FontWeight="Bold" Foreground="White" />
             </Border>
           </Grid>
-          <Border Style="{StaticResource RoundIcon}" Margin="0,0,14,0">
-            <TextBlock Text="?" FontSize="16" FontWeight="Bold" Foreground="#44546A"
-                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-          </Border>
-          <Button Style="{StaticResource CaptionButton}" Tag="M 1,6 L 11,6" Click="OnMinimize" />
-          <Button Style="{StaticResource CaptionButton}" Tag="M 1,1 L 11,1 L 11,11 L 1,11 Z" Click="OnMaximize" />
-          <Button Style="{StaticResource CaptionButton}" Tag="M 1,1 L 11,11 M 11,1 L 1,11" Click="OnClose" />
+
+          <Button Style="{StaticResource CaptionButton}" Tag="{StaticResource IconMinimize}" Click="OnMinimize" />
+          <Button Style="{StaticResource CaptionButton}" Tag="{StaticResource IconMaximize}" Click="OnMaximize" />
+          <Button Style="{StaticResource CaptionButton}" Tag="{StaticResource IconClose}" Click="OnClose" />
         </StackPanel>
       </Grid>
 
@@ -147,10 +160,7 @@
         <ScrollViewer x:Name="ViewDashboard" VerticalScrollBarVisibility="Auto" Padding="26,0,26,18">
           <StackPanel>
             <DockPanel Margin="0,0,0,14">
-              <Button x:Name="RescanBtn" DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" VerticalAlignment="Center" Click="OnRescan" />
               <StackPanel>
-                <TextBlock x:Name="DashTitle" Style="{StaticResource H1}" />
-                <TextBlock x:Name="DashSub" Style="{StaticResource Sub}" Margin="0,4,20,0" />
               </StackPanel>
             </DockPanel>
 
@@ -161,76 +171,72 @@
                 <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
 
-              <!-- hero -->
-              <Border Grid.Column="0" Style="{StaticResource Card}" Background="{StaticResource HeroBg}" Padding="20,14">
-                <StackPanel Orientation="Horizontal">
-                  <Grid Width="92" Height="92" VerticalAlignment="Center">
-                    <Ellipse Width="84" Height="84">
-                      <Ellipse.Fill>
-                        <RadialGradientBrush GradientOrigin="0.33,0.28">
-                          <GradientStop Color="#E0E7FF" Offset="0" />
-                          <GradientStop Color="#818CF8" Offset="0.42" />
-                          <GradientStop Color="#7C3AED" Offset="0.78" />
-                          <GradientStop Color="#3B0764" Offset="1" />
-                        </RadialGradientBrush>
-                      </Ellipse.Fill>
-                    </Ellipse>
-                    <Ellipse Width="34" Height="19" Fill="#7AFFFFFF" Margin="14,20,0,0"
-                             HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0.5,0.5">
-                      <Ellipse.RenderTransform><RotateTransform Angle="-24" /></Ellipse.RenderTransform>
-                    </Ellipse>
-                  </Grid>
-                  <StackPanel Margin="18,0,0,0" VerticalAlignment="Center">
+              <!--
+                hero
+                One dark glass panel: what state the machine is in, in one word, with the two
+                things you can do about it. White type on indigo - the old version set the headline
+                in ink on navy and it vanished.
+              -->
+              <Border Grid.Column="0" Style="{StaticResource Card}" Padding="26,22">
+                <Grid>
+                  <StackPanel VerticalAlignment="Center">
                     <TextBlock x:Name="HeroLabel" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Muted}" />
-                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                      <TextBlock x:Name="HeroState" FontSize="26" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" />
-                      <Border x:Name="HeroBadge" Width="21" Height="21" CornerRadius="11" Background="{StaticResource Good}"
-                              Margin="10,0,0,0" VerticalAlignment="Center">
-                        <Path x:Name="HeroBadgeGlyph" Data="{StaticResource IconCheck}" Width="11" Height="11" Stretch="Uniform"
-                              Stroke="White" StrokeThickness="2" StrokeLineJoin="Round" />
+                    <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                      <TextBlock x:Name="HeroState" Style="{StaticResource Display}" FontSize="34" />
+                      <Border x:Name="HeroBadge" Width="24" Height="24" CornerRadius="12" Background="{StaticResource Good}"
+                              Margin="12,0,0,0" VerticalAlignment="Center">
+                        <Path x:Name="HeroBadgeGlyph" Data="{StaticResource IconCheck}" Width="12" Height="12" Stretch="Uniform"
+                              Stroke="White" StrokeThickness="2.2" StrokeLineJoin="Round" />
                       </Border>
                     </StackPanel>
-                    <TextBlock x:Name="HeroDetail" Style="{StaticResource Sub}" Margin="0,5,0,0" MaxWidth="470" />
-                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
-                      <Button x:Name="HeroFixBtn" Style="{StaticResource PrimaryButton}" Height="34" Click="OnHeroFix" />
-                      <Button x:Name="HeroDetailBtn" Style="{StaticResource SecondaryButton}" Height="34" Margin="10,0,0,0" Click="OnHeroDetails" />
+                    <TextBlock x:Name="HeroDetail" FontSize="13.5" Foreground="{StaticResource Muted}" TextWrapping="Wrap"
+                               LineHeight="21" Margin="0,10,0,0" MaxWidth="560" HorizontalAlignment="Left" />
+                    <StackPanel Orientation="Horizontal" Margin="0,18,0,0">
+                      <Button x:Name="HeroFixBtn" Style="{StaticResource PrimaryButton}" Height="36" Click="OnHeroFix" />
+                      <Button x:Name="HeroDetailBtn" Style="{StaticResource SecondaryButton}" Height="36" Margin="10,0,0,0"
+                              Click="OnHeroDetails" />
                     </StackPanel>
                   </StackPanel>
-                </StackPanel>
+                </Grid>
               </Border>
 
-              <!-- health rail -->
-              <Border Grid.Column="2" Style="{StaticResource Card}">
+              <!-- health -->
+              <Border Grid.Column="2" Style="{StaticResource Card}" Padding="22,18">
                 <StackPanel>
-                  <TextBlock x:Name="HealthTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,6" />
-                  <StackPanel Orientation="Horizontal">
-                    <Grid Width="112" Height="112">
-                      <Ellipse Width="96" Height="96" Stroke="#E8EEF7" StrokeThickness="10" />
-                      <Ellipse x:Name="HealthRing" Width="96" Height="96" StrokeThickness="10"
+                  <TextBlock x:Name="HealthTitle" Style="{StaticResource CardTitle}" />
+                  <Grid Margin="0,12,0,0">
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="Auto" />
+                      <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Width="104" Height="104">
+                      <Ellipse Width="96" Height="96" Stroke="#EEF1F7" StrokeThickness="9" />
+                      <Ellipse x:Name="HealthRing" Width="96" Height="96" StrokeThickness="9"
                                Stroke="{StaticResource AccentBar}" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
                                RenderTransformOrigin="0.5,0.5">
                         <Ellipse.RenderTransform><RotateTransform Angle="-90" /></Ellipse.RenderTransform>
                       </Ellipse>
                       <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <TextBlock x:Name="HealthScoreText" FontSize="28" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" HorizontalAlignment="Center" />
-                        <TextBlock Text="/100" FontSize="11" Foreground="{StaticResource Faint}" HorizontalAlignment="Center" Margin="0,-4,0,0" />
+                        <TextBlock x:Name="HealthScoreText" Style="{StaticResource Display}" FontSize="30" HorizontalAlignment="Center" />
+                        <TextBlock Text="/100" FontSize="10.5" Foreground="{StaticResource Faint}" HorizontalAlignment="Center" Margin="0,-5,0,0" />
                       </StackPanel>
                     </Grid>
-                    <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
-                      <TextBlock x:Name="HealthLabel" FontSize="17" FontWeight="ExtraBold" Foreground="{StaticResource Good}" />
-                      <TextBlock x:Name="HealthNote" Style="{StaticResource Tiny}" MaxWidth="150" Margin="0,3,0,0" />
+                    <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center">
+                      <TextBlock x:Name="HealthLabel" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Good}" />
+                      <TextBlock x:Name="HealthNote" Style="{StaticResource Tiny}" Margin="0,4,0,0" />
                     </StackPanel>
-                  </StackPanel>
-                  <Border Height="1" Background="{StaticResource Hair}" Margin="0,10,0,6" />
+                  </Grid>
+                  <Border Height="1" Background="{StaticResource Hair}" Margin="0,14,0,10" />
                   <ItemsControl x:Name="HealthChecks">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
-                        <DockPanel Margin="0,3">
-                          <Border DockPanel.Dock="Left" Width="16" Height="16" CornerRadius="8" Background="{Binding Tone}">
-                            <Path Data="{Binding Glyph}" Width="9" Height="9" Stretch="Uniform" Stroke="White" StrokeThickness="1.8" StrokeLineJoin="Round" />
+                        <DockPanel Margin="0,4">
+                          <Border DockPanel.Dock="Left" Width="18" Height="18" CornerRadius="9" Background="{Binding Tone}">
+                            <Path Data="{Binding Glyph}" Width="9" Height="9" Stretch="Uniform" Stroke="White" StrokeThickness="1.9" StrokeLineJoin="Round" />
                           </Border>
                           <TextBlock DockPanel.Dock="Right" Text="{Binding State}" FontSize="11.5" Foreground="{StaticResource Faint}" VerticalAlignment="Center" />
-                          <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="#44546A" Margin="9,0,8,0" VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding Name}" FontSize="12.5" Foreground="{StaticResource Ink}" Margin="10,0,8,0"
+                                     VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                         </DockPanel>
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -275,22 +281,27 @@
               </ItemsControl.ItemsPanel>
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Border Style="{StaticResource Card}" Margin="0,0,12,0">
-                    <StackPanel>
-                      <StackPanel Orientation="Horizontal">
-                        <Border Width="30" Height="30" CornerRadius="9" Background="{Binding Tone}">
-                          <Path Data="{Binding Glyph}" Width="15" Height="15" Stretch="Uniform"
-                                Stroke="{Binding Accent}" StrokeThickness="1.6" />
+                  <Border Style="{StaticResource Card}" Margin="0,0,14,0" Padding="20,16">
+                    <Grid>
+                      <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                      </Grid.RowDefinitions>
+                      <DockPanel>
+                        <Border DockPanel.Dock="Right" Width="36" Height="36" CornerRadius="8" Background="{Binding Tone}">
+                          <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="17" Foreground="{Binding Accent}" />
                         </Border>
-                        <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
-                                   Foreground="{StaticResource Muted}" Margin="9,0,0,0" VerticalAlignment="Center" />
+                        <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold"
+                                   Foreground="{StaticResource Muted}" VerticalAlignment="Center" />
+                      </DockPanel>
+                      <TextBlock Grid.Row="1" Text="{Binding Value}" Style="{StaticResource Display}" FontSize="30"
+                                 Foreground="{Binding Accent}" Margin="0,10,0,8" />
+                      <StackPanel Grid.Row="2">
+                        <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent}" Foreground="{Binding Accent}" />
+                        <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" Margin="0,8,0,0" TextTrimming="CharacterEllipsis" />
                       </StackPanel>
-                      <TextBlock Text="{Binding Value}" FontSize="22" FontWeight="ExtraBold"
-                                 Foreground="{Binding Accent}" Margin="0,7,0,0" />
-                      <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent}"
-                                   Foreground="{Binding Accent}" Margin="0,6,0,0" />
-                      <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" Margin="0,5,0,0" />
-                    </StackPanel>
+                    </Grid>
                   </Border>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
@@ -307,8 +318,10 @@
               <Border Grid.Column="0" Style="{StaticResource Card}">
                 <StackPanel>
                   <DockPanel Margin="0,0,0,8">
-                    <TextBlock x:Name="ProcTitle" Style="{StaticResource CardTitle}" />
-                    <TextBlock x:Name="ProcHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                    <TextBlock x:Name="ProcTitle" Style="{StaticResource CardTitle}" DockPanel.Dock="Left"
+                               VerticalAlignment="Center" Margin="0,0,16,0" />
+                    <TextBlock x:Name="ProcHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right"
+                               VerticalAlignment="Center" TextAlignment="Right" MaxWidth="300" />
                   </DockPanel>
                   <Grid Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
@@ -361,27 +374,21 @@
                   <ItemsControl x:Name="DeviceGroups">
                     <ItemsControl.ItemTemplate>
                       <DataTemplate>
-                        <StackPanel Margin="0,0,0,9">
-                          <TextBlock Text="{Binding Group}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Faint}" Margin="0,0,0,3" />
+                        <StackPanel Margin="0,0,0,8">
+                          <TextBlock Text="{Binding Group}" Style="{StaticResource Sect}" Margin="2,2,0,6" />
                           <ItemsControl ItemsSource="{Binding Items}">
-                            <ItemsControl.ItemsPanel>
-                              <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                               <DataTemplate>
-                                <Border Style="{StaticResource FlatCard}" Padding="10,7" Margin="0,0,8,8" MaxWidth="260">
-                                  <StackPanel Orientation="Horizontal">
-                                    <Border Width="26" Height="26" CornerRadius="8" Background="{Binding Tone}" VerticalAlignment="Center">
-                                      <Path Data="{Binding Glyph}" Width="13" Height="13" Stretch="Uniform"
-                                            Stroke="{Binding Accent}" StrokeThickness="1.6" />
+                                <Border Style="{StaticResource SettingsRow}" Padding="12,9" MinHeight="46">
+                                  <DockPanel>
+                                    <Border DockPanel.Dock="Left" Width="30" Height="30" CornerRadius="6" Background="{Binding Tone}" VerticalAlignment="Center">
+                                      <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="15" Foreground="{Binding Accent}" />
                                     </Border>
-                                    <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
-                                      <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold"
-                                                 Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" MaxWidth="200" />
-                                      <TextBlock Text="{Binding Detail}" FontSize="10.5" Foreground="{StaticResource Faint}"
-                                                 TextTrimming="CharacterEllipsis" MaxWidth="200" />
+                                    <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                                      <TextBlock Text="{Binding Name}" FontSize="13" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                                      <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
-                                  </StackPanel>
+                                  </DockPanel>
                                 </Border>
                               </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -391,100 +398,6 @@
                     </ItemsControl.ItemTemplate>
                   </ItemsControl>
                   <TextBlock x:Name="DevEmpty" Style="{StaticResource Tiny}" Visibility="Collapsed" />
-                </StackPanel>
-              </Border>
-            </Grid>
-
-            <!-- storage · security · startup · network: four dense cards of read-only context -->
-            <Grid Margin="0,0,0,16">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.15*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-
-              <Border Grid.Column="0" Style="{StaticResource Card}">
-                <StackPanel>
-                  <TextBlock x:Name="StorageTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,9" />
-                  <ItemsControl x:Name="DriveList">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate>
-                        <StackPanel Margin="0,0,0,9">
-                          <DockPanel>
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding Free}" FontSize="11.5" Foreground="{StaticResource Faint}" />
-                            <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold" Foreground="{StaticResource Ink}" />
-                          </DockPanel>
-                          <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent}"
-                                       Foreground="{Binding Accent}" Margin="0,5,0,0" />
-                        </StackPanel>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </StackPanel>
-              </Border>
-
-              <Border Grid.Column="2" Style="{StaticResource Card}">
-                <StackPanel>
-                  <TextBlock x:Name="SecurityTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,9" />
-                  <ItemsControl x:Name="SecurityRows">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate>
-                        <DockPanel Margin="0,0,0,7">
-                          <Border DockPanel.Dock="Left" Width="16" Height="16" CornerRadius="8" Background="{Binding Tone}">
-                            <Path Data="{Binding Glyph}" Width="9" Height="9" Stretch="Uniform" Stroke="White" StrokeThickness="1.8" StrokeLineJoin="Round" />
-                          </Border>
-                          <TextBlock DockPanel.Dock="Right" Text="{Binding State}" FontSize="11.5" Foreground="{StaticResource Faint}" VerticalAlignment="Center" />
-                          <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="#44546A" Margin="9,0,8,0" VerticalAlignment="Center" />
-                        </DockPanel>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </StackPanel>
-              </Border>
-
-              <Border Grid.Column="4" Style="{StaticResource Card}">
-                <StackPanel>
-                  <DockPanel Margin="0,0,0,9">
-                    <TextBlock x:Name="StartupCount" DockPanel.Dock="Right" FontSize="12" FontWeight="Bold" Foreground="{StaticResource Accent}" />
-                    <TextBlock x:Name="StartupTitle" Style="{StaticResource CardTitle}" />
-                  </DockPanel>
-                  <ItemsControl x:Name="StartupList">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate>
-                        <DockPanel Margin="0,0,0,6">
-                          <TextBlock DockPanel.Dock="Right" Text="{Binding Detail}" FontSize="10.5" Foreground="{StaticResource Faint}" VerticalAlignment="Center" />
-                          <Border Width="18" Height="18" CornerRadius="6" Background="{Binding Tone}" DockPanel.Dock="Left">
-                            <TextBlock Text="{Binding Initial}" FontSize="9.5" FontWeight="Bold" Foreground="{Binding Accent}"
-                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
-                          </Border>
-                          <TextBlock Text="{Binding Name}" FontSize="12" Foreground="{StaticResource Ink}"
-                                     Margin="8,0,6,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                        </DockPanel>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                  <TextBlock x:Name="StartupHint" Style="{StaticResource Tiny}" Margin="0,2,0,0" />
-                </StackPanel>
-              </Border>
-
-              <Border Grid.Column="6" Style="{StaticResource Card}">
-                <StackPanel>
-                  <TextBlock x:Name="NetTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,9" />
-                  <ItemsControl x:Name="NetRows">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate>
-                        <DockPanel Margin="0,0,0,7">
-                          <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" FontSize="11.5" Foreground="{StaticResource Faint}" Width="74" />
-                          <TextBlock Text="{Binding Value}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Ink}"
-                                     TextTrimming="CharacterEllipsis" />
-                        </DockPanel>
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
                 </StackPanel>
               </Border>
             </Grid>
@@ -513,224 +426,33 @@
         <!-- ================================= SYSTEM STATUS -->
         <ScrollViewer x:Name="ViewStatus" VerticalScrollBarVisibility="Auto" Padding="26,0,26,18" Visibility="Collapsed">
           <StackPanel>
-            <TextBlock x:Name="StatusTitle" Style="{StaticResource H1}" />
-            <TextBlock x:Name="StatusSub" Style="{StaticResource Sub}" Margin="0,4,0,14" />
 
-            <Grid Margin="0,0,0,14">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-              <Border Grid.Column="0" Style="{StaticResource Card}">
-                <StackPanel>
-                  <StackPanel Orientation="Horizontal">
-                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource AccentSoft}">
-                      <Path Data="{StaticResource IconClock}" Width="17" Height="17" Stretch="Uniform" Stroke="{StaticResource Accent}" StrokeThickness="1.6" />
-                    </Border>
-                    <TextBlock x:Name="UptimeLabel" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Muted}" Margin="10,0,0,0" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <TextBlock x:Name="UptimeValue" FontSize="18" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" Margin="0,7,0,0" />
-                </StackPanel>
-              </Border>
-              <Border Grid.Column="2" Style="{StaticResource Card}">
-                <StackPanel>
-                  <StackPanel Orientation="Horizontal">
-                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource AccentSoft}">
-                      <Grid Width="17" Height="17">
-                        <Rectangle Fill="#0078D4" Width="7.2" Height="7.2" HorizontalAlignment="Left" VerticalAlignment="Top" />
-                        <Rectangle Fill="#0078D4" Width="7.2" Height="7.2" HorizontalAlignment="Right" VerticalAlignment="Top" />
-                        <Rectangle Fill="#0078D4" Width="7.2" Height="7.2" HorizontalAlignment="Left" VerticalAlignment="Bottom" />
-                        <Rectangle Fill="#0078D4" Width="7.2" Height="7.2" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
-                      </Grid>
-                    </Border>
-                    <TextBlock x:Name="OsLabel" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Muted}" Margin="10,0,0,0" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <TextBlock x:Name="OsValue" FontSize="18" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" Margin="0,7,0,0" TextWrapping="Wrap" />
-                  <TextBlock x:Name="OsBuild" Style="{StaticResource Tiny}" Margin="0,2,0,0" />
-                </StackPanel>
-              </Border>
-              <Border Grid.Column="4" Style="{StaticResource Card}">
-                <StackPanel>
-                  <StackPanel Orientation="Horizontal">
-                    <Border Width="34" Height="34" CornerRadius="10" Background="{StaticResource GoodSoft}">
-                      <Path Data="{StaticResource IconShield}" Width="17" Height="17" Stretch="Uniform" Stroke="{StaticResource Good}" StrokeThickness="1.6" StrokeLineJoin="Round" />
-                    </Border>
-                    <TextBlock x:Name="EncryptionLabel" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Muted}" Margin="10,0,0,0" VerticalAlignment="Center" />
-                  </StackPanel>
-                  <TextBlock x:Name="EncryptionValue" FontSize="18" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" Margin="0,7,0,0" />
-                  <TextBlock x:Name="EncryptionNote" Style="{StaticResource Tiny}" Margin="0,2,0,0" />
-                </StackPanel>
-              </Border>
-            </Grid>
-
-            <TextBlock x:Name="HardwareSect" Style="{StaticResource Sect}" />
-            <Grid Margin="0,0,0,14">
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="11" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="11" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="11" />
-                <ColumnDefinition Width="*" />
-              </Grid.ColumnDefinitions>
-
-              <Border Grid.Column="0" Style="{StaticResource Card}">
-                <StackPanel>
-                  <StackPanel Orientation="Horizontal">
-                    <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource AccentSoft}">
-                      <Path Data="{StaticResource IconChip}" Width="16" Height="16" Stretch="Uniform" Stroke="{StaticResource Accent}" StrokeThickness="1.6" />
-                    </Border>
-                    <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
-                      <TextBlock Text="CPU" FontSize="13" FontWeight="Bold" Foreground="{StaticResource Ink}" />
-                      <TextBlock x:Name="CpuName" Style="{StaticResource Tiny}" MaxWidth="180" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                    </StackPanel>
-                  </StackPanel>
-                  <TextBlock x:Name="CpuValue" Style="{StaticResource BigValue}" Foreground="{StaticResource Accent}" Margin="0,8,0,0" />
-                  <Polyline x:Name="CpuSpark" Stroke="{StaticResource Accent}" StrokeThickness="2" Height="30" Margin="0,4,0,0" />
-                </StackPanel>
-              </Border>
-
-              <Border Grid.Column="2" Style="{StaticResource Card}">
-                <StackPanel>
-                  <StackPanel Orientation="Horizontal">
-                    <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource VioletSoft}">
-                      <Path Data="{StaticResource IconRam}" Width="16" Height="16" Stretch="Uniform" Stroke="{StaticResource Violet}" StrokeThickness="1.6" />
-                    </Border>
-                    <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
-                      <TextBlock Text="RAM" FontSize="13" FontWeight="Bold" Foreground="{StaticResource Ink}" />
-                      <TextBlock x:Name="RamSpeed" Style="{StaticResource Tiny}" />
-                    </StackPanel>
-                  </StackPanel>
-                  <TextBlock x:Name="RamValue" Style="{StaticResource BigValue}" Foreground="{StaticResource Violet}" Margin="0,8,0,0" />
-                  <ProgressBar x:Name="RamBar" Style="{StaticResource ThinBar}" Foreground="{StaticResource VioletBar}" Margin="0,6,0,0" />
-                  <TextBlock x:Name="RamDetail" Style="{StaticResource Tiny}" Margin="0,5,0,0" />
-                </StackPanel>
-              </Border>
-
-              <Border Grid.Column="4" Style="{StaticResource Card}">
-                <StackPanel>
-                  <StackPanel Orientation="Horizontal">
-                    <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource OrangeSoft}">
-                      <Path Data="{StaticResource IconDisk}" Width="16" Height="16" Stretch="Uniform" Stroke="{StaticResource Orange}" StrokeThickness="1.6" />
-                    </Border>
-                    <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
-                      <TextBlock x:Name="DiskTitle" FontSize="13" FontWeight="Bold" Foreground="{StaticResource Ink}" />
-                      <TextBlock x:Name="DiskName" Style="{StaticResource Tiny}" />
-                    </StackPanel>
-                  </StackPanel>
-                  <TextBlock x:Name="DiskValue" Style="{StaticResource BigValue}" Foreground="{StaticResource Orange}" Margin="0,8,0,0" />
-                  <ProgressBar x:Name="DiskBar" Style="{StaticResource ThinBar}" Foreground="{StaticResource OrangeBar}" Margin="0,6,0,0" />
-                  <TextBlock x:Name="DiskDetail" Style="{StaticResource Tiny}" Margin="0,5,0,0" />
-                </StackPanel>
-              </Border>
-
-              <Border Grid.Column="6" Style="{StaticResource Card}">
-                <StackPanel>
-                  <StackPanel Orientation="Horizontal">
-                    <Border Width="32" Height="32" CornerRadius="9" Background="{StaticResource CyanSoft}">
-                      <Path Data="{StaticResource IconMonitor}" Width="16" Height="16" Stretch="Uniform" Stroke="{StaticResource Cyan}" StrokeThickness="1.6" />
-                    </Border>
-                    <StackPanel Margin="9,0,0,0" VerticalAlignment="Center">
-                      <TextBlock x:Name="DisplayTitle" FontSize="13" FontWeight="Bold" Foreground="{StaticResource Ink}" />
-                      <TextBlock x:Name="DisplayMax" Style="{StaticResource Tiny}" />
-                    </StackPanel>
-                  </StackPanel>
-                  <TextBlock x:Name="DisplayValue" Style="{StaticResource BigValue}" Foreground="{StaticResource Cyan}" Margin="0,8,0,0" />
-                  <TextBlock x:Name="DisplayNote" Style="{StaticResource Tiny}" Margin="0,6,0,0" />
-                </StackPanel>
-              </Border>
-            </Grid>
-
-            <TextBlock x:Name="ActivitySect" Style="{StaticResource Sect}" />
-            <ItemsControl x:Name="ActivityTiles" Margin="0,0,0,14">
-              <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
-              </ItemsControl.ItemsPanel>
+            <DockPanel Margin="0,4,0,10">
+              <ToggleButton x:Name="DetailToggle" DockPanel.Dock="Right" Style="{StaticResource Switch}" VerticalAlignment="Center"
+                            Click="OnDetailToggle" />
+              <TextBlock x:Name="DetailToggleLabel" DockPanel.Dock="Right" FontSize="12.5" Foreground="{StaticResource Muted}"
+                         VerticalAlignment="Center" Margin="0,0,10,0" />
+              <TextBlock x:Name="ReadingsTitle" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Ink}" VerticalAlignment="Center" Margin="2,0,0,0" />
+            </DockPanel>
+            <ItemsControl x:Name="ReadingsList">
               <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                  <Border Style="{StaticResource Card}" Margin="0,0,11,0">
-                    <StackPanel>
-                      <TextBlock Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Muted}" />
-                      <TextBlock Text="{Binding Value}" FontSize="18" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" Margin="0,6,0,0" />
-                      <TextBlock Text="{Binding Note}" FontSize="11" Foreground="{Binding Accent}" Margin="0,2,0,0" TextWrapping="Wrap" />
-                    </StackPanel>
+                  <Border Style="{StaticResource SettingsRow}">
+                    <DockPanel>
+                      <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontSize="13.5" FontWeight="SemiBold"
+                                 Foreground="{Binding Accent}" VerticalAlignment="Center" Margin="16,0,0,0" />
+                      <Border DockPanel.Dock="Left" Width="36" Height="36" CornerRadius="8" Background="{Binding Tone}" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="17" Foreground="{Binding Accent}" />
+                      </Border>
+                      <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" FontSize="14" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" FontSize="12" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                      </StackPanel>
+                    </DockPanel>
                   </Border>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
             </ItemsControl>
-
-            <!-- full hardware inventory, grouped -->
-            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
-              <StackPanel>
-                <DockPanel Margin="0,0,0,10">
-                  <TextBlock x:Name="InventoryTitle" Style="{StaticResource CardTitle}" />
-                  <TextBlock x:Name="InventoryHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
-                </DockPanel>
-                <ItemsControl x:Name="InventoryGroups">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <StackPanel Margin="0,0,0,10">
-                        <TextBlock Text="{Binding Group}" FontSize="11.5" FontWeight="Bold" Foreground="{StaticResource Faint}" Margin="0,0,0,4" />
-                        <ItemsControl ItemsSource="{Binding Items}">
-                          <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
-                          </ItemsControl.ItemsPanel>
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                              <Border Style="{StaticResource FlatCard}" Padding="12,9" Margin="0,0,10,10" MinWidth="240" MaxWidth="330">
-                                <StackPanel Orientation="Horizontal">
-                                  <Border Width="30" Height="30" CornerRadius="9" Background="{Binding Tone}" VerticalAlignment="Center">
-                                    <Path Data="{Binding Glyph}" Width="15" Height="15" Stretch="Uniform"
-                                          Stroke="{Binding Accent}" StrokeThickness="1.6" />
-                                  </Border>
-                                  <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                                    <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="SemiBold"
-                                               Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" MaxWidth="260" />
-                                    <TextBlock Text="{Binding Detail}" FontSize="11" Foreground="{StaticResource Faint}"
-                                               TextTrimming="CharacterEllipsis" MaxWidth="260" />
-                                  </StackPanel>
-                                </StackPanel>
-                              </Border>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </StackPanel>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </StackPanel>
-            </Border>
-
-            <Border Style="{StaticResource Card}">
-              <StackPanel>
-                <DockPanel Margin="0,0,0,8">
-                  <TextBlock x:Name="ReadingsTitle" Style="{StaticResource CardTitle}" />
-                  <TextBlock x:Name="ReadingsHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
-                </DockPanel>
-                <ItemsControl x:Name="ReadingsList">
-                  <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                      <Border Background="{Binding RowBg}" CornerRadius="8" Padding="10,7" Margin="0,2">
-                        <Grid>
-                          <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="300" />
-                            <ColumnDefinition Width="150" />
-                            <ColumnDefinition Width="*" />
-                          </Grid.ColumnDefinitions>
-                          <TextBlock Grid.Column="0" Text="{Binding Name}" FontSize="12.5" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
-                          <TextBlock Grid.Column="1" Text="{Binding Value}" FontSize="12.5" FontWeight="Bold" Foreground="{Binding Accent}" />
-                          <TextBlock Grid.Column="2" Text="{Binding Source}" FontSize="11" Foreground="{StaticResource Faint}" TextTrimming="CharacterEllipsis" />
-                        </Grid>
-                      </Border>
-                    </DataTemplate>
-                  </ItemsControl.ItemTemplate>
-                </ItemsControl>
-              </StackPanel>
-            </Border>
           </StackPanel>
         </ScrollViewer>
 
@@ -745,8 +467,6 @@
                 </StackPanel>
               </Border>
               <StackPanel>
-                <TextBlock x:Name="PerfTitle" Style="{StaticResource H1}" />
-                <TextBlock x:Name="PerfSub" Style="{StaticResource Sub}" Margin="0,4,20,0" />
               </StackPanel>
             </DockPanel>
 
@@ -802,8 +522,10 @@
             <Border Style="{StaticResource Card}" Margin="0,14,0,0">
               <StackPanel>
                 <DockPanel Margin="0,0,0,8">
-                  <TextBlock x:Name="PerfProcTitle" Style="{StaticResource CardTitle}" />
-                  <TextBlock x:Name="PerfProcHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                  <TextBlock x:Name="PerfProcTitle" Style="{StaticResource CardTitle}" DockPanel.Dock="Left"
+                               VerticalAlignment="Center" Margin="0,0,16,0" />
+                  <TextBlock x:Name="PerfProcHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right"
+                               VerticalAlignment="Center" TextAlignment="Right" MaxWidth="300" />
                 </DockPanel>
                 <ItemsControl x:Name="PerfProcList">
                   <ItemsControl.ItemTemplate>
@@ -852,8 +574,6 @@
         <!-- ================================= PLAN & APPLY -->
         <ScrollViewer x:Name="ViewPlan" VerticalScrollBarVisibility="Auto" Padding="26,0,26,18" Visibility="Collapsed">
           <StackPanel>
-            <TextBlock x:Name="PlanTitle" Style="{StaticResource H1}" />
-            <TextBlock x:Name="PlanSub" Style="{StaticResource Sub}" Margin="0,4,0,14" />
 
             <Border Style="{StaticResource Card}" Margin="0,0,0,14">
               <StackPanel>
@@ -939,24 +659,21 @@
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
-                <TextBlock x:Name="ResultNext" FontSize="12.5" Foreground="{StaticResource Warn}" TextWrapping="Wrap" Margin="0,9,0,0" />
+                <Border x:Name="RestartBanner" Background="{StaticResource WarnSoft}" BorderBrush="#F0DCB4"
+                        BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,12,0,0" Visibility="Collapsed">
+                  <DockPanel>
+                    <Button x:Name="RestartNowBtn" DockPanel.Dock="Right" Style="{StaticResource PrimaryButton}"
+                            VerticalAlignment="Center" Margin="16,0,0,0" Click="OnRestartNow" />
+                    <StackPanel VerticalAlignment="Center">
+                      <TextBlock x:Name="RestartTitle" FontSize="13.5" FontWeight="SemiBold" Foreground="{StaticResource Warn}" />
+                      <TextBlock x:Name="ResultNext" FontSize="12.5" Foreground="{StaticResource Warn}" TextWrapping="Wrap" Margin="0,3,0,0" />
+                    </StackPanel>
+                  </DockPanel>
+                </Border>
               </StackPanel>
             </Border>
-          </StackPanel>
-        </ScrollViewer>
 
-        <!-- ================================= HISTORY -->
-        <ScrollViewer x:Name="ViewHistory" VerticalScrollBarVisibility="Auto" Padding="26,0,26,18" Visibility="Collapsed">
-          <StackPanel>
-            <DockPanel Margin="0,0,0,14">
-              <Button x:Name="HistoryRefreshBtn" DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}" VerticalAlignment="Center" Click="OnHistoryRefresh" />
-              <StackPanel>
-                <TextBlock x:Name="HistoryTitle" Style="{StaticResource H1}" />
-                <TextBlock x:Name="HistorySub" Style="{StaticResource Sub}" Margin="0,4,20,0" />
-              </StackPanel>
-            </DockPanel>
-
-            <TextBlock x:Name="TxSect" Style="{StaticResource Sect}" />
+            <TextBlock x:Name="TxSect" Style="{StaticResource Sect}" Margin="2,20,0,9" />
             <TextBlock x:Name="TxEmpty" Style="{StaticResource Sub}" Margin="0,0,0,12" Visibility="Collapsed" />
             <ItemsControl x:Name="TxList">
               <ItemsControl.ItemTemplate>
@@ -978,23 +695,109 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <Border Style="{StaticResource Card}" Margin="0,6,0,0">
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= HARDWARE -->
+        <ScrollViewer x:Name="ViewHardware" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
               <StackPanel>
-                <TextBlock x:Name="EventsTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,8" />
-                <TextBlock x:Name="EventsEmpty" Style="{StaticResource Sub}" Visibility="Collapsed" />
-                <ItemsControl x:Name="EventsList">
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="VolumesTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="VolumesHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="VolumeList">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><UniformGrid Columns="2" /></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                      <Border Background="{Binding RowBg}" CornerRadius="8" Padding="10,7" Margin="0,2">
+                      <Border Background="{Binding RowBg}" CornerRadius="10" Padding="14,12" Margin="0,3,10,3">
+                        <StackPanel>
+                          <DockPanel Margin="0,0,0,8">
+                            <TextBlock Text="{Binding Name}" FontSize="14" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Value}" FontSize="12.5" FontWeight="Bold"
+                                       Foreground="{Binding Accent}" HorizontalAlignment="Right"
+                                       Typography.NumeralAlignment="Tabular" />
+                          </DockPanel>
+                          <ProgressBar Style="{StaticResource ThinBar}" Height="8" Value="{Binding Percent}"
+                                       Foreground="{Binding Accent}" />
+                          <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" Margin="0,7,0,0" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+            <!-- the inventory, one row per part, grouped the way Settings groups devices -->
+            <TextBlock x:Name="InventoryTitle" Style="{StaticResource Sect}" />
+            <TextBlock x:Name="InventoryHint" Style="{StaticResource Tiny}" Visibility="Collapsed" />
+            <ItemsControl x:Name="InventoryGroups">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Margin="0,0,0,14">
+                    <TextBlock Text="{Binding Group}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Ink}" Margin="2,0,0,8" />
+                    <ItemsControl ItemsSource="{Binding Items}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <Border Style="{StaticResource SettingsRow}">
+                            <DockPanel>
+                              <TextBlock DockPanel.Dock="Right" Text="{StaticResource GlyphChevron}" Style="{StaticResource Glyph}"
+                                         FontSize="12" Foreground="{StaticResource Faint}" Margin="12,0,0,0" />
+                              <Border DockPanel.Dock="Left" Width="36" Height="36" CornerRadius="8" Background="{Binding Tone}" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="17" Foreground="{Binding Accent}" />
+                              </Border>
+                              <StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Name}" FontSize="14" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" FontSize="12" Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                              </StackPanel>
+                            </DockPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= SECURITY -->
+        <ScrollViewer x:Name="ViewSecurity" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="SecurityStateTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="SecurityStateHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="SecurityList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
                         <Grid>
                           <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="34" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                           </Grid.ColumnDefinitions>
-                          <TextBlock Grid.Column="0" Text="{Binding When}" FontSize="11.5" Foreground="{StaticResource Faint}" />
-                          <TextBlock Grid.Column="1" Text="{Binding Category}" FontSize="11.5" Foreground="{StaticResource Muted}" />
-                          <TextBlock Grid.Column="2" Text="{Binding Change}" FontSize="12" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Background="{Binding Tone}"
+                                  VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="14" Foreground="{Binding Accent}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12.5" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
                         </Grid>
                       </Border>
                     </DataTemplate>
@@ -1002,23 +805,457 @@
                 </ItemsControl>
               </StackPanel>
             </Border>
+
+            <Border Style="{StaticResource Card}">
+              <StackPanel>
+                <TextBlock x:Name="Win11Title" Style="{StaticResource CardTitle}" Margin="0,0,0,4" />
+                <TextBlock x:Name="Win11Body" Style="{StaticResource Sub}" Margin="0,0,0,12" />
+                <ItemsControl x:Name="Win11List">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Background="{Binding Tone}"
+                                  VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="14" Foreground="{Binding Accent}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12.5" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button x:Name="Win11Plan" Style="{StaticResource SoftButton}" HorizontalAlignment="Left"
+                        Margin="0,14,0,0" Click="OnOpenWin11Plan" Visibility="Collapsed" />
+              </StackPanel>
+            </Border>
+
           </StackPanel>
         </ScrollViewer>
 
-        <!-- ================================= NOT IN v0.1 -->
-        <Grid x:Name="ViewSoon" Visibility="Collapsed">
-          <Border Style="{StaticResource Card}" MaxWidth="620" VerticalAlignment="Center" HorizontalAlignment="Center" Padding="34,30">
-            <StackPanel>
-              <Border Width="52" Height="52" CornerRadius="16" Background="{StaticResource AccentSoft}" HorizontalAlignment="Left">
-                <Path Data="{StaticResource IconWrench}" Width="24" Height="24" Stretch="Uniform" Stroke="{StaticResource Accent}" StrokeThickness="1.6" StrokeLineJoin="Round" />
-              </Border>
-              <TextBlock x:Name="SoonModule" FontSize="22" FontWeight="ExtraBold" Foreground="{StaticResource Ink}" Margin="0,16,0,0" />
-              <TextBlock x:Name="SoonBody" Style="{StaticResource Sub}" Margin="0,8,0,0" />
-              <TextBlock x:Name="SoonPhase" Style="{StaticResource Tiny}" Margin="0,12,0,0" />
-              <Button x:Name="SoonBackBtn" Style="{StaticResource SoftButton}" HorizontalAlignment="Left" Margin="0,18,0,0" Padding="18,0" Height="36" Click="OnSoonBack" />
-            </StackPanel>
+        <!-- ================================= RECOVERY -->
+        <ScrollViewer x:Name="ViewRecovery" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="RecoveryStateTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="RecoveryStateHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="RecoveryList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Background="{Binding Tone}"
+                                  VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="14" Foreground="{Binding Accent}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12.5" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="QuarantineTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="QuarantineHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="QuarantineList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Background="{Binding Tone}"
+                                  VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="14" Foreground="{Binding Accent}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12.5" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= CLEANUP -->
+        <ScrollViewer x:Name="ViewCleanup" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto" />
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                  <TextBlock x:Name="CleanupTotalLabel" Style="{StaticResource Sect}" Margin="0,0,0,3" />
+                  <TextBlock x:Name="CleanupTotal" Style="{StaticResource BigValue}" />
+                </StackPanel>
+                <TextBlock Grid.Column="1" x:Name="CleanupNote" Style="{StaticResource Sub}"
+                           VerticalAlignment="Center" Margin="26,0,26,0" />
+                <Button Grid.Column="2" x:Name="CleanupApply" Style="{StaticResource PrimaryButton}"
+                        VerticalAlignment="Center" Click="OnCleanupApply" />
+              </Grid>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="CleanupListTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="CleanupListHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="CleanupList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,12">
+                        <StackPanel>
+                          <DockPanel Margin="0,0,0,7">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Value}" FontSize="12.5" FontWeight="Bold"
+                                       Foreground="{Binding Accent}" HorizontalAlignment="Right"
+                                       Typography.NumeralAlignment="Tabular" />
+                          </DockPanel>
+                          <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent}"
+                                       Foreground="{Binding Accent}" />
+                          <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" Margin="0,6,0,0" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= STARTUP -->
+        <ScrollViewer x:Name="ViewStartup" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="StartupListTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="StartupListHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="StartupList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="1" Text="{Binding State}" FontSize="12" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" Margin="0,0,14,0" />
+                          <ToggleButton Grid.Column="2" Style="{StaticResource Switch}" VerticalAlignment="Center"
+                                        IsChecked="{Binding IsOn, Mode=OneWay}" IsEnabled="{Binding CanToggle}"
+                                        Tag="{Binding Name}" Click="OnStartupToggled" ToolTip="{Binding Hint}" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= DRIVERS -->
+        <ScrollViewer x:Name="ViewDrivers" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="DriverProblemTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="DriverProblemHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="DriverProblemList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Background="{Binding Tone}"
+                                  VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="14" Foreground="{Binding Accent}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12.5" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="DriverAllTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="DriverAllHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="DriverList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Background="{Binding Tone}"
+                                  VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="14" Foreground="{Binding Accent}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12.5" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= COMPARE -->
+        <ScrollViewer x:Name="ViewCompare" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <DockPanel>
+                <Button DockPanel.Dock="Right" x:Name="CompareRun" Style="{StaticResource PrimaryButton}"
+                        Click="OnCompareRun" />
+                <TextBlock x:Name="CompareWindow" Style="{StaticResource Sub}" VerticalAlignment="Center"
+                           Margin="0,0,20,0" />
+              </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="CompareChangedTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="CompareChangedHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="CompareChangedList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Background="{Binding Tone}"
+                                  VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="14" Foreground="{Binding Accent}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12.5" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="CompareVisibilityTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="CompareVisibilityHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="CompareVisibilityList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="34" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="6" Background="{Binding Tone}"
+                                  VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="14" Foreground="{Binding Accent}" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextTrimming="CharacterEllipsis" />
+                          </StackPanel>
+                          <TextBlock Grid.Column="2" Text="{Binding Value}" FontSize="12.5" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= TIMELINE -->
+        <ScrollViewer x:Name="ViewTimeline" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border x:Name="TimelineGapCard" Style="{StaticResource Card}" Margin="0,0,0,14"
+                    Background="{StaticResource WarnSoft}" BorderBrush="#F0DCB4" Visibility="Collapsed">
+              <StackPanel>
+                <TextBlock x:Name="TimelineGapTitle" Style="{StaticResource CardTitle}" Foreground="{StaticResource Warn}" />
+                <ItemsControl x:Name="TimelineGapList" Margin="0,7,0,0">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding}" Style="{StaticResource Tiny}" Foreground="{StaticResource Warn}" Margin="0,2" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="TimelineListTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="TimelineListHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="TimelineList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,11">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="132" />
+                            <ColumnDefinition Width="124" />
+                            <ColumnDefinition Width="*" />
+                          </Grid.ColumnDefinitions>
+                          <TextBlock Grid.Column="0" Text="{Binding When}" FontSize="12" Foreground="{StaticResource Faint}"
+                                     Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" />
+                          <Border Grid.Column="1" Background="{Binding Tone}" CornerRadius="6" Padding="8,2"
+                                  HorizontalAlignment="Left" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Category}" FontSize="11" FontWeight="SemiBold" Foreground="{Binding Accent}" />
+                          </Border>
+                          <TextBlock Grid.Column="2" Text="{Binding Change}" FontSize="12.5" Foreground="{StaticResource Ink}"
+                                     TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+
+        <!--
+          Page busy. A thin bar under the header rather than a modal veil: the page's own headings
+          stay readable, so it reads as "filling in" instead of "blocked".
+        -->
+        <Border x:Name="PageBusy" Visibility="Collapsed" VerticalAlignment="Top" HorizontalAlignment="Stretch"
+                Height="3" Margin="30,0" Background="#E6E6EE" CornerRadius="2" IsHitTestVisible="False">
+          <Border x:Name="PageBusyBar" Width="180" HorizontalAlignment="Left" CornerRadius="2"
+                  Background="{StaticResource AccentBar}">
+            <Border.RenderTransform><TranslateTransform /></Border.RenderTransform>
           </Border>
-        </Grid>
+          <Border.Triggers>
+            <EventTrigger RoutedEvent="Border.Loaded">
+              <BeginStoryboard>
+                <Storyboard RepeatBehavior="Forever">
+                  <DoubleAnimation Storyboard.TargetName="PageBusyBar"
+                                   Storyboard.TargetProperty="RenderTransform.X"
+                                   From="-200" To="1500" Duration="0:0:1.1" />
+                </Storyboard>
+              </BeginStoryboard>
+            </EventTrigger>
+          </Border.Triggers>
+        </Border>
 
         <!-- busy overlay -->
         <Border x:Name="BusyOverlay" Background="#88EAF1FB" Visibility="Collapsed">
@@ -1029,6 +1266,7 @@
             </StackPanel>
           </Border>
         </Border>
+      </Grid>
       </Grid>
     </Grid>
 

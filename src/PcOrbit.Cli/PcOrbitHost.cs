@@ -3,6 +3,7 @@ using PcOrbit.Adapters.Windows.Executors;
 using PcOrbit.Core.Abstractions;
 using PcOrbit.Core.Actions;
 using PcOrbit.Core.Checkup;
+using PcOrbit.Core.Cleanup;
 using PcOrbit.Core.Compiler;
 using PcOrbit.Core.Events;
 using PcOrbit.Core.Graph;
@@ -86,11 +87,52 @@ public sealed class PcOrbitHost : IDisposable
 
     public IEventLog Events { get; }
 
+    /// <summary>
+    /// Read-only windows onto changes PC Orbit did not make. Listed here for the same reason the
+    /// executor allowlist is: what a privileged process reads is worth being able to see in one
+    /// place.
+    /// </summary>
+    public IReadOnlyList<IChangeSource> ChangeSources { get; } = WindowsChangeSources.All();
+
+    /// <summary>What starts with Windows.</summary>
+    public IStartupInventory Startup { get; } = new WindowsStartupInventory();
+
+    /// <summary>
+    /// Turning a startup entry on or off. The permitted set is the machine's own inventory read at
+    /// the moment of the change, plus a fixed refusal list (ADR 0005).
+    /// </summary>
+    public IStartupController StartupControl { get; } = new WindowsStartupController();
+
+    /// <summary>
+    /// Moving this installation between Windows editions. Read-only until the user supplies their
+    /// own product key — this product ships none (ADR 0006).
+    /// </summary>
+    public IEditionService Editions { get; } = new WindowsEditionService();
+
+    /// <summary>
+    /// What is currently defending the machine, and whether Windows would even let it be changed.
+    /// </summary>
+    public WindowsProtectionState Protection { get; } = new();
+
+    /// <summary>What is driving the hardware, and Windows' own verdict on each device.</summary>
+    public IDriverInventory Drivers { get; } = new WindowsDriverInventory();
+
+    /// <summary>Measures reclaimable space. Read-only; moving files is the store's job.</summary>
+    public ICleanupScanner CleanupScanner { get; } = new WindowsCleanupScanner();
+
+    /// <summary>
+    /// Where removed files go so they can come back. The primitive cleanup could not exist without.
+    /// </summary>
+    public IQuarantineStore Quarantine { get; } = new WindowsQuarantineStore();
+
     public IElevationContext Elevation { get; } = WindowsElevationContext.Instance;
 
     public IBootSession Boot { get; } = WindowsBootSession.Instance;
 
     public IClock Clock { get; } = SystemClock.Instance;
+
+    /// <summary>Today, for the knowledge-pack expiry checks. Through the clock, so it is testable.</summary>
+    public DateOnly Today => DateOnly.FromDateTime(Clock.Now.LocalDateTime);
 
     /// <param name="safeApplyConfirmation">
     /// How Safe Apply asks "can you still see the screen?" (spec 10.1). The console countdown by
@@ -124,6 +166,7 @@ public sealed class PcOrbitHost : IDisposable
             new DisplayRefreshRateExecutor(safeApplyConfirmation ?? new ConsoleSafeApplyConfirmation()),
             new GuidedFirmwareExecutor(guides),
             new DellFirmwareExecutor(),
+            new RegistrySettingExecutor(),
         ]);
 
         var engine = new TransactionEngine(

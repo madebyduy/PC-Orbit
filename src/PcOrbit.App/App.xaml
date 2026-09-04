@@ -5,60 +5,187 @@
              StartupUri="MainWindow.xaml">
   <Application.Resources>
 
-    <!-- ============================================================ palette -->
-    <SolidColorBrush x:Key="Ink" Color="#1E2B3C" />
-    <SolidColorBrush x:Key="Muted" Color="#6B7A8F" />
-    <SolidColorBrush x:Key="Faint" Color="#8A99AD" />
-    <SolidColorBrush x:Key="Hair" Color="#EEF2F8" />
-    <SolidColorBrush x:Key="Accent" Color="#2563EB" />
-    <SolidColorBrush x:Key="AccentSoft" Color="#EAF2FF" />
-    <SolidColorBrush x:Key="Good" Color="#0F9D6E" />
-    <SolidColorBrush x:Key="GoodSoft" Color="#E3F8EF" />
-    <SolidColorBrush x:Key="Warn" Color="#B45309" />
-    <SolidColorBrush x:Key="WarnSoft" Color="#FDF3E7" />
-    <SolidColorBrush x:Key="Bad" Color="#C42B1C" />
-    <SolidColorBrush x:Key="Violet" Color="#8B5CF6" />
-    <SolidColorBrush x:Key="VioletSoft" Color="#F0EAFF" />
-    <SolidColorBrush x:Key="Cyan" Color="#06B6D4" />
-    <SolidColorBrush x:Key="CyanSoft" Color="#E2F6FD" />
-    <SolidColorBrush x:Key="Orange" Color="#F97316" />
-    <SolidColorBrush x:Key="OrangeSoft" Color="#FFEFE6" />
-    <SolidColorBrush x:Key="CardBg" Color="#F0FFFFFF" />
-    <SolidColorBrush x:Key="SideBg" Color="#8AFFFFFF" />
-    <SolidColorBrush x:Key="White" Color="#FFFFFF" />
+    <!--
+      ================================================================= design system
 
+      Two surfaces, deliberately far apart in value: a deep navy rail that reads as the
+      instrument, and a near-white canvas that reads as the readout. Contrast between the two is
+      what makes a tool look considered rather than merely tinted, and it keeps the content — which
+      is what people came for — the brightest thing on screen.
+
+      One accent. The previous palette had five (blue, violet, cyan, orange, green) all competing
+      at full saturation, which is why nothing on a page felt more important than anything else.
+      Indigo is now the only colour that means "act on this"; green, amber and red are reserved for
+      states the machine reported, and violet and cyan survive as data-series colours only.
+    -->
+
+    <!-- ============================================================ ink -->
+    <SolidColorBrush x:Key="Ink" Color="#0F172A" />
+    <SolidColorBrush x:Key="Muted" Color="#64748B" />
+    <SolidColorBrush x:Key="Faint" Color="#94A3B8" />
+    <SolidColorBrush x:Key="Hair" Color="#E9EDF3" />
+
+    <!-- ============================================================ accent -->
+    <SolidColorBrush x:Key="Accent" Color="#4F46E5" />
+    <SolidColorBrush x:Key="AccentDeep" Color="#3730A3" />
+    <SolidColorBrush x:Key="AccentSoft" Color="#EEF0FE" />
+
+    <!-- ============================================================ state -->
+    <SolidColorBrush x:Key="Good" Color="#047857" />
+    <SolidColorBrush x:Key="GoodSoft" Color="#E7F6F0" />
+    <SolidColorBrush x:Key="Warn" Color="#A16207" />
+    <SolidColorBrush x:Key="WarnSoft" Color="#FCF4E4" />
+    <SolidColorBrush x:Key="Bad" Color="#B91C1C" />
+    <SolidColorBrush x:Key="BadSoft" Color="#FDECEC" />
+
+    <!-- Data-series only. Never used to mean "important". -->
+    <SolidColorBrush x:Key="Violet" Color="#7C3AED" />
+    <SolidColorBrush x:Key="VioletSoft" Color="#F3EEFE" />
+    <SolidColorBrush x:Key="Cyan" Color="#0891B2" />
+    <SolidColorBrush x:Key="CyanSoft" Color="#E4F5F9" />
+    <SolidColorBrush x:Key="Orange" Color="#C2410C" />
+    <SolidColorBrush x:Key="OrangeSoft" Color="#FCEFE8" />
+
+    <!-- ============================================================ surfaces -->
+    <SolidColorBrush x:Key="White" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="CardBg" Color="#FFFFFF" />
+
+    <!--
+      The zebra stripe behind list rows. It was referenced from six places and defined in none, so
+      opening Plan &amp; Apply threw a XamlParseException the moment a plan rendered — a
+      DataTemplate is parsed when it is first applied, which is why nothing failed at startup.
+    -->
+    <SolidColorBrush x:Key="RowBg" Color="#F8FAFC" />
+    <SolidColorBrush x:Key="RowHover" Color="#F1F5F9" />
+
+    <!-- the rail -->
+    <SolidColorBrush x:Key="SideBg" Color="#0B1220" />
+    <SolidColorBrush x:Key="SideInk" Color="#1B1B1F" />
+    <SolidColorBrush x:Key="SideMuted" Color="#5C6270" />
+    <SolidColorBrush x:Key="SideHair" Color="#E3E5EC" />
+
+    <SolidColorBrush x:Key="NavActive" Color="#E6E6EE" />
+
+    <SolidColorBrush x:Key="SideFill" Color="#00FFFFFF" />
+
+    <!--
+      The canvas. Two soft colour fields drifting across an off-white, the way Windows 11's Mica
+      lets the wallpaper bleed through the frame. Low enough contrast that white cards still sit
+      clearly on top; high enough that the page is not a flat grey.
+    -->
     <LinearGradientBrush x:Key="PageBg" StartPoint="0,0" EndPoint="1,1">
-      <GradientStop Color="#EAF1FB" Offset="0" />
-      <GradientStop Color="#E7EFFA" Offset="0.45" />
-      <GradientStop Color="#E9F2F6" Offset="1" />
+      <GradientStop Color="#EEF0F8" Offset="0" />
+      <GradientStop Color="#F3F3F7" Offset="0.5" />
+      <GradientStop Color="#EDF2F6" Offset="1" />
     </LinearGradientBrush>
+
+    <!-- The two Mica glows laid over the canvas. Painted once, behind everything. -->
+    <RadialGradientBrush x:Key="GlowIndigo" GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+      <GradientStop Color="#5A6366F1" Offset="0" />
+      <GradientStop Color="#006366F1" Offset="1" />
+    </RadialGradientBrush>
+    <RadialGradientBrush x:Key="GlowCyan" GradientOrigin="0.5,0.5" Center="0.5,0.5" RadiusX="0.5" RadiusY="0.5">
+      <GradientStop Color="#4A22D3EE" Offset="0" />
+      <GradientStop Color="#0022D3EE" Offset="1" />
+    </RadialGradientBrush>
+
+    <!-- A card edge that darkens toward the bottom, standing in for a shadow. -->
+    <LinearGradientBrush x:Key="CardEdge" StartPoint="0,0" EndPoint="0,1">
+      <GradientStop Color="#F1F4F9" Offset="0" />
+      <GradientStop Color="#DCE3EE" Offset="1" />
+    </LinearGradientBrush>
+
+    <!-- Glass tile fill for the live gauges: a whisper of the accent at the top edge. -->
+    <LinearGradientBrush x:Key="TileFill" StartPoint="0,0" EndPoint="0,1">
+      <GradientStop Color="#FFFFFF" Offset="0" />
+      <GradientStop Color="#FAFBFE" Offset="1" />
+    </LinearGradientBrush>
+
     <LinearGradientBrush x:Key="LogoBg" StartPoint="0,0" EndPoint="1,1">
-      <GradientStop Color="#60A5FA" Offset="0" />
-      <GradientStop Color="#2563EB" Offset="1" />
+      <GradientStop Color="#818CF8" Offset="0" />
+      <GradientStop Color="#4F46E5" Offset="1" />
     </LinearGradientBrush>
-    <LinearGradientBrush x:Key="HeroBg" StartPoint="0,0" EndPoint="1,0.6">
-      <GradientStop Color="#F3E8FF" Offset="0" />
-      <GradientStop Color="#E9EDFF" Offset="0.5" />
-      <GradientStop Color="#FDEEF5" Offset="1" />
+
+    <!-- The one place a wash is allowed: the hero, which has no data competing with it. -->
+    <LinearGradientBrush x:Key="HeroBg" StartPoint="0,0" EndPoint="1,1">
+      <GradientStop Color="#1B1F4B" Offset="0" />
+      <GradientStop Color="#312E81" Offset="0.5" />
+      <GradientStop Color="#4338CA" Offset="1" />
     </LinearGradientBrush>
+    <RadialGradientBrush x:Key="HeroGlow" GradientOrigin="0.8,0.1" Center="0.8,0.1" RadiusX="0.7" RadiusY="1.1">
+      <GradientStop Color="#66A5B4FC" Offset="0" />
+      <GradientStop Color="#00A5B4FC" Offset="1" />
+    </RadialGradientBrush>
+
     <LinearGradientBrush x:Key="AccentBar" StartPoint="0,0" EndPoint="1,0">
-      <GradientStop Color="#60A5FA" Offset="0" />
-      <GradientStop Color="#2563EB" Offset="1" />
+      <GradientStop Color="#818CF8" Offset="0" />
+      <GradientStop Color="#4F46E5" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="VioletBar" StartPoint="0,0" EndPoint="1,0">
       <GradientStop Color="#A78BFA" Offset="0" />
-      <GradientStop Color="#8B5CF6" Offset="1" />
+      <GradientStop Color="#7C3AED" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="OrangeBar" StartPoint="0,0" EndPoint="1,0">
-      <GradientStop Color="#FDBA74" Offset="0" />
-      <GradientStop Color="#F97316" Offset="1" />
+      <GradientStop Color="#FB923C" Offset="0" />
+      <GradientStop Color="#C2410C" Offset="1" />
     </LinearGradientBrush>
     <LinearGradientBrush x:Key="GoodBar" StartPoint="0,0" EndPoint="1,0">
-      <GradientStop Color="#6EE7B7" Offset="0" />
-      <GradientStop Color="#10B981" Offset="1" />
+      <GradientStop Color="#34D399" Offset="0" />
+      <GradientStop Color="#047857" Offset="1" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CyanBar" StartPoint="0,0" EndPoint="1,0">
+      <GradientStop Color="#22D3EE" Offset="0" />
+      <GradientStop Color="#0891B2" Offset="1" />
     </LinearGradientBrush>
 
-    <!-- ============================================================ icons -->
+    <!--
+      ============================================================ icons
+      Windows' own icon font, so the app draws with the same strokes as Settings and Explorer.
+      Segoe Fluent Icons on Windows 11, Segoe MDL2 Assets underneath it on 10 - same code points.
+    -->
+    <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <sys:String x:Key="GlyphHome">&#xE80F;</sys:String>
+    <sys:String x:Key="GlyphStatus">&#xE9D9;</sys:String>
+    <sys:String x:Key="GlyphHardware">&#xE950;</sys:String>
+    <sys:String x:Key="GlyphPerf">&#xEC4A;</sys:String>
+    <sys:String x:Key="GlyphSecurity">&#xEA18;</sys:String>
+    <sys:String x:Key="GlyphRecovery">&#xEC7A;</sys:String>
+    <sys:String x:Key="GlyphCleanup">&#xE74D;</sys:String>
+    <sys:String x:Key="GlyphStartup">&#xE7E8;</sys:String>
+    <sys:String x:Key="GlyphDrivers">&#xE9F5;</sys:String>
+    <sys:String x:Key="GlyphPlan">&#xE945;</sys:String>
+    <sys:String x:Key="GlyphTimeline">&#xE81C;</sys:String>
+    <sys:String x:Key="GlyphCompare">&#xE8AB;</sys:String>
+    <sys:String x:Key="GlyphCpu">&#xE950;</sys:String>
+    <sys:String x:Key="GlyphRam">&#xEEA0;</sys:String>
+    <sys:String x:Key="GlyphDisk">&#xEDA2;</sys:String>
+    <sys:String x:Key="GlyphNet">&#xE701;</sys:String>
+    <sys:String x:Key="GlyphCheck">&#xE73E;</sys:String>
+    <sys:String x:Key="GlyphRefresh">&#xE72C;</sys:String>
+    <sys:String x:Key="GlyphAdmin">&#xE7EF;</sys:String>
+    <sys:String x:Key="GlyphClock">&#xE823;</sys:String>
+    <sys:String x:Key="GlyphMonitor">&#xE7F4;</sys:String>
+    <sys:String x:Key="GlyphAudio">&#xE767;</sys:String>
+    <sys:String x:Key="GlyphKeyboard">&#xE765;</sys:String>
+    <sys:String x:Key="GlyphGpu">&#xE9D9;</sys:String>
+    <sys:String x:Key="GlyphSearch">&#xE721;</sys:String>
+    <sys:String x:Key="GlyphSpark">&#xE945;</sys:String>
+    <sys:String x:Key="GlyphWarn">&#xE7BA;</sys:String>
+    <sys:String x:Key="GlyphInfo">&#xE946;</sys:String>
+    <sys:String x:Key="GlyphFolder">&#xE8B7;</sys:String>
+    <sys:String x:Key="GlyphChevron">&#xE76C;</sys:String>
+    <sys:String x:Key="GlyphList">&#xE9D5;</sys:String>
+
+    <Style x:Key="Glyph" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="{StaticResource IconFont}" />
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextOptions.TextRenderingMode" Value="Grayscale" />
+    </Style>
+
+    <!-- ============================================================ path icons (legacy) -->
     <Geometry x:Key="IconHome">M 3,9 L 10,3 L 17,9 L 17,17 L 3,17 Z</Geometry>
     <Geometry x:Key="IconGauge">M 3,10 A 7,7 0 1 1 17,10 M 10,10 L 13.5,6.5</Geometry>
     <Geometry x:Key="IconChip">M 5,5 L 15,5 L 15,15 L 5,15 Z M 8,2 L 8,5 M 12,2 L 12,5 M 8,15 L 8,18 M 12,15 L 12,18 M 2,8 L 5,8 M 2,12 L 5,12 M 15,8 L 18,8 M 15,12 L 18,12</Geometry>
@@ -84,52 +211,124 @@
     <Geometry x:Key="IconMoon">M 16.5,12 A 7,7 0 0 1 8,3.5 A 7,7 0 1 0 16.5,12</Geometry>
     <Geometry x:Key="IconCog">M 10,7.4 A 2.6,2.6 0 1 1 10,12.6 A 2.6,2.6 0 1 1 10,7.4 M 10,3 L 10,5 M 10,15 L 10,17 M 3,10 L 5,10 M 15,10 L 17,10 M 5.2,5.2 L 6.6,6.6 M 13.4,13.4 L 14.8,14.8 M 14.8,5.2 L 13.4,6.6 M 6.6,13.4 L 5.2,14.8</Geometry>
 
-    <!-- ============================================================ cards -->
+    <!-- window caption. Geometry, not strings: TemplateBinding does not convert types. -->
+    <sys:String x:Key="IconMinimize">&#xE921;</sys:String>
+    <sys:String x:Key="IconMaximize">&#xE922;</sys:String>
+    <sys:String x:Key="IconClose">&#xE8BB;</sys:String>
+
+    <!-- new pages -->
+    <Geometry x:Key="IconBroom">M 12,2 L 15,5 L 8.5,11.5 L 5.5,8.5 Z M 5.5,8.5 L 2.5,15.5 L 9.5,12.5 M 4,12 L 6,14</Geometry>
+    <Geometry x:Key="IconPower">M 10,3 L 10,9.5 M 5.6,5.6 A 6.2,6.2 0 1 0 14.4,5.6</Geometry>
+    <Geometry x:Key="IconLifebuoy">M 10,3 A 7,7 0 1 1 10,17 A 7,7 0 1 1 10,3 M 10,6.6 A 3.4,3.4 0 1 1 10,13.4 A 3.4,3.4 0 1 1 10,6.6 M 5,5 L 7.6,7.6 M 12.4,12.4 L 15,15 M 15,5 L 12.4,7.6 M 7.6,12.4 L 5,15</Geometry>
+    <Geometry x:Key="IconCompare">M 4,5 L 9,5 M 4,10 L 9,10 M 4,15 L 9,15 M 11,5 L 16,5 M 11,10 L 16,10 M 11,15 L 16,15</Geometry>
+    <Geometry x:Key="IconLock">M 5.5,9 L 14.5,9 L 14.5,16.5 L 5.5,16.5 Z M 7.5,9 L 7.5,6.5 A 2.5,2.5 0 0 1 12.5,6.5 L 12.5,9</Geometry>
+
+    <!-- ============================================================ elevation -->
+    <!--
+      Two shadows, not one. A tight dark shadow gives the edge its contact with the page and a
+      wide soft one gives the card its height; a single blur does one or the other and reads flat.
+      WPF allows one Effect per element, so the tight layer is a hairline border in the same hue.
+    -->
     <Style x:Key="Card" TargetType="Border">
-      <Setter Property="Background" Value="{StaticResource CardBg}" />
-      <Setter Property="BorderBrush" Value="{StaticResource White}" />
+      <Setter Property="Background" Value="#FFFFFF" />
+      <Setter Property="BorderBrush" Value="#E3E5EC" />
       <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="16" />
-      <Setter Property="Padding" Value="18,15" />
-      <Setter Property="Effect">
-        <Setter.Value>
-          <DropShadowEffect Color="#1E4078" Opacity="0.09" BlurRadius="26" ShadowDepth="7" Direction="270" />
-        </Setter.Value>
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Padding" Value="20,16" />
+      <Setter Property="SnapsToDevicePixels" Value="True" />
+    </Style>
+
+    <!--
+      The Settings row: one thing per line, an icon on the left, a name with a one-line description,
+      and whatever there is to say about it on the right. Windows uses it for every setting on every
+      page, which is why a person already knows how to read it.
+    -->
+    <Style x:Key="SettingsRow" TargetType="Border">
+      <Setter Property="Background" Value="#FFFFFF" />
+      <Setter Property="BorderBrush" Value="#E3E5EC" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="Padding" Value="16,13" />
+      <Setter Property="Margin" Value="0,0,0,4" />
+      <Setter Property="MinHeight" Value="60" />
+      <Setter Property="SnapsToDevicePixels" Value="True" />
+      <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+      <Setter Property="RenderTransform">
+        <Setter.Value><TranslateTransform /></Setter.Value>
       </Setter>
+      <Style.Triggers>
+        <EventTrigger RoutedEvent="MouseEnter">
+          <BeginStoryboard>
+            <Storyboard>
+              <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Y" To="-1"
+                               Duration="0:0:0.12" />
+            </Storyboard>
+          </BeginStoryboard>
+        </EventTrigger>
+        <EventTrigger RoutedEvent="MouseLeave">
+          <BeginStoryboard>
+            <Storyboard>
+              <DoubleAnimation Storyboard.TargetProperty="RenderTransform.Y" To="0"
+                               Duration="0:0:0.16" />
+            </Storyboard>
+          </BeginStoryboard>
+        </EventTrigger>
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter Property="Background" Value="#FBFBFD" />
+          <Setter Property="BorderBrush" Value="#C9CCE8" />
+        </Trigger>
+      </Style.Triggers>
     </Style>
 
     <Style x:Key="FlatCard" TargetType="Border" BasedOn="{StaticResource Card}">
-      <Setter Property="Background" Value="{StaticResource White}" />
-      <Setter Property="BorderBrush" Value="{StaticResource Hair}" />
-      <Setter Property="CornerRadius" Value="14" />
-      <Setter Property="Padding" Value="14,12" />
-      <Setter Property="Effect">
-        <Setter.Value>
-          <DropShadowEffect Color="#1E4078" Opacity="0.05" BlurRadius="14" ShadowDepth="4" Direction="270" />
-        </Setter.Value>
-      </Setter>
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Padding" Value="15,13" />
+    </Style>
+
+    <!-- A card that carries no shadow, for dense lists where 20 shadows become a grey smear. -->
+    <Style x:Key="PlainCard" TargetType="Border" BasedOn="{StaticResource Card}">
+      <Setter Property="Effect" Value="{x:Null}" />
+      <Setter Property="CornerRadius" Value="12" />
     </Style>
 
     <!-- ============================================================ text -->
+    <!--
+      A real scale rather than a handful of sizes: 28 / 19 / 15 / 13 / 11.5, each with a weight and
+      a colour that says what it is. Large text is tracked slightly tighter, which is the single
+      cheapest thing that separates a considered interface from a default one.
+    -->
     <Style x:Key="H1" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="25" />
-      <Setter Property="FontWeight" Value="ExtraBold" />
+      <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI" />
+      <Setter Property="FontSize" Value="28" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource Ink}" />
+      <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+    </Style>
+    <Style x:Key="H2" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI" />
+      <Setter Property="FontSize" Value="20" />
+      <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{StaticResource Ink}" />
     </Style>
     <Style x:Key="Sub" TargetType="TextBlock">
       <Setter Property="FontSize" Value="13" />
       <Setter Property="Foreground" Value="{StaticResource Muted}" />
       <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="LineHeight" Value="19" />
     </Style>
+
+    <!-- Section label: small, spaced, upper-ish. It orders the page without shouting. -->
     <Style x:Key="Sect" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="15" />
-      <Setter Property="FontWeight" Value="Bold" />
-      <Setter Property="Foreground" Value="{StaticResource Ink}" />
-      <Setter Property="Margin" Value="0,0,0,8" />
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource Faint}" />
+      <Setter Property="Margin" Value="2,4,0,10" />
+      <Setter Property="Typography.Capitals" Value="AllSmallCaps" />
     </Style>
+
     <Style x:Key="CardTitle" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="15" />
-      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="FontSize" Value="14.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{StaticResource Ink}" />
     </Style>
     <Style x:Key="Tiny" TargetType="TextBlock">
@@ -137,44 +336,89 @@
       <Setter Property="Foreground" Value="{StaticResource Faint}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
-    <Style x:Key="BigValue" TargetType="TextBlock">
-      <Setter Property="FontSize" Value="21" />
-      <Setter Property="FontWeight" Value="ExtraBold" />
+
+    <!--
+      Numbers get lining, tabular figures. Without this a column of readings jitters as the digits
+      change width, which is exactly the sort of small wrongness that makes a dashboard feel cheap.
+    -->
+    <Style x:Key="Display" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI" />
+      <Setter Property="FontSize" Value="34" />
+      <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Foreground" Value="{StaticResource Ink}" />
+      <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+      <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+    </Style>
+    <Style x:Key="BigValue" TargetType="TextBlock">
+      <Setter Property="FontFamily" Value="Segoe UI Variable Display, Segoe UI" />
+      <Setter Property="FontSize" Value="24" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="{StaticResource Ink}" />
+      <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
+      <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+    </Style>
+    <Style x:Key="Metric" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="Foreground" Value="{StaticResource Ink}" />
+      <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
     </Style>
 
     <!-- ============================================================ nav -->
+    <!--
+      On the dark rail the active item is a filled indigo block rather than a tinted one: at this
+      value there is no such thing as a subtle tint, and a barely-there highlight would leave the
+      user unsure which page they are on.
+    -->
     <Style x:Key="NavItem" TargetType="RadioButton">
-      <Setter Property="Foreground" Value="#5B6B80" />
+      <Setter Property="Foreground" Value="{StaticResource SideInk}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Accent}" />
       <Setter Property="FontSize" Value="13.5" />
-      <Setter Property="FontWeight" Value="Medium" />
-      <Setter Property="Height" Value="39" />
+      <Setter Property="FontWeight" Value="Normal" />
+      <Setter Property="Height" Value="38" />
+      <Setter Property="Margin" Value="0,1" />
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="RadioButton">
-            <Border x:Name="Bg" CornerRadius="12" Padding="14,0" Background="Transparent">
-              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <Path x:Name="Ico" Data="{TemplateBinding Tag}" Width="18" Height="18" Stretch="Uniform"
-                      Stroke="{TemplateBinding Foreground}" StrokeThickness="1.5"
-                      StrokeLineJoin="Round" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
-                <ContentPresenter Margin="12,0,0,0" VerticalAlignment="Center" />
-              </StackPanel>
-            </Border>
+            <Grid>
+              <Border x:Name="Bg" CornerRadius="9" Padding="13,0" Background="Transparent">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                  <TextBlock x:Name="Ico" Text="{TemplateBinding Tag}" Style="{StaticResource Glyph}"
+                             FontSize="16" Foreground="{TemplateBinding BorderBrush}" Width="20" />
+                  <ContentPresenter Margin="12,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+              </Border>
+
+              <!-- The marker rail. Reads as position even for someone who cannot see the fill. -->
+              <Border x:Name="Marker" Width="3" Height="18" CornerRadius="2" HorizontalAlignment="Left"
+                      Background="{StaticResource Accent}" Visibility="Collapsed" Margin="-9,0,0,0" />
+            </Grid>
             <ControlTemplate.Triggers>
               <Trigger Property="IsChecked" Value="True">
-                <Setter TargetName="Bg" Property="Background" Value="{StaticResource AccentSoft}" />
-                <Setter Property="Foreground" Value="{StaticResource Accent}" />
+                <Setter TargetName="Bg" Property="Background" Value="{StaticResource NavActive}" />
                 <Setter Property="FontWeight" Value="SemiBold" />
+                <Setter TargetName="Marker" Property="Visibility" Value="Visible" />
               </Trigger>
-              <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Bg" Property="Background" Value="#70FFFFFF" />
-              </Trigger>
+              <MultiTrigger>
+                <MultiTrigger.Conditions>
+                  <Condition Property="IsMouseOver" Value="True" />
+                  <Condition Property="IsChecked" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="Bg" Property="Background" Value="#EDEDF3" />
+              </MultiTrigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
+    </Style>
+
+    <!-- Group heading inside the rail, so fourteen destinations read as four groups. -->
+    <Style x:Key="NavGroup" TargetType="TextBlock">
+      <Setter Property="FontSize" Value="10.5" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="#7A8090" />
+      <Setter Property="Margin" Value="14,18,0,6" />
     </Style>
 
     <!-- ============================================================ buttons -->
@@ -184,17 +428,29 @@
       <Setter Property="FontSize" Value="13" />
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Padding" Value="18,0" />
-      <Setter Property="Height" Value="36" />
+      <Setter Property="Height" Value="38" />
       <Setter Property="Cursor" Value="Hand" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Bg" CornerRadius="10" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+            <Border x:Name="Bg" CornerRadius="10" Background="{TemplateBinding Background}"
+                    Padding="{TemplateBinding Padding}">
               <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bg" Property="Background" Value="#1D4ED8" /></Trigger>
-              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="Bg" Property="Background" Value="#A8C1EC" /></Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bg" Property="Background" Value="{StaticResource AccentDeep}" />
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Bg" Property="Background" Value="#312E81" />
+                <Setter TargetName="Bg" Property="RenderTransform">
+                  <Setter.Value><ScaleTransform ScaleX="0.98" ScaleY="0.98" /></Setter.Value>
+                </Setter>
+                <Setter TargetName="Bg" Property="RenderTransformOrigin" Value="0.5,0.5" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Bg" Property="Background" Value="#C7CBF0" />
+              </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -204,26 +460,23 @@
     <!-- A button on a pale background needs an edge, or it reads as a label. -->
     <Style x:Key="SecondaryButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
       <Setter Property="Background" Value="{StaticResource White}" />
-      <Setter Property="Foreground" Value="#243B57" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Foreground" Value="#1E293B" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
             <Border x:Name="Bg" CornerRadius="10" Background="{TemplateBinding Background}"
-                    BorderBrush="#B9CAE0" BorderThickness="1.2" Padding="{TemplateBinding Padding}">
-              <Border.Effect>
-                <DropShadowEffect Color="#1E4078" Opacity="0.10" BlurRadius="10" ShadowDepth="2" Direction="270" />
-              </Border.Effect>
+                    BorderBrush="#D7DEE8" BorderThickness="1" Padding="{TemplateBinding Padding}">
               <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
             </Border>
             <ControlTemplate.Triggers>
               <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Bg" Property="Background" Value="#EDF3FC" />
+                <Setter TargetName="Bg" Property="Background" Value="#F8FAFC" />
                 <Setter TargetName="Bg" Property="BorderBrush" Value="{StaticResource Accent}" />
+                <Setter Property="Foreground" Value="{StaticResource AccentDeep}" />
               </Trigger>
               <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="#93A3B6" />
-                <Setter TargetName="Bg" Property="BorderBrush" Value="#DCE3EC" />
+                <Setter Property="Foreground" Value="#A3AEBE" />
+                <Setter TargetName="Bg" Property="BorderBrush" Value="{StaticResource Hair}" />
               </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
@@ -232,14 +485,13 @@
     </Style>
 
     <Style x:Key="SoftButton" TargetType="Button" BasedOn="{StaticResource PrimaryButton}">
-      <Setter Property="Background" Value="#DCE9FF" />
-      <Setter Property="Foreground" Value="#12448F" />
-      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="Background" Value="{StaticResource AccentSoft}" />
+      <Setter Property="Foreground" Value="{StaticResource AccentDeep}" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
             <Border x:Name="Bg" CornerRadius="10" Background="{TemplateBinding Background}"
-                    BorderBrush="#8FB6F2" BorderThickness="1.2" Padding="{TemplateBinding Padding}">
+                    BorderBrush="#C7CBF5" BorderThickness="1" Padding="{TemplateBinding Padding}">
               <ContentPresenter VerticalAlignment="Center" HorizontalAlignment="Center" />
             </Border>
             <ControlTemplate.Triggers>
@@ -247,27 +499,42 @@
                 <Setter TargetName="Bg" Property="Background" Value="{StaticResource Accent}" />
                 <Setter Property="Foreground" Value="White" />
               </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="#A3AEBE" />
+                <Setter TargetName="Bg" Property="Background" Value="#F1F5F9" />
+                <Setter TargetName="Bg" Property="BorderBrush" Value="{StaticResource Hair}" />
+              </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
       </Setter>
     </Style>
 
-    <!-- window caption buttons -->
+    <!-- A small button that lives inside a list row. -->
+    <Style x:Key="RowButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+      <Setter Property="Height" Value="30" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Padding" Value="13,0" />
+    </Style>
+
+    <!-- window caption buttons, on the light top bar -->
     <Style x:Key="CaptionButton" TargetType="Button">
       <Setter Property="Width" Value="44" />
       <Setter Property="Height" Value="40" />
       <Setter Property="Cursor" Value="Hand" />
-      <Setter Property="Foreground" Value="#44546A" />
+      <Setter Property="Foreground" Value="#1B1B1F" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="Button">
-            <Border x:Name="Bg" Background="Transparent" CornerRadius="8">
-              <Path Data="{TemplateBinding Tag}" Width="11" Height="11" Stretch="Uniform"
-                    Stroke="{TemplateBinding Foreground}" StrokeThickness="1.2" />
+            <Border x:Name="Bg" Background="Transparent" CornerRadius="6">
+              <TextBlock Text="{TemplateBinding Tag}" Style="{StaticResource Glyph}" FontSize="10"
+                         Foreground="{TemplateBinding Foreground}" />
             </Border>
             <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Bg" Property="Background" Value="#33FFFFFF" /></Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bg" Property="Background" Value="#E9EDF3" />
+                <Setter Property="Foreground" Value="{StaticResource Ink}" />
+              </Trigger>
             </ControlTemplate.Triggers>
           </ControlTemplate>
         </Setter.Value>
@@ -275,38 +542,34 @@
     </Style>
 
     <Style x:Key="RoundIcon" TargetType="Border">
-      <Setter Property="Width" Value="44" />
-      <Setter Property="Height" Value="44" />
-      <Setter Property="CornerRadius" Value="22" />
-      <Setter Property="Background" Value="{StaticResource White}" />
-      <Setter Property="Effect">
-        <Setter.Value>
-          <DropShadowEffect Color="#1E4078" Opacity="0.08" BlurRadius="18" ShadowDepth="5" Direction="270" />
-        </Setter.Value>
-      </Setter>
+      <Setter Property="Width" Value="42" />
+      <Setter Property="Height" Value="42" />
+      <Setter Property="CornerRadius" Value="12" />
+      <Setter Property="Background" Value="{StaticResource AccentSoft}" />
     </Style>
 
     <!-- pill / chip -->
     <Style x:Key="Chip" TargetType="Border">
-      <Setter Property="CornerRadius" Value="12" />
-      <Setter Property="Padding" Value="11,4" />
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Padding" Value="9,3" />
       <Setter Property="Background" Value="{StaticResource AccentSoft}" />
       <Setter Property="HorizontalAlignment" Value="Left" />
     </Style>
 
     <Style x:Key="ThinBar" TargetType="ProgressBar">
-      <Setter Property="Height" Value="8" />
+      <Setter Property="Height" Value="6" />
       <Setter Property="Minimum" Value="0" />
       <Setter Property="Maximum" Value="100" />
       <Setter Property="Foreground" Value="{StaticResource AccentBar}" />
-      <Setter Property="Background" Value="#EDF0F6" />
+      <Setter Property="Background" Value="#EDF1F6" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Template">
         <Setter.Value>
           <ControlTemplate TargetType="ProgressBar">
-            <Border CornerRadius="4" Background="{TemplateBinding Background}">
-              <Border x:Name="PART_Track" CornerRadius="4">
-                <Border x:Name="PART_Indicator" CornerRadius="4" Background="{TemplateBinding Foreground}" HorizontalAlignment="Left" />
+            <Border CornerRadius="3" Background="{TemplateBinding Background}">
+              <Border x:Name="PART_Track" CornerRadius="3">
+                <Border x:Name="PART_Indicator" CornerRadius="3" Background="{TemplateBinding Foreground}"
+                        HorizontalAlignment="Left" />
               </Border>
             </Border>
           </ControlTemplate>
@@ -314,8 +577,36 @@
       </Setter>
     </Style>
 
+    <!-- A switch, for the one page that has per-row on/off. -->
+    <Style x:Key="Switch" TargetType="ToggleButton">
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Width" Value="40" />
+      <Setter Property="Height" Value="22" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Border x:Name="Track" CornerRadius="11" Background="#CBD5E1">
+              <Ellipse x:Name="Knob" Width="16" Height="16" Fill="White" HorizontalAlignment="Left"
+                       Margin="3,0,0,0" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="Track" Property="Background" Value="{StaticResource Accent}" />
+                <Setter TargetName="Knob" Property="HorizontalAlignment" Value="Right" />
+                <Setter TargetName="Knob" Property="Margin" Value="0,0,3,0" />
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Track" Property="Background" Value="#E9EDF3" />
+                <Setter TargetName="Knob" Property="Fill" Value="#CBD5E1" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
     <Style TargetType="ScrollBar">
-      <Setter Property="Width" Value="9" />
+      <Setter Property="Width" Value="10" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="Template">
         <Setter.Value>
@@ -325,7 +616,7 @@
                 <Thumb>
                   <Thumb.Template>
                     <ControlTemplate TargetType="Thumb">
-                      <Border Background="#55889FBF" CornerRadius="4" Width="6" HorizontalAlignment="Center" />
+                      <Border Background="#C3CDDB" CornerRadius="3" Width="6" HorizontalAlignment="Center" />
                     </ControlTemplate>
                   </Thumb.Template>
                 </Thumb>
@@ -343,10 +634,28 @@
     </Style>
 
     <Style TargetType="ComboBox">
-      <Setter Property="Height" Value="36" />
+      <Setter Property="Height" Value="38" />
       <Setter Property="FontSize" Value="13" />
       <Setter Property="VerticalContentAlignment" Value="Center" />
       <Setter Property="Background" Value="{StaticResource White}" />
+    </Style>
+
+    <Style TargetType="ToolTip">
+      <Setter Property="Background" Value="{StaticResource Ink}" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Padding" Value="10,7" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToolTip">
+            <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}"
+                    MaxWidth="360">
+              <ContentPresenter />
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
 
   </Application.Resources>

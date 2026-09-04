@@ -4,11 +4,21 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <RootNamespace>PcOrbit.App</RootNamespace>
-    <AssemblyName>PcControl</AssemblyName>
+    <AssemblyName>PcOrbit</AssemblyName>
     <UseWPF>true</UseWPF>
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <InvariantGlobalization>false</InvariantGlobalization>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!--
+      Trim the managed heap aggressively. A desktop tool that idles in the tray-adjacent corner of
+      someone's day should not hold 300 MB because the GC saw no pressure; 5 tells the runtime to
+      keep the heap near what is live rather than near what was recently allocated.
+    -->
+    <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="5" />
+    <RuntimeHostConfigurationOption Include="System.GC.Concurrent" Value="false" />
+  </ItemGroup>
 
   <ItemGroup>
     <!-- The CLI project is the composition root: the executor allowlist lives in PcOrbitHost and

@@ -1,7 +1,10 @@
 using System.Globalization;
 using PcOrbit.Adapters.Windows;
+using PcOrbit.Core.Abstractions;
 using PcOrbit.Core.Actions;
 using PcOrbit.Core.Checkup;
+using PcOrbit.Core.Cleanup;
+using PcOrbit.Core.Compare;
 using PcOrbit.Core.Compiler;
 using PcOrbit.Core.Events;
 using PcOrbit.Core.Graph;
@@ -61,7 +64,7 @@ public static class Commands
                 snapshot.TakenAt,
                 snapshot.Machine,
                 snapshot.Machine.Fingerprint,
-                Tier = SupportTierResolver.Resolve(snapshot.Machine, host.Catalog, FirmwareGuide(host)).ToString(),
+                Tier = SupportTierResolver.Resolve(snapshot.Machine, host.Catalog, FirmwareGuide(host), host.Today).ToString(),
                 snapshot.Readings,
             }));
 
@@ -78,7 +81,9 @@ public static class Commands
                 ? reading.Capability.Value
                 : output.CapabilityName(reading.Capability, node.DisplayKey);
 
-            string unit = node?.Unit is { } u ? " " + u : string.Empty;
+            // "Unknown days" reads as a measurement. A unit belongs to a number, so it only appears
+            // when there is one.
+            string unit = node?.Unit is { } u && reading.Value.IsKnown ? " " + u : string.Empty;
 
             Output.Line($"  {name,-42} {output.Status(reading.Value)}{unit}");
 
@@ -112,12 +117,13 @@ public static class Commands
         StateSnapshot snapshot = await host.Scanner.ScanAsync(ct).ConfigureAwait(false);
         await host.Snapshots.SaveAsync(snapshot, ct).ConfigureAwait(false);
 
-        IReadOnlyList<Finding> findings = PcOrbitHost.Checkup.Run(
-            new CheckupContext(snapshot, host.Graph, host.Catalog));
+        var context = new CheckupContext(snapshot, host.Graph, host.Catalog);
+        IReadOnlyList<Finding> findings = PcOrbitHost.Checkup.Run(context);
+        HealthVerdict verdict = HealthScore.Evaluate(context, findings);
 
         if (options.Json)
         {
-            Output.Line(DataLocator.ToJson(findings));
+            Output.Line(DataLocator.ToJson(new { Verdict = verdict, Findings = findings }));
             return ExitCodes.Ok;
         }
 
@@ -129,10 +135,12 @@ public static class Commands
         {
             Output.Heading(output.Text("cli.checkup.ok.title"));
             Output.Line("  " + output.Text("cli.checkup.ok.body"));
+            PrintUnreadable(verdict, output);
             return ExitCodes.Ok;
         }
 
         Output.Heading(output.Text("cli.checkup.heading", Output.Args(("count", Output.Number(findings.Count)))));
+        PrintUnreadable(verdict, output);
 
         foreach (Finding finding in findings)
         {
@@ -141,6 +149,17 @@ public static class Commands
             Output.Line($"  [{finding.Severity}] {output.Text(finding.TitleKey, finding.Arguments)}");
             Output.Line($"    {output.Text(finding.BenefitKey, finding.Arguments)}");
             Output.Line($"    {output.Text(finding.SafetyKey, finding.Arguments)}");
+
+            // Named, not summarised: "Secure Boot and TPM are off" and "your PC is too old" lead
+            // to completely different decisions, and only the list separates them.
+            foreach (CapabilityId related in finding.RelatedCapabilities)
+            {
+                CapabilityNode? node = host.Graph.Node(related);
+
+                Output.Line($"      - {(node is null ? related.Value : output.CapabilityName(related, node.DisplayKey))}"
+                    + $": {output.Status(snapshot.ValueOf(related))}");
+            }
+
             Output.Line($"    {output.Text("cli.checkup.cost", Output.Args(
                 ("restart", output.Restart(finding.Restart)),
                 ("seconds", Output.Number(Math.Max(1, finding.EstimatedSeconds)))))}");
@@ -551,6 +570,594 @@ public static class Commands
         return ExitCodes.Ok;
     }
 
+    // ---------------------------------------------------------------- clean
+
+    /// <summary>
+    /// Measures reclaimable space, and — with <c>--apply</c> — moves it to quarantine.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Nothing is deleted. Files are moved into a store that keeps their original path for thirty
+    /// days, so <c>pco restore</c> puts them back. That is the whole reason this feature could ship:
+    /// undo everywhere else in this product means restoring the value read before the change, and a
+    /// deleted file has no such value (ADR 0004, ADR 0005).
+    /// </para>
+    /// <para>
+    /// The honest cost of that is stated rather than hidden: the disk does not get smaller until
+    /// the retention window closes. An undo that quietly does not work would be the worse trade.
+    /// </para>
+    /// </remarks>
+    public static async Task<int> CleanAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(output);
+
+        CleanupSurvey survey = await host.CleanupScanner.SurveyAsync(ct).ConfigureAwait(false);
+
+        if (options.Json)
+        {
+            Output.Line(DataLocator.ToJson(survey));
+            return ExitCodes.Ok;
+        }
+
+        Output.Heading(output.Text("cli.clean.heading"));
+
+        foreach (CleanupCandidate candidate in survey.Candidates)
+        {
+            // Keyed on the candidate id, not the category: two temp folders are the same category
+            // and different places, and one line saying "Temporary files" twice tells the reader
+            // nothing about which one holds the three gigabytes.
+            string label = output.Text($"cleanup.item.{candidate.Id}");
+            string size = Output.Number((int)Math.Round(candidate.MegaBytes));
+            string mark = candidate.CanReclaim ? " " : "·";
+
+            // Three states, not two. "We will not remove this" and "there is nothing here to
+            // remove" are different facts, and collapsing them libels an empty folder.
+            string note = candidate.Trust != CleanupTrust.Reclaimable
+                ? output.Text("cli.clean.reportOnly")
+                : candidate.CanReclaim
+                    ? output.Text("cli.clean.reclaimable")
+                    : output.Text("cli.clean.alreadyClear");
+
+            Output.Line($"  {mark} {Truncate(label, 34),-34} {size,8} MB  {note}");
+
+            if (output.Verbose)
+            {
+                Output.Line($"    {"",-34} {candidate.Path}");
+                Output.Line($"    {"",-34} {candidate.Evidence.Source}");
+            }
+        }
+
+        Output.Line();
+        Output.Line("  " + output.Text("cli.clean.total", Output.Args(
+            ("reclaimable", Output.Number((int)Math.Round(survey.ReclaimableBytes / 1024d / 1024d))),
+            ("reported", Output.Number((int)Math.Round(survey.ReportedBytes / 1024d / 1024d))))));
+
+        // A survey that could not read part of the disk is a floor, not a total, and says so.
+        foreach (string problem in survey.Problems)
+        {
+            Output.Line($"    - {problem}");
+        }
+
+        if (!options.Apply)
+        {
+            Output.Line();
+            Output.Line("  " + output.Text("cli.clean.previewOnly"));
+            return ExitCodes.Ok;
+        }
+
+        List<CleanupCandidate> actionable = [.. survey.Candidates.Where(c => c.CanReclaim)];
+
+        if (actionable.Count == 0)
+        {
+            Output.Line();
+            Output.Line("  " + output.Text("cli.clean.nothingToDo"));
+            return ExitCodes.Ok;
+        }
+
+        if (!options.AssumeYes && !ConfirmCleanup(survey, output))
+        {
+            return ExitCodes.NotReached;
+        }
+
+        QuarantineBatch batch = await host.Quarantine.QuarantineAsync(actionable, ct).ConfigureAwait(false);
+
+        Output.Line();
+        Output.Line("  " + output.Text("cli.clean.done", Output.Args(
+            ("files", Output.Number(batch.Files.Count)),
+            ("mb", Output.Number((int)Math.Round(batch.Bytes / 1024d / 1024d))),
+            ("id", batch.Id),
+            ("expires", batch.ExpiresAt.LocalDateTime.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture)))));
+
+        foreach (string failure in batch.Failures.Take(5))
+        {
+            Output.Line($"    - {failure}");
+        }
+
+        return ExitCodes.Ok;
+    }
+
+    private static bool ConfirmCleanup(CleanupSurvey survey, Output output)
+    {
+        Output.Line();
+        Output.Line("  " + output.Text("cli.clean.confirm", Output.Args(
+            ("mb", Output.Number((int)Math.Round(survey.ReclaimableBytes / 1024d / 1024d))))));
+
+        Console.Write("  > ");
+        string? answer = Console.ReadLine();
+
+        return answer is not null
+            && (answer.Trim().Equals("y", StringComparison.OrdinalIgnoreCase)
+                || answer.Trim().Equals("yes", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>Lists quarantine batches, or puts one back.</summary>
+    public static async Task<int> RestoreAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(output);
+
+        if (options.FirstArgument is not { } batchId)
+        {
+            IReadOnlyList<QuarantineBatch> batches = await host.Quarantine.ListAsync(ct).ConfigureAwait(false);
+
+            if (options.Json)
+            {
+                Output.Line(DataLocator.ToJson(batches));
+                return ExitCodes.Ok;
+            }
+
+            Output.Heading(output.Text("cli.restore.heading"));
+
+            if (batches.Count == 0)
+            {
+                Output.Line("  " + output.Text("cli.restore.empty"));
+                return ExitCodes.Ok;
+            }
+
+            foreach (QuarantineBatch batch in batches)
+            {
+                Output.Line($"  {batch.Id}  {batch.CreatedAt.LocalDateTime:yyyy-MM-dd HH:mm}  "
+                    + $"{batch.Files.Count,5} files  {batch.Bytes / 1024 / 1024,6} MB  "
+                    + output.Text("cli.restore.expires", Output.Args(
+                        ("date", batch.ExpiresAt.LocalDateTime.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture)))));
+            }
+
+            Output.Line();
+            Output.Line("  " + output.Text("cli.restore.how"));
+            return ExitCodes.Ok;
+        }
+
+        QuarantineRestore restore = await host.Quarantine.RestoreAsync(batchId, ct).ConfigureAwait(false);
+
+        if (options.Json)
+        {
+            Output.Line(DataLocator.ToJson(restore));
+            return restore.IsComplete ? ExitCodes.Ok : ExitCodes.NotReached;
+        }
+
+        Output.Line(output.Text("cli.restore.done", Output.Args(("count", Output.Number(restore.Restored)))));
+
+        foreach (string failure in restore.Failures)
+        {
+            Output.Line($"  - {failure}");
+        }
+
+        return restore.IsComplete ? ExitCodes.Ok : ExitCodes.NotReached;
+    }
+
+    // ---------------------------------------------------------------- drivers
+
+    /// <summary>
+    /// The driver behind every device, and Windows' own verdict on whether it is working.
+    /// </summary>
+    /// <remarks>
+    /// Sorted with faulty devices first and never by date. An old driver is not a fault, and a list
+    /// that implies otherwise is how people are talked into installing something worse than what
+    /// they had (ADR 0004).
+    /// </remarks>
+    public static async Task<int> DriversAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(output);
+
+        DriverInventoryResult inventory = await host.Drivers.ReadAsync(ct).ConfigureAwait(false);
+
+        if (options.Json)
+        {
+            Output.Line(DataLocator.ToJson(inventory));
+            return ExitCodes.Ok;
+        }
+
+        if (inventory.Problem is { } problem)
+        {
+            Output.Error(problem);
+            return ExitCodes.Error;
+        }
+
+        Output.Heading(output.Text("cli.drivers.heading", Output.Args(
+            ("count", Output.Number(inventory.Drivers.Count)))));
+
+        if (inventory.Faulty.Count > 0)
+        {
+            Output.Line("  " + output.Text("cli.drivers.faulty", Output.Args(
+                ("count", Output.Number(inventory.Faulty.Count)))));
+
+            foreach (DriverEntry driver in inventory.Faulty)
+            {
+                Output.Line($"    ! {Truncate(driver.DeviceName, 46),-46} "
+                    + output.Text("cli.drivers.problemCode", Output.Args(
+                        ("code", Output.Number(driver.ProblemCode ?? 0)))));
+            }
+
+            Output.Line();
+        }
+        else
+        {
+            Output.Line("  " + output.Text("cli.drivers.allWorking"));
+            Output.Line();
+        }
+
+        // The full list only in verbose: two hundred working devices is not information.
+        if (output.Verbose)
+        {
+            foreach (DriverEntry driver in inventory.Drivers)
+            {
+                Output.Line($"    {Truncate(driver.DeviceName, 46),-46} {driver.Version,-18} "
+                    + $"{driver.Date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "—",-12} {driver.Provider}");
+            }
+        }
+        else
+        {
+            Output.Line("  " + output.Text("cli.drivers.verboseHint"));
+        }
+
+        return ExitCodes.Ok;
+    }
+
+    // ---------------------------------------------------------------- startup
+
+    /// <summary>
+    /// Lists what starts with Windows.
+    /// </summary>
+    /// <remarks>
+    /// Read-only, and it says so at the end rather than leaving the reader hunting for a button
+    /// that is not there. Disabling an entry needs a parameter kind the action model does not have
+    /// yet (ADR 0004), and a list that pretends otherwise would be worse than one that explains.
+    /// </remarks>
+    public static async Task<int> StartupAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(output);
+
+        // 'startup on <name>' / 'startup off <name>' — the change half. The name is checked against
+        // the machine's own inventory inside the controller before any command is built (ADR 0005).
+        if (options.Arguments.Count >= 2 && options.Arguments[0] is "on" or "off")
+        {
+            bool enable = options.Arguments[0] == "on";
+            string name = string.Join(' ', options.Arguments.Skip(1));
+
+            StartupChangeResult change = await host.StartupControl
+                .SetEnabledAsync(name, enable, ct)
+                .ConfigureAwait(false);
+
+            if (options.Json)
+            {
+                Output.Line(DataLocator.ToJson(change));
+                return change.Verified ? ExitCodes.Ok : ExitCodes.NotReached;
+            }
+
+            if (change.Problem is { } refusal)
+            {
+                Output.Error(refusal);
+                return ExitCodes.NotReached;
+            }
+
+            Output.Line(output.Text(
+                change.Applied ? "cli.startup.changed" : "cli.startup.alreadyThere",
+                Output.Args(
+                    ("name", change.Name),
+                    ("state", output.Text(enable ? "status.enabled" : "status.disabled")))));
+
+            Output.Line("  " + output.Text("cli.startup.undo", Output.Args(
+                ("how", $"pco startup {(enable ? "off" : "on")} {change.Name}"))));
+
+            return ExitCodes.Ok;
+        }
+
+        StartupInventoryResult inventory = await host.Startup.ReadAsync(ct).ConfigureAwait(false);
+
+        if (options.Json)
+        {
+            Output.Line(DataLocator.ToJson(inventory));
+            return ExitCodes.Ok;
+        }
+
+        if (inventory.Problem is { } problem)
+        {
+            Output.Error(problem);
+            return ExitCodes.Error;
+        }
+
+        Output.Heading(output.Text("cli.startup.heading", Output.Args(
+            ("count", Output.Number(inventory.Entries.Count)))));
+
+        if (inventory.Entries.Count == 0)
+        {
+            Output.Line("  " + output.Text("cli.startup.empty"));
+            return ExitCodes.Ok;
+        }
+
+        foreach (IGrouping<StartupLocation, StartupEntry> group in inventory.Entries.GroupBy(e => e.Location))
+        {
+            Output.Line();
+            Output.Line("  " + output.Text($"startup.location.{Camel(group.Key.ToString())}"));
+
+            foreach (StartupEntry entry in group)
+            {
+                // Three states, not two. "We could not tell" is its own word, because an entry
+                // silently printed as on is an entry the reader will not think to check.
+                string state = entry.Enabled switch
+                {
+                    true => output.Text("status.enabled"),
+                    false => output.Text("status.disabled"),
+                    null => output.Text("status.unknown"),
+                };
+
+                Output.Line($"    {Truncate(entry.Name, 38),-38} {state}");
+
+                if (output.Verbose)
+                {
+                    Output.Line($"    {"",-38} {Truncate(entry.Command, 90)}");
+                    Output.Line($"    {"",-38} {entry.Evidence.SourceKind}: {entry.Evidence.Source} [{entry.Evidence.Confidence}]");
+                }
+            }
+        }
+
+        Output.Line();
+        Output.Line("  " + output.Text("cli.startup.readOnly"));
+
+        return ExitCodes.Ok;
+    }
+
+    // ---------------------------------------------------------------- timeline
+
+    /// <summary>
+    /// Everything that changed on this machine recently, whoever changed it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>history</c> answers "what did PC Orbit do". This answers the question people actually
+    /// arrive with: <em>what changed just before it started doing that?</em> Windows updates,
+    /// driver installs, blue screens, hardware errors and restore points, on one axis with our own
+    /// transactions (deep research §7.3).
+    /// </para>
+    /// <para>
+    /// It is a correlation view and says so. Nothing here claims a cause — the ordering is the
+    /// evidence, and the reader draws the conclusion.
+    /// </para>
+    /// </remarks>
+    public static async Task<int> TimelineAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(output);
+
+        DateTimeOffset since = host.Clock.Now.AddDays(-options.Days);
+
+        IReadOnlyList<ChangeEvent> own = await host.Events
+            .QueryAsync(new EventQuery(Since: since, Limit: options.Limit), ct)
+            .ConfigureAwait(false);
+
+        List<ChangeSourceResult> external = [];
+
+        foreach (IChangeSource source in host.ChangeSources)
+        {
+            external.Add(await source.ReadAsync(since, ct).ConfigureAwait(false));
+        }
+
+        Timeline timeline = TimelineBuilder.Build(own, external, since, options.Limit);
+
+        if (options.Json)
+        {
+            Output.Line(DataLocator.ToJson(timeline));
+            return ExitCodes.Ok;
+        }
+
+        Output.Heading(output.Text("cli.timeline.heading", Output.Args(
+            ("days", Output.Number(options.Days)))));
+
+        // Said before the list, not after: a reader who has already scrolled the events has
+        // already decided the machine was quiet.
+        if (timeline.Unavailable.Count > 0)
+        {
+            Output.Line("  " + output.Text(
+                "cli.timeline.unavailable",
+                Output.Args(("count", Output.Number(timeline.Unavailable.Count)))));
+
+            foreach (UnavailableSource unavailable in timeline.Unavailable)
+            {
+                Output.Line($"    - {unavailable.Problem}");
+            }
+        }
+
+        if (timeline.Events.Count == 0)
+        {
+            Output.Line("  " + output.Text("cli.timeline.empty", Output.Args(("days", Output.Number(options.Days)))));
+            return ExitCodes.Ok;
+        }
+
+        Output.Line();
+
+        foreach (ChangeEvent e in timeline.Events)
+        {
+            string when = e.Timestamp.LocalDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.CurrentCulture);
+            string mark = e.Source == EventSource.PcOrbit ? "*" : " ";
+            string after = e.After is { } value ? $" -> {value}" : string.Empty;
+
+            Output.Line($"  {mark} {when}  {e.Category,-11} {Truncate(e.Component, 52)}{after}");
+
+            if (output.Verbose)
+            {
+                Output.Line($"    {"",-19}  source={e.Source} evidence={e.Evidence?.Source ?? "-"}");
+            }
+        }
+
+        Output.Line();
+        Output.Line("  " + output.Text("cli.timeline.correlationOnly"));
+
+        return ExitCodes.Ok;
+    }
+
+    /// <summary>Keeps one long update title from wrapping the whole table.</summary>
+    private static string Truncate(string value, int max) =>
+        value.Length <= max ? value : value[..(max - 1)] + "…";
+
+    /// <summary>Enum name to string-catalog key suffix: <c>UserRegistry</c> to <c>userRegistry</c>.</summary>
+    private static string Camel(string value) =>
+        string.IsNullOrEmpty(value) ? value : char.ToLowerInvariant(value[0]) + value[1..];
+
+    // ---------------------------------------------------------------- diff
+
+    /// <summary>
+    /// Scans, then shows what has moved since a previous scan.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The research's BIOS Baseline &amp; Diff (§8.5), and the answer to the question nobody can
+    /// currently answer after a firmware update or a CMOS reset: <em>which settings actually
+    /// changed?</em> Vendors reset far more than they announce, and "compare it to how it was" has
+    /// until now meant remembering.
+    /// </para>
+    /// <para>
+    /// Readings we lost sight of are listed apart from readings that moved. An unelevated scan
+    /// cannot see the TPM or drive encryption, and rolling those into the same list would report a
+    /// BIOS update as having switched off the security chip (ADR 0004).
+    /// </para>
+    /// </remarks>
+    public static async Task<int> DiffAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(output);
+
+        StateSnapshot after = await host.Scanner.ScanAsync(ct).ConfigureAwait(false);
+        StateSnapshot? before = await ResolveBaselineAsync(host, options, after, ct).ConfigureAwait(false);
+
+        // Saved after the baseline is chosen, so "the scan before this one" cannot be this one.
+        await host.Snapshots.SaveAsync(after, ct).ConfigureAwait(false);
+
+        if (before is null)
+        {
+            Output.Line(output.Text("cli.diff.noBaseline"));
+            return ExitCodes.Ok;
+        }
+
+        SnapshotComparison comparison = SnapshotDiff.Compare(before, after);
+
+        if (options.Json)
+        {
+            Output.Line(DataLocator.ToJson(comparison));
+            return ExitCodes.Ok;
+        }
+
+        PrintMachineHeader(host, after, output);
+
+        Output.Heading(output.Text("cli.diff.heading", Output.Args(
+            ("before", before.TakenAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.CurrentCulture)),
+            ("after", after.TakenAt.LocalDateTime.ToString("yyyy-MM-dd HH:mm", CultureInfo.CurrentCulture)))));
+
+        // Comparing two different PCs is a legitimate thing to want and an illegitimate thing to
+        // present as one machine's history, so it is said out loud rather than silently allowed.
+        if (!comparison.SameMachine)
+        {
+            Output.Line("  " + output.Text("cli.diff.differentMachine"));
+        }
+
+        if (comparison.IsUnchanged)
+        {
+            Output.Line("  " + output.Text("cli.diff.identical"));
+            return ExitCodes.Ok;
+        }
+
+        PrintChanges(host, output, comparison.RealChanges, "cli.diff.changed");
+        PrintChanges(host, output, comparison.VisibilityChanges, "cli.diff.visibility");
+
+        return ExitCodes.Ok;
+    }
+
+    /// <summary>
+    /// The snapshot to compare against: the one named on the command line, or the newest earlier
+    /// scan of this same machine.
+    /// </summary>
+    private static async Task<StateSnapshot?> ResolveBaselineAsync(
+        PcOrbitHost host,
+        CliOptions options,
+        StateSnapshot current,
+        CancellationToken ct)
+    {
+        if (options.FirstArgument is { } explicitId)
+        {
+            return await host.Snapshots.LoadAsync(explicitId, ct).ConfigureAwait(false)
+                ?? throw new CliUsageException($"No stored scan has the id '{explicitId}'. Run 'pco diff' with no id to use the previous scan.");
+        }
+
+        IReadOnlyList<SnapshotSummary> recent = await host.Snapshots
+            .ListRecentAsync(50, ct)
+            .ConfigureAwait(false);
+
+        SnapshotSummary? previous = recent.FirstOrDefault(s =>
+            s.Id != current.Id
+            && string.Equals(s.MachineFingerprint, current.Machine.Fingerprint, StringComparison.Ordinal));
+
+        return previous is null
+            ? null
+            : await host.Snapshots.LoadAsync(previous.Id, ct).ConfigureAwait(false);
+    }
+
+    private static void PrintChanges(
+        PcOrbitHost host,
+        Output output,
+        IReadOnlyList<CapabilityChange> changes,
+        string headingKey)
+    {
+        if (changes.Count == 0)
+        {
+            return;
+        }
+
+        Output.Line();
+        Output.Line("  " + output.Text(headingKey, Output.Args(("count", Output.Number(changes.Count)))));
+
+        foreach (CapabilityChange change in changes)
+        {
+            CapabilityNode? node = host.Graph.Node(change.Capability);
+
+            string name = node is null
+                ? change.Capability.Value
+                : output.CapabilityName(change.Capability, node.DisplayKey);
+
+            Output.Line($"    {name,-40} {output.Status(change.Before)} -> {output.Status(change.After)}");
+
+            // A value that moved at the same time as its source moved is a weaker claim than one
+            // that moved on its own, and the reader should be able to tell which they are looking at.
+            if (change.EvidenceChanged)
+            {
+                Output.Line($"    {"",-40} {output.Text("cli.diff.sourceChanged")}");
+            }
+
+            if (output.Verbose)
+            {
+                Output.Line($"    {"",-40} was: {change.BeforeEvidence?.Source ?? "-"}");
+                Output.Line($"    {"",-40} now: {change.AfterEvidence?.Source ?? "-"}");
+            }
+        }
+    }
+
     // ---------------------------------------------------------------- outcomes
 
     public static int Outcomes(PcOrbitHost host, CliOptions options, Output output)
@@ -591,6 +1198,41 @@ public static class Commands
     /// and this is the command that fails a build when shipped data and shipped code disagree.
     /// Output stays English — it is developer output, not product surface.
     /// </remarks>
+    /// <summary>
+    /// Knowledge-pack expiry, reported before it bites rather than after.
+    /// </summary>
+    /// <remarks>
+    /// An expired pack fails closed at the point of use, which is right for the user and useless
+    /// for whoever ships the build — they find out from a support ticket. This runs in CI, so the
+    /// warning arrives while there is still time to revalidate the pack (ADR 0004).
+    /// </remarks>
+    private static IEnumerable<string> CheckGuidePacks(PcOrbitHost host)
+    {
+        DateOnly today = host.Today;
+        DateOnly soon = today.AddDays(60);
+
+        foreach ((string id, GuideData guide) in host.Guides.OrderBy(g => g.Key, StringComparer.Ordinal))
+        {
+            if (guide.ExpiresOn is not { } expiry)
+            {
+                yield return $"Guide pack '{id}' declares no expiresOn, so nothing will ever stop it being "
+                    + "used after the vendor menus it describes have moved.";
+                continue;
+            }
+
+            if (guide.IsExpired(today))
+            {
+                yield return $"Guide pack '{id}' expired on {expiry:yyyy-MM-dd}. Every guided step using it "
+                    + "now refuses, and machines relying on it have dropped to read-only.";
+            }
+            else if (expiry <= soon)
+            {
+                yield return $"Guide pack '{id}' expires on {expiry:yyyy-MM-dd}, within 60 days. Revalidate it "
+                    + "against current vendor firmware before it lapses.";
+            }
+        }
+    }
+
     public static int Doctor(PcOrbitHost host, CliOptions options, Output output)
     {
         ArgumentNullException.ThrowIfNull(host);
@@ -672,6 +1314,8 @@ public static class Commands
             }
         }
 
+        problems.AddRange(CheckGuidePacks(host));
+
         Output.Line();
 
         if (problems.Count == 0)
@@ -708,7 +1352,7 @@ public static class Commands
 
     private static void PrintMachineHeader(PcOrbitHost host, StateSnapshot snapshot, Output output)
     {
-        SupportTier tier = SupportTierResolver.Resolve(snapshot.Machine, host.Catalog, FirmwareGuide(host));
+        SupportTier tier = SupportTierResolver.Resolve(snapshot.Machine, host.Catalog, FirmwareGuide(host), host.Today);
 
         Output.Line();
         Output.Line(output.Text("cli.header.pc", Output.Args(("name", snapshot.Machine.DisplayName))));
@@ -725,6 +1369,27 @@ public static class Commands
             // is which actions would need administrator rights.
             Output.Line("  " + output.Text("cli.header.standardUser"));
         }
+    }
+
+    /// <summary>
+    /// Says how much of the machine the checkup could not see.
+    /// </summary>
+    /// <remarks>
+    /// "Nothing found" and "nothing found, and twelve things were unreadable" are different
+    /// results, and only one of them means the PC is fine. No rule fires on Unknown (spec 6.6),
+    /// so without this line the good news would be reporting the absence of evidence as evidence
+    /// of absence (ADR 0004).
+    /// </remarks>
+    private static void PrintUnreadable(HealthVerdict verdict, Output output)
+    {
+        if (!verdict.IsPartial)
+        {
+            return;
+        }
+
+        Output.Line("  " + output.Text(
+            "health.partial",
+            Output.Args(("count", Output.Number(verdict.UnreadableCount)))));
     }
 
     private static PreflightReport RunPreflight(

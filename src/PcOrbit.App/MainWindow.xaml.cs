@@ -25,7 +25,7 @@ namespace PcOrbit.App;
 
 // ---------------------------------------------------------------- row models
 
-public sealed record ReadingRow(string Name, string Value, string Source, Brush Accent, Brush RowBg);
+public sealed record ReadingRow(string Name, string Detail, string Value, string Glyph, Brush Tone, Brush Accent);
 
 public sealed record FindingRow(
     string Title,
@@ -69,7 +69,7 @@ public sealed record GaugeRow(
     string Value,
     string Note,
     double Percent,
-    Geometry Glyph,
+    string Glyph,
     Brush Tone,
     Brush Accent);
 
@@ -84,7 +84,7 @@ public sealed record ProcRow(
     Brush Accent,
     Brush RowBg);
 
-public sealed record DeviceRow(string Name, string Detail, Geometry Glyph, Brush Tone, Brush Accent);
+public sealed record DeviceRow(string Name, string Detail, string Glyph, Brush Tone, Brush Accent);
 
 public sealed record DeviceGroupRow(string Group, IReadOnlyList<DeviceRow> Items);
 
@@ -142,11 +142,14 @@ public partial class MainWindow : Window
     private IReadOnlyList<Finding> _findings = [];
     private LiveMetrics _live = LiveMetrics.None;
     private Plan? _plan;
+    private int _tick;
+    private IReadOnlyList<(RadioButton Nav, Page Page)>? _pages;
 
     public MainWindow()
     {
         InitializeComponent();
         _liveTimer.Tick += OnLiveTick;
+
     }
 
     // ---------------------------------------------------------------- helpers
@@ -172,6 +175,9 @@ public partial class MainWindow : Window
     private static Brush B(string key) => (Brush)Application.Current.Resources[key];
 
     private static Geometry G(string key) => (Geometry)Application.Current.Resources[key];
+
+    /// <summary>A Segoe Fluent glyph from the resources, by key.</summary>
+    private static string Gl(string key) => (string)Application.Current.Resources[key];
 
     private static string N(int value) => value.ToString(CultureInfo.InvariantCulture);
 
@@ -229,13 +235,12 @@ public partial class MainWindow : Window
         Task<HardwareInventory> hardware = _hardware.ReadAsync();
         Task<SystemSummary> summary = _summaryReader.ReadAsync();
 
-        await RescanAsync();
+        await LoadOrScanAsync();
 
         _inventory = await hardware;
         _summary = await summary;
 
         RenderInventory();
-        RenderContextCards();
 
         await RefreshHistoryAsync();
 
@@ -270,10 +275,12 @@ public partial class MainWindow : Window
         RenderStatusView();
         RenderStatusStrip();
         RenderInventory();
-        RenderContextCards();
         RenderDashGauges();
         RenderProcesses();
         RenderPerf();
+
+        InvalidatePages();
+        await ReloadCurrentPageAsync();
 
         _plan = null;
         PlanResultArea.Visibility = Visibility.Collapsed;
@@ -287,46 +294,29 @@ public partial class MainWindow : Window
         Title = T("app.title");
         AppTitle.Text = T("app.title");
         AppTagline.Text = T("app.tagline");
-        SearchHint.Text = T("app.search");
         BusyText.Text = T("app.status.scanning");
 
-        NavDashboard.Content = T("app.nav.dashboard");
-        NavStatus.Content = T("app.nav.status");
-        NavPerf.Content = T("app.nav.perf");
-        NavPlan.Content = T("app.nav.plan");
-        NavHistory.Content = T("app.nav.history");
-        NavOptimize.Content = T("app.nav.optimize");
-        NavRepair.Content = T("app.nav.repair");
-        NavUpdates.Content = T("app.nav.updates");
-        NavHardware.Content = T("app.nav.hardware");
-        NavDrivers.Content = T("app.nav.drivers");
-        NavApps.Content = T("app.nav.apps");
-        NavAutomation.Content = T("app.nav.automation");
-        NavBackup.Content = T("app.nav.backup");
-        NavTools.Content = T("app.nav.tools");
+        NavGroupMachine.Text = T("app.navgroup.machine");
+        NavGroupSafety.Text = T("app.navgroup.safety");
+        NavGroupUpkeep.Text = T("app.navgroup.upkeep");
+        NavGroupChange.Text = T("app.navgroup.change");
 
-        DashTitle.Text = T("app.nav.dashboard");
-        DashSub.Text = T("app.dash.sub");
-        RescanBtn.Content = T("app.rescan");
+        foreach ((RadioButton nav, Page page) in Pages)
+        {
+            nav.Content = T(page.TitleKey);
+        }
+
+        AppVersionLabel.Text = "v" + PcOrbitHost.AppVersion;
+        TopRescan.Content = T("app.rescan");
+        ApplyPageChrome();
+
         HeroLabel.Text = T("app.hero.label");
         HealthTitle.Text = T("app.health.title");
         FindingsSect.Text = T("app.dash.findings");
         OutcomesSect.Text = T("cli.outcomes.heading");
 
-        StatusTitle.Text = T("app.nav.status");
-        StatusSub.Text = T("app.status.sub");
-        UptimeLabel.Text = T("app.uptime.label");
-        OsLabel.Text = T("app.os.label");
-        EncryptionLabel.Text = T("cap.security.bitlocker.system-drive");
-        HardwareSect.Text = T("app.status.hardware");
-        ActivitySect.Text = T("app.status.activity");
         ReadingsTitle.Text = T("cli.scan.heading");
-        ReadingsHint.Text = T("app.status.readingsHint");
-        DiskTitle.Text = T("app.disk.title");
-        DisplayTitle.Text = T("cap.display.current-refresh-rate");
 
-        PerfTitle.Text = T("app.nav.perf");
-        PerfSub.Text = T("app.perf.sub");
         LiveChip.Text = T("app.perf.live");
         CpuChartTitle.Text = T("app.perf.cpu");
         RamChartTitle.Text = T("app.perf.ram");
@@ -335,23 +325,16 @@ public partial class MainWindow : Window
         PerfHonestyTitle.Text = T("app.perf.honesty.title");
         PerfHonestyBody.Text = T("app.perf.honesty.body");
 
-        PlanTitle.Text = T("app.nav.plan");
-        PlanSub.Text = T("app.plan.sub");
         CompileBtn.Content = T("app.plan.compile");
         DryRunBox.Content = T("app.plan.dryRun");
         RecoveryKeyBox.Content = T("app.plan.recoveryKey");
         PlanNotesTitle.Text = T("cli.plan.beforeApply");
         UpdateApplyButtonText();
 
-        HistoryTitle.Text = T("app.nav.history");
-        HistorySub.Text = T("app.history.sub");
-        HistoryRefreshBtn.Content = T("app.history.refresh");
         TxSect.Text = T("app.history.transactions");
-        EventsTitle.Text = T("app.history.events");
         TxEmpty.Text = T("cli.resume.nothing");
-        EventsEmpty.Text = T("cli.history.empty");
 
-        SoonBackBtn.Content = T("app.soon.back");
+        ApplyPageStrings();
 
         ProcTitle.Text = T("app.processes.title");
         ProcHint.Text = T("app.processes.hint");
@@ -368,10 +351,6 @@ public partial class MainWindow : Window
         InventoryTitle.Text = T("app.status.hardware");
         InventoryHint.Text = T("app.hw.reading");
 
-        StorageTitle.Text = T("app.storage.title");
-        SecurityTitle.Text = T("app.sec.title");
-        StartupTitle.Text = T("app.startup.title");
-        NetTitle.Text = T("app.net.title");
     }
 
     private void UpdateApplyButtonText()
@@ -386,6 +365,31 @@ public partial class MainWindow : Window
 
     // ---------------------------------------------------------------- navigation
 
+    /// <summary>
+    /// The pages, in rail order.
+    /// </summary>
+    /// <remarks>
+    /// A table rather than a chain of <c>if</c>s. The old version had one branch per destination
+    /// and an <c>else</c> that showed a "not in this version" placeholder — which is how seven of
+    /// the fourteen entries came to lead nowhere. With the list in one place, a page that has no
+    /// view cannot be added to the rail by accident.
+    /// </remarks>
+    private IReadOnlyList<(RadioButton Nav, Page Page)> Pages => _pages ??=
+    [
+        (NavDashboard, new Page(ViewDashboard, "app.nav.dashboard", "app.dash.sub")),
+        (NavStatus, new Page(ViewStatus, "app.nav.status", "app.status.sub")),
+        (NavHardware, new Page(ViewHardware, "app.nav.hardware", "app.hardware.sub")),
+        (NavPerf, new Page(ViewPerf, "app.nav.perf", "app.perf.sub")),
+        (NavSecurity, new Page(ViewSecurity, "app.nav.security", "app.security.sub")),
+        (NavRecovery, new Page(ViewRecovery, "app.nav.recovery", "app.recovery.sub")),
+        (NavCleanup, new Page(ViewCleanup, "app.nav.cleanup", "app.cleanup.sub")),
+        (NavStartup, new Page(ViewStartup, "app.nav.startup", "app.startupPage.sub")),
+        (NavDrivers, new Page(ViewDrivers, "app.nav.drivers", "app.drivers.sub")),
+        (NavPlan, new Page(ViewPlan, "app.nav.plan", "app.plan.sub")),
+        (NavTimeline, new Page(ViewTimeline, "app.nav.timeline", "app.timeline.sub")),
+        (NavCompare, new Page(ViewCompare, "app.nav.compare", "app.compare.sub")),
+    ];
+
     private void OnNavChanged(object sender, RoutedEventArgs e)
     {
         if (!Ready || ViewDashboard is null || sender is not RadioButton nav)
@@ -393,45 +397,18 @@ public partial class MainWindow : Window
             return;
         }
 
-        ViewDashboard.Visibility = Visibility.Collapsed;
-        ViewStatus.Visibility = Visibility.Collapsed;
-        ViewPerf.Visibility = Visibility.Collapsed;
-        ViewPlan.Visibility = Visibility.Collapsed;
-        ViewHistory.Visibility = Visibility.Collapsed;
-        ViewSoon.Visibility = Visibility.Collapsed;
+        foreach ((RadioButton item, Page page) in Pages)
+        {
+            page.View.Visibility = ReferenceEquals(item, nav) ? Visibility.Visible : Visibility.Collapsed;
+        }
 
-        if (ReferenceEquals(nav, NavDashboard))
-        {
-            ViewDashboard.Visibility = Visibility.Visible;
-        }
-        else if (ReferenceEquals(nav, NavStatus))
-        {
-            ViewStatus.Visibility = Visibility.Visible;
-        }
-        else if (ReferenceEquals(nav, NavPerf))
-        {
-            ViewPerf.Visibility = Visibility.Visible;
-        }
-        else if (ReferenceEquals(nav, NavPlan))
-        {
-            ViewPlan.Visibility = Visibility.Visible;
-        }
-        else if (ReferenceEquals(nav, NavHistory))
-        {
-            ViewHistory.Visibility = Visibility.Visible;
-        }
-        else
-        {
-            // A module the spec describes but v0.1 does not implement. Saying so plainly beats a
-            // screen that looks finished and does nothing (spec 6.6).
-            SoonModule.Text = nav.Content as string ?? string.Empty;
-            SoonBody.Text = T("app.soon.body");
-            SoonPhase.Text = T("app.soon.phase");
-            ViewSoon.Visibility = Visibility.Visible;
-        }
+        ApplyPageChrome();
+
+        // Loaded on arrival rather than at startup: each of these runs a PowerShell batch, and
+        // paying for all of them before the first frame would make the app slow to open in order
+        // to populate pages nobody has asked for yet.
+        _ = EnsurePageLoadedAsync(nav);
     }
-
-    private void OnSoonBack(object sender, RoutedEventArgs e) => NavDashboard.IsChecked = true;
 
     private async Task<bool> BusyAsync(string messageKey, Func<Task> work)
     {
@@ -472,7 +449,50 @@ public partial class MainWindow : Window
         _summary = await summary;
 
         RenderInventory();
-        RenderContextCards();
+    }
+
+    /// <summary>
+    /// Opens on the last scan when it is recent, and only reads the machine when there is none.
+    /// </summary>
+    /// <remarks>
+    /// Ten seconds of "reading your PC" on every launch is a tax on people who opened the app to
+    /// look at something they saw yesterday. A snapshot under six hours old is what they would have
+    /// got anyway; the title bar says when it was taken, and the button beside it takes a new one.
+    /// </remarks>
+    private async Task LoadOrScanAsync()
+    {
+        if (_host is null)
+        {
+            return;
+        }
+
+        StateSnapshot? stored = await _host.Snapshots.LoadLatestAsync();
+
+        // An elevated run must not open on a snapshot taken without those rights: the values the
+        // user elevated *for* — TPM, drive encryption, restore points — would still read Unknown,
+        // and the UAC prompt would have bought them a stale answer.
+        bool storedIsBlind = stored is not null
+            && _host.Elevation.IsElevated
+            && HealthScore.CountUnreadable(stored, _host.Graph) > 0;
+
+        if (stored is not null && !storedIsBlind && _host.Clock.Now - stored.TakenAt < TimeSpan.FromHours(6))
+        {
+            _snapshot = stored;
+            _findings = PcOrbitHost.Checkup.Run(new CheckupContext(stored, _host.Graph, _host.Catalog));
+
+            RenderMachineCard();
+            RenderDashboard();
+            RenderStatusView();
+            RenderStatusStrip();
+            InvalidatePages();
+            await ReloadCurrentPageAsync();
+
+            LastScanLabel.Text = T("app.scan.cached", Args(
+                ("time", stored.TakenAt.LocalDateTime.ToString("HH:mm", CultureInfo.CurrentCulture))));
+            return;
+        }
+
+        await RescanAsync();
     }
 
     private async Task RescanAsync()
@@ -495,6 +515,28 @@ public partial class MainWindow : Window
         RenderDashboard();
         RenderStatusView();
         RenderStatusStrip();
+
+        // Everything the other pages showed was derived from the previous scan. Dropping the cache
+        // is what stops a page that is now wrong from staying on screen until the app restarts.
+        InvalidatePages();
+        await ReloadCurrentPageAsync();
+
+        LastScanLabel.Text = _snapshot is null
+            ? T("status.unknown")
+            : _snapshot.TakenAt.LocalDateTime.ToString("HH:mm", CultureInfo.CurrentCulture);
+    }
+
+    /// <summary>Re-fills whichever page is open, so a rescan is visible without navigating away.</summary>
+    private async Task ReloadCurrentPageAsync()
+    {
+        foreach ((RadioButton nav, Page _) in Pages)
+        {
+            if (nav.IsChecked == true)
+            {
+                await EnsurePageLoadedAsync(nav);
+                return;
+            }
+        }
     }
 
     // ---------------------------------------------------------------- live gauges
@@ -514,10 +556,15 @@ public partial class MainWindow : Window
         }
 
         RenderMachineCard();
-        RenderLiveCards();
         RenderDashGauges();
-        RenderProcesses();
         RenderPerf();
+
+        // Enumerating every process allocates a few hundred objects a pass. Gauges are worth
+        // refreshing every second; the top-process list does not change fast enough to justify it.
+        if (++_tick % 3 == 0)
+        {
+            RenderProcesses();
+        }
     }
 
     /// <summary>The four gauges across the dashboard: what the machine is doing this second.</summary>
@@ -535,7 +582,7 @@ public partial class MainWindow : Window
                 Pct(_live.CpuPercent),
                 _snapshot?.Machine.CpuName ?? string.Empty,
                 _live.CpuPercent ?? 0d,
-                G("IconChip"),
+                Gl("GlyphCpu"),
                 B("AccentSoft"),
                 B("Accent")),
             new(
@@ -545,7 +592,7 @@ public partial class MainWindow : Window
                     ? T("status.unknown")
                     : T("app.ram.detail", Args(("used", Gb(_live.RamUsedGb)), ("total", Gb(_live.RamTotalGb)))),
                 _live.RamPercent ?? 0d,
-                G("IconRam"),
+                Gl("GlyphRam"),
                 B("VioletSoft"),
                 B("Violet")),
             new(
@@ -555,19 +602,23 @@ public partial class MainWindow : Window
                     ? T("status.unknown")
                     : T("app.disk.detail", Args(("free", Gb(_live.DiskFreeGb)), ("total", Gb(_live.DiskTotalGb)))),
                 _live.DiskPercent ?? 0d,
-                G("IconDisk"),
+                Gl("GlyphDisk"),
                 B("OrangeSoft"),
                 B("Orange")),
             new(
                 T("app.tile.network"),
-                Mbps(_live.NetworkDownMbps),
-                _live.NetworkAdapter ?? T("status.unknown"),
+                _live.NetworkDownMbps is null && _live.NetworkUpMbps is null
+                    ? T("status.unknown")
+                    : $"↓ {Mbps(_live.NetworkDownMbps)}   ↑ {Mbps(_live.NetworkUpMbps)}",
+                _live.NetworkLinkMbps is { } linkMbps
+                    ? T("app.net.linkDetail", Args(("adapter", _live.NetworkAdapter ?? "—"), ("link", Mbps(linkMbps))))
+                    : _live.NetworkAdapter ?? T("status.unknown"),
 
                 // A throughput bar needs a ceiling, and the link speed is the honest one.
                 _live.NetworkDownMbps is { } down && _live.NetworkLinkMbps is { } link && link > 0
                     ? Math.Clamp(down / link * 100d, 0d, 100d)
                     : 0d,
-                G("IconWifi"),
+                Gl("GlyphNet"),
                 B("CyanSoft"),
                 B("Cyan")),
         };
@@ -608,97 +659,6 @@ public partial class MainWindow : Window
     /// <summary>
     /// Storage, security, startup and network: the context cards under the findings.
     /// </summary>
-    private void RenderContextCards()
-    {
-        if (!Ready)
-        {
-            return;
-        }
-
-        // ---- every fixed drive, worst first, because that is the one worth acting on
-        DriveList.ItemsSource = (_summary.Drives ?? [])
-            .OrderByDescending(d => d.UsedPercent)
-            .Select(d => new DriveRow(
-                Name: string.IsNullOrWhiteSpace(d.Label) ? d.Name : $"{d.Name}  {d.Label}",
-                Free: T("app.drive.free", Args(("free", Gb(d.FreeGb)), ("total", Gb(d.TotalGb)))),
-                Percent: d.UsedPercent,
-                Accent: d.UsedPercent >= 90 ? B("Bad") : d.UsedPercent >= 75 ? B("Orange") : B("Good")))
-            .ToList();
-
-        // ---- security, with "no answer" kept distinct from "off"
-        SecuritySummary security = _summary.Security ?? new SecuritySummary();
-
-        SecurityRows.ItemsSource = new List<CheckRow>
-        {
-            Check(T("app.sec.product"), security.Product, security.Product is not null),
-            Check(
-                T("app.sec.realtime"),
-                security.RealTimeProtection switch
-                {
-                    true => T("status.enabled"),
-                    false => T("status.disabled"),
-                    null => null,
-                },
-                security.RealTimeProtection == true),
-            Check(
-                T("app.sec.signatures"),
-                security.SignaturesUpdated?.LocalDateTime.ToString("dd/MM HH:mm", CultureInfo.CurrentCulture),
-                security.SignaturesUpdated is { } updated && (DateTimeOffset.Now - updated).TotalDays < 7),
-            Check(
-                T("app.sec.lastScan"),
-                security.LastScan?.LocalDateTime.ToString("dd/MM/yyyy", CultureInfo.CurrentCulture),
-                security.LastScan is not null),
-            Check(
-                T("app.sec.patch"),
-                _summary.Updates?.LatestPatch is { } patch
-                    ? patch + (_summary.Updates.InstalledOn is { } on
-                        ? " · " + on.LocalDateTime.ToString("dd/MM", CultureInfo.CurrentCulture)
-                        : string.Empty)
-                    : null,
-                _summary.Updates?.LatestPatch is not null),
-        };
-
-        // ---- what Windows starts for you
-        IReadOnlyList<StartupItem> startup = _summary.Startup ?? [];
-
-        StartupCount.Text = N(startup.Count);
-        StartupList.ItemsSource = startup
-            .Take(7)
-            .Select((s, index) => new StartupRow(
-                Name: s.Name,
-                Detail: T(s.Source == "machine" ? "app.startup.machine" : "app.startup.user"),
-                Initial: s.Name.Length > 0 ? s.Name[..1].ToUpperInvariant() : "?",
-                Tone: index % 2 == 0 ? B("AccentSoft") : B("VioletSoft"),
-                Accent: index % 2 == 0 ? B("Accent") : B("Violet")))
-            .ToList();
-
-        StartupHint.Text = startup.Count > 7
-            ? T("app.startup.more", Args(("count", N(startup.Count - 7))))
-            : T("app.startup.hint");
-
-        // ---- network detail
-        NetworkSummary network = _summary.Network ?? new NetworkSummary();
-
-        NetRows.ItemsSource = new List<LabelRow>
-        {
-            new(T("app.net.name"), network.HostName ?? T("status.unknown")),
-            new(T("app.net.adapter"), network.Adapter ?? T("status.unknown")),
-            new(T("app.net.ip"), network.IpAddress ?? T("status.unknown")),
-            new(T("app.net.gateway"), network.Gateway ?? T("status.unknown")),
-            new(T("app.net.dns"), network.DnsServers is { Count: > 0 } dns ? string.Join(", ", dns) : T("status.unknown")),
-        };
-    }
-
-    private CheckRow Check(string name, string? value, bool good) => new(
-        name,
-        value ?? T("status.unknown"),
-        value is null ? G("IconSearch") : good ? G("IconCheck") : G("IconSpark"),
-        value is null ? B("Faint") : good ? B("Good") : B("Warn"));
-
-    /// <summary>
-    /// The hardware inventory, grouped. A group the machine reported nothing for is left out
-    /// rather than shown empty — an empty "Displays" heading says something untrue.
-    /// </summary>
     private void RenderInventory()
     {
         if (!Ready)
@@ -715,7 +675,7 @@ public partial class MainWindow : Window
                     [.. g.Parts!.Select(p => new DeviceRow(
                         p.Name,
                         p.Detail ?? p.Extra ?? string.Empty,
-                        G(g.Icon),
+                        Gl(g.Icon),
                         B(g.Tone),
                         B(g.Accent)))])),
         ];
@@ -727,25 +687,26 @@ public partial class MainWindow : Window
 
         InventoryGroups.ItemsSource = Groups(
         [
-            ("app.hw.gpu", gpu, "IconGauge", "GoodSoft", "Good"),
-            ("app.hw.disks", _inventory.Disks, "IconDisk", "OrangeSoft", "Orange"),
-            ("app.hw.memory", _inventory.MemoryModules, "IconRam", "VioletSoft", "Violet"),
-            ("app.hw.monitors", _inventory.Monitors, "IconMonitor", "AccentSoft", "Accent"),
-            ("app.hw.network", _inventory.Network, "IconWifi", "CyanSoft", "Cyan"),
-            ("app.hw.audio", _inventory.Audio, "IconGrid", "VioletSoft", "Violet"),
-            ("app.hw.input", _inventory.Input, "IconGrid", "Hair", "Muted"),
+            ("app.hw.gpu", gpu, "GlyphGpu", "GoodSoft", "Good"),
+            ("app.hw.disks", _inventory.Disks, "GlyphDisk", "OrangeSoft", "Orange"),
+            ("app.hw.memory", _inventory.MemoryModules, "GlyphRam", "VioletSoft", "Violet"),
+            ("app.hw.monitors", _inventory.Monitors, "GlyphMonitor", "AccentSoft", "Accent"),
+            ("app.hw.network", _inventory.Network, "GlyphNet", "CyanSoft", "Cyan"),
+            ("app.hw.audio", _inventory.Audio, "GlyphAudio", "VioletSoft", "Violet"),
+            ("app.hw.input", _inventory.Input, "GlyphKeyboard", "RowHover", "Muted"),
         ]);
 
         List<DeviceGroupRow> attached = Groups(
         [
-            ("app.hw.monitors", _inventory.Monitors, "IconMonitor", "AccentSoft", "Accent"),
-            ("app.hw.audio", _inventory.Audio, "IconGrid", "VioletSoft", "Violet"),
-            ("app.hw.input", _inventory.Input, "IconGrid", "GoodSoft", "Good"),
-            ("app.hw.network", _inventory.Network, "IconWifi", "CyanSoft", "Cyan"),
+            ("app.hw.monitors", _inventory.Monitors, "GlyphMonitor", "AccentSoft", "Accent"),
+            ("app.hw.audio", _inventory.Audio, "GlyphAudio", "VioletSoft", "Violet"),
+            ("app.hw.input", _inventory.Input, "GlyphKeyboard", "GoodSoft", "Good"),
+            ("app.hw.network", _inventory.Network, "GlyphNet", "CyanSoft", "Cyan"),
         ]);
 
         DeviceGroups.ItemsSource = attached;
         DevEmpty.Visibility = attached.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        RenderVolumes();
     }
 
     private static void Push(List<double> history, double value)
@@ -795,14 +756,17 @@ public partial class MainWindow : Window
 
         MachineName.Text = machine.DisplayName;
         MachineOs.Text = $"Windows {machine.OsEdition} · {machine.OsBuild}";
-        MachineUptime.Text = UptimeText();
-        MachineTier.Text = T("cli.header.support", Args(("tier", T(SupportTierResolver.DisplayKey(Tier())))));
+        // Uptime and support tier moved off the rail into the tooltip of the card: they are
+        // context, and context was crowding out the navigation.
+        MachineName.ToolTip = UptimeText() + Environment.NewLine
+            + T("cli.header.support", Args(("tier", T(SupportTierResolver.DisplayKey(Tier())))));
+        RenderElevation();
     }
 
     private SupportTier Tier()
     {
         GuideData? guide = _host!.Guides.TryGetValue("guide.firmware.virtualization", out GuideData? g) ? g : null;
-        return SupportTierResolver.Resolve(_snapshot!.Machine, _host.Catalog, guide);
+        return SupportTierResolver.Resolve(_snapshot!.Machine, _host.Catalog, guide, _host.Today);
     }
 
     private string UptimeText() => _live.Uptime is { } up
@@ -852,11 +816,18 @@ public partial class MainWindow : Window
             return;
         }
 
-        HealthVerdict verdict = HealthScore.Evaluate(_findings);
+        HealthVerdict verdict = HealthScore.Evaluate(
+            new CheckupContext(_snapshot, _host.Graph, _host.Catalog),
+            _findings);
 
         HealthScoreText.Text = N(verdict.Score);
         HealthLabel.Text = T(verdict.LabelKey);
-        HealthNote.Text = _findings.Count == 0 ? T("app.health.clean") : T("app.health.some");
+
+        // The number can only speak for what we managed to read, so when something was unreadable
+        // it says so instead of implying the whole machine was checked (ADR 0004).
+        HealthNote.Text = verdict.IsPartial
+            ? T("health.partial", Args(("count", N(verdict.UnreadableCount))))
+            : _findings.Count == 0 ? T("app.health.clean") : T("app.health.some");
         DrawRing(verdict.Score);
 
         bool clean = _findings.Count == 0;
@@ -970,69 +941,57 @@ public partial class MainWindow : Window
 
         StateSnapshot snapshot = _snapshot;
 
-        OsValue.Text = $"Windows {snapshot.Machine.OsEdition}";
-        OsBuild.Text = T("app.strip.build", Args(("build", N(snapshot.Machine.OsBuild))));
 
-        CapabilityValue encryption = snapshot.ValueOf(CoreCapabilities.BitLockerSystemDrive);
-        EncryptionValue.Text = EncryptionText(encryption);
-        EncryptionNote.Text = encryption.IsKnown
-            ? snapshot.ReadingOf(CoreCapabilities.BitLockerSystemDrive)?.Evidence.Source ?? string.Empty
-            : T("app.status.needsAdmin");
 
-        CpuName.Text = snapshot.Machine.CpuName;
+        RenderReadings();
 
-        CapabilityValue ramSpeed = snapshot.ValueOf(CoreCapabilities.MemoryCurrentSpeed);
-        RamSpeed.Text = ramSpeed.Status == CapabilityStatus.Value ? $"{ramSpeed.Raw} MT/s" : T("status.unknown");
-
-        DiskName.Text = System.IO.Path.GetPathRoot(Environment.SystemDirectory) ?? "C:\\";
-
-        CapabilityValue currentHz = snapshot.ValueOf(CoreCapabilities.DisplayCurrentRefreshRate);
-        CapabilityValue maxHz = snapshot.ValueOf(CoreCapabilities.DisplayMaxRefreshRate);
-
-        DisplayValue.Text = currentHz.Status == CapabilityStatus.Value ? $"{currentHz.Raw} Hz" : T("status.unknown");
-        DisplayMax.Text = maxHz.Status == CapabilityStatus.Value
-            ? T("app.display.max", Args(("max", maxHz.Raw ?? string.Empty)))
-            : T("status.unknown");
-        DisplayNote.Text = currentHz.Satisfies(maxHz) ? T("app.display.atBest") : T("app.display.below");
-
-        ReadingsList.ItemsSource = snapshot.Readings
-            .Select((r, index) => new ReadingRow(
-                Name: CapabilityName(r.Capability),
-                Value: Status(r.Value) + Unit(r.Capability),
-                Source: r.Evidence.Source,
-                Accent: r.Value.IsKnown ? B("Ink") : B("Faint"),
-                RowBg: index % 2 == 0 ? B("RowBg") : Brushes.Transparent))
-            .ToList();
-
-        RenderLiveCards();
     }
 
-    private void RenderLiveCards()
+    /// <summary>
+    /// Every reading as a Settings row.
+    /// </summary>
+    /// <remarks>
+    /// The second line is a sentence for a person, not the WMI class the value came from. The
+    /// source is still one switch away — spec 6.1 wants "how do you know?" to be answerable — but
+    /// a registry path on every line is the app talking to itself in front of the user.
+    /// </remarks>
+    private void RenderReadings()
     {
-        if (_snapshot is null)
+        if (_snapshot is null || _host is null)
         {
             return;
         }
 
-        UptimeValue.Text = UptimeText();
+        bool technical = DetailToggle.IsChecked == true;
 
-        CpuValue.Text = Pct(_live.CpuPercent);
-        DrawSpark(CpuSpark, _cpuHistory);
+        DetailToggleLabel.Text = T("app.status.detailToggle");
+        ReadingsTitle.Text = T("app.status.readingsPlain");
 
-        RamValue.Text = Pct(_live.RamPercent);
-        RamBar.Value = _live.RamPercent ?? 0d;
-        RamDetail.Text = _live.RamTotalGb is null
-            ? T("status.unknown")
-            : T("app.ram.detail", Args(("used", Gb(_live.RamUsedGb)), ("total", Gb(_live.RamTotalGb))));
+        ReadingsList.ItemsSource = _snapshot.Readings
+            .Select(r =>
+            {
+                bool known = r.Value.IsKnown;
+                bool needsAdmin = !known && r.Evidence.Source.Contains("administrator", StringComparison.OrdinalIgnoreCase);
 
-        DiskValue.Text = Pct(_live.DiskPercent);
-        DiskBar.Value = _live.DiskPercent ?? 0d;
-        DiskDetail.Text = _live.DiskTotalGb is null
-            ? T("status.unknown")
-            : T("app.disk.detail", Args(("free", Gb(_live.DiskFreeGb)), ("total", Gb(_live.DiskTotalGb))));
+                string detail = technical
+                    ? r.Evidence.Source
+                    : known
+                        ? T("app.status.readFine")
+                        : needsAdmin ? T("app.status.needsAdmin") : T("app.status.notReadable");
 
-        ActivityTiles.ItemsSource = BuildActivityTiles();
+                return new ReadingRow(
+                    Name: CapabilityName(r.Capability),
+                    Detail: detail,
+                    Value: Status(r.Value) + Unit(r.Capability),
+                    Glyph: known ? Gl("GlyphCheck") : Gl("GlyphSearch"),
+                    Tone: known ? B("GoodSoft") : B("RowHover"),
+                    Accent: known ? B("Ink") : B("Faint"));
+            })
+            .ToList();
     }
+
+    private void OnDetailToggle(object sender, RoutedEventArgs e) => RenderReadings();
+
 
     private List<TileRow> BuildActivityTiles()
     {
@@ -1408,14 +1367,23 @@ public partial class MainWindow : Window
         }).ToList();
 
         ResultNext.Text = result.NeedsRestart
-            ? T("cli.result.next", Args(("restart", Restart(result.PendingRestart)))) + "  " + T("cli.result.noExpiry")
+            ? T("cli.result.noExpiry")
             : result.Mode == ExecutionMode.DryRun ? T("cli.result.dryRun") : string.Empty;
+
+        RenderRestartBanner(result);
     }
 
     // ---------------------------------------------------------------- history view
 
-    private async void OnHistoryRefresh(object sender, RoutedEventArgs e) => await RefreshHistoryAsync();
-
+    /// <summary>
+    /// The transaction list, which now lives on Plan &amp; Apply.
+    /// </summary>
+    /// <remarks>
+    /// It used to share a History page with the event log. The event log is the Timeline now — the
+    /// same rows plus everything Windows did — so keeping both put identical entries on two pages.
+    /// Transactions belong here anyway: this is where a change is made, and undoing one is the
+    /// same conversation.
+    /// </remarks>
     private async Task RefreshHistoryAsync()
     {
         if (_host is null)
@@ -1424,7 +1392,6 @@ public partial class MainWindow : Window
         }
 
         IReadOnlyList<Transaction> transactions = await _host.Transactions.ListRecentAsync(15);
-        IReadOnlyList<ChangeEvent> events = await _host.Events.QueryAsync(new EventQuery(Limit: 60));
 
         TxList.ItemsSource = transactions.Select(tx =>
         {
@@ -1444,14 +1411,6 @@ public partial class MainWindow : Window
         }).ToList();
 
         TxEmpty.Visibility = transactions.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-
-        EventsList.ItemsSource = events.Select((ev, index) => new EventRow(
-            When: ev.Timestamp.LocalDateTime.ToString("dd/MM HH:mm", CultureInfo.CurrentCulture),
-            Category: ev.Category.ToString(),
-            Change: $"{CapabilityName(CapabilityId.Parse(ev.Component))}: {ev.Before ?? "·"} → {ev.After ?? "·"}",
-            RowBg: index % 2 == 0 ? B("RowBg") : Brushes.Transparent)).ToList();
-
-        EventsEmpty.Visibility = events.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private static bool CanUndo(Transaction tx) =>
