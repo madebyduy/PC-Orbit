@@ -32,9 +32,11 @@ Run against a real Windows 11 machine, with no elevation required for anything r
 | `pco timeline` | Everything that changed recently, **whoever changed it**: Windows updates, driver installs, blue screens, hardware errors, restore points and our own transactions on one axis. A source it could not read is named, so a gap never reads as a quiet machine. |
 | `pco diff` | Scans, then shows what has moved since the previous scan. Values that merely became unreadable are listed apart from values that actually changed — the difference between "the BIOS update turned off your TPM" and "this scan was not elevated". |
 | `pco startup` | What starts with Windows, and whether each entry is on, off, or something we could not classify. Read-only. |
-| `pco clean` | Measures reclaimable space. With `--apply`, moves it to **quarantine** — files stay restorable for 30 days and nothing is deleted until that window closes. `pco restore [id]` puts a batch back. |
+| `pco clean` | Measures reclaimable space across sixteen locations. With `--apply`, caches that rebuild themselves are deleted and the space is back at once; everything else moves to **quarantine**, restorable for 30 days. Cookies, history and saved passwords are never touched. `pco restore [id]` puts a batch back; `pco restore purge` releases the lot now. |
 | `pco startup on\|off <name>` | Switches a startup entry. The name has to be one the machine reports *right now*, and security entries are refused outright (ADR 0005). |
 | `pco drivers` | The driver behind every device, faulty ones first. Never sorted by age: an old driver is not a fault. |
+| `pco apps` | The applications this product installs, and which are already here. Two sources are read — winget's export and Add or Remove Programs — because winget correlates by exact package id, so a PC running Chrome Beta answers "no" to `Google.Chrome`. `pco apps install\|remove <id>` changes one, and verifies by asking the machine again. |
+| `pco bios` | What the manufacturer's firmware interface reports on this machine, and — whether or not it answers — the menu path, the key to press and the vendor's own label for each setting this product can guide. Read-only: writing a firmware setting needs the consequences on screen and a confirmation sized to the risk, which is the wrong shape for a terminal flag (ADR 0007). |
 | `pco doctor` | Validates the shipped data and the executor allowlist, and warns about knowledge packs that have expired or are about to. Meant for CI. |
 
 Both **English and Vietnamese** ship, as spec 21.11 requires — including plural handling, so
@@ -203,24 +205,52 @@ curves or undervolting, no cloud migration, hundreds of repair scripts, peripher
 every brand, AI features, automatic performance optimisation, full drift auto-remediation, full
 regression intelligence, or cross-device blueprint restore.
 
-Two more, from [ADR 0004](docs/adr/0004-research-backlog-reconciliation.md), which sorted the deep
-research in `docs/research/` into what shipped, what is deferred and what was rejected outright:
+Two things that used to be listed here have shipped since, each once the primitive it was waiting
+on existed — which is what [ADR 0005](docs/adr/0005-quarantine-and-dynamic-allowlists.md) is a
+record of. Cleanup was blocked on having an undo for a deleted file, and now moves files into a
+quarantine instead of deleting them. Switching a startup entry off was blocked on validating a
+caller-chosen identifier against an allowlist, and now uses a **dynamic** one: the set of entries
+the machine reported in that same read, which the caller cannot extend.
 
-- **No disk cleanup.** Undo here works by restoring the value a step recorded before it. A deleted
-  file has no before-value, so cleanup cannot be undone by the engine that undoes everything else.
-  It needs a quarantine store first, and until that exists offering it would break the one promise
-  the product is built on.
-- **No switching startup entries off.** `pco startup` lists them. Disabling one means passing a
-  caller-chosen identifier to an executor, and `ActionParameters` validates every parameter against
-  an allowlist before it reaches a command (spec 17.1) — "whichever entry the user picked" is not
-  an allowlist. That needs a design decision, and it gets its own ADR.
+Firmware is the one to read carefully, because half of it ships and half does not:
+
+- **A firmware setting you choose, one at a time, is written** — through the manufacturer's own
+  published interface, with the consequence named, the BitLocker preflight run, and the change
+  verified by reading the firmware back. Serious changes make you type the setting's name.
+  [ADR 0007](docs/adr/0007-user-initiated-firmware-writes.md) explains why that is a different
+  risk from the next line.
+- **A firmware write the State Compiler picks on its own is still gated**, exactly as
+  [`data/actions/pending-verification/README.md`](data/actions/pending-verification/README.md)
+  describes. Nothing about the page above promotes it.
+- **No BIOS flashing**, at any level. Updating firmware is the manufacturer's job and the app
+  routes you to their support page.
+- Most consumer hardware exposes no settings interface at all, and is told so plainly rather than
+  shown switches that do nothing. On that hardware the app gives the key to press and the menu
+  path instead.
 
 ## The desktop app
 
 `src/PcOrbit.App` is a WPF surface over the same `PcOrbitHost` the CLI composes, so the executor
-allowlist exists once. Twelve pages, each with its own content and none repeating another's:
-Dashboard, Status (every reading with its evidence), Hardware (inventory, every mounted drive),
-Performance (the only page with live gauges), Security, Recovery, Free up space, Starts with
-Windows, Drivers, Plan &amp; Apply, Timeline and Compare. A standard-user scan offers to relaunch as
-administrator, which is the honest answer to every "could not read". A staged firmware change ends
-in a banner with a button that restarts straight into firmware setup.
+allowlist exists once.
+
+Six destinations in the rail, each holding the pages that answer the same question, with a pivot
+inside the page to move between them — the rail says *which part of my PC*, the pivot says *which
+view of it*:
+
+| Section | Pages |
+|---|---|
+| Overview | Dashboard |
+| My PC | Readings (every value with its evidence), Hardware, Performance (the only page with live gauges), BIOS |
+| Protection | Security, Recovery |
+| Tune-up | Free up space, Startup, Drivers |
+| Apps &amp; Windows | App catalogue, Office, Windows (activation, edition, reinstall from an ISO) |
+| Changes | Plan &amp; Apply, Timeline, Compare |
+
+The rule that shapes it: **no page repeats another's content**. Live meters exist only on
+Performance; readings with their evidence only on Readings, minus the firmware ones, which have one
+home each — Secure Boot, the boot mode and the TPM on Protection because that is where somebody
+looks for them, the rest on BIOS.
+
+Pages fill themselves in the background once the first scan is in, so changing tab is not the
+moment the work starts. A standard-user scan offers to relaunch as administrator, which is the
+honest answer to every "could not read".

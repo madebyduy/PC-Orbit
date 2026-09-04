@@ -623,6 +623,22 @@ public static class Commands
                 firmware.Vendor is { Length: > 0 } vendor ? "app.firmware.modelHasNone" : "app.firmware.noInterface",
                 new Dictionary<string, string>(StringComparer.Ordinal) { ["vendor"] = firmware.Vendor ?? "" }));
 
+            // From the stored scan rather than a fresh one: the guides are chosen by manufacturer,
+            // which does not change between scans, and a firmware read should not cost a full sweep
+            // of the machine.
+            StateSnapshot? scan = await host.Snapshots.LoadLatestAsync(ct).ConfigureAwait(false);
+
+            Output.Heading(host.Strings.Format("app.guide.title"));
+
+            if (scan is null)
+            {
+                Output.Line("  " + host.Strings.Format("app.guide.none"));
+            }
+            else
+            {
+                PrintGuides(host, scan.Machine);
+            }
+
             return ExitCodes.Ok;
         }
 
@@ -638,6 +654,62 @@ public static class Commands
         }
 
         return ExitCodes.Ok;
+    }
+
+    /// <summary>
+    /// What to do by hand, per this machine's manufacturer.
+    /// </summary>
+    /// <remarks>
+    /// Printed after the interface report because it is the answer to what that report usually
+    /// says. The setting name is the vendor's own English, untranslated, because it has to match a
+    /// screen this product does not control (spec 21.11).
+    /// </remarks>
+    private static void PrintGuides(PcOrbitHost host, MachineIdentity machine)
+    {
+        DateOnly today = DateOnly.FromDateTime(DateTime.Now);
+        var any = false;
+
+        foreach (GuideData guide in host.Guides.Values.OrderBy(g => g.Capability.Value, StringComparer.Ordinal))
+        {
+            if (guide.SelectFor(machine, today) is not { } entry)
+            {
+                if (guide.IsExpired(today))
+                {
+                    any = true;
+                    Output.Line();
+                    Output.Line($"  {host.Strings.Format($"cap.{guide.Capability.Value}")}");
+                    Output.Line("      " + host.Strings.Format("app.guide.expired"));
+                }
+
+                continue;
+            }
+
+            any = true;
+
+            Output.Line();
+            Output.Line($"  {host.Strings.Format($"cap.{guide.Capability.Value}")}");
+            Output.Line($"      setting   {entry.SettingName}");
+            Output.Line($"      path      {string.Join("  >  ", entry.MenuPath)}");
+            Output.Line($"      enter     {string.Join(" / ", entry.EnterKeys ?? ["F2", "Del"])}");
+
+            if (entry.SaveKeys is { Count: > 0 } save)
+            {
+                Output.Line($"      save      {string.Join(" / ", save)}");
+            }
+
+            if (entry.AlternateNames is { Count: > 0 } alternates)
+            {
+                Output.Line($"      also      {string.Join(", ", alternates)}");
+            }
+
+            Output.Line($"      tier      {entry.Tier}");
+        }
+
+        if (!any)
+        {
+            Output.Line();
+            Output.Line("  " + host.Strings.Format("app.guide.none"));
+        }
     }
 
     public static async Task<int> AppsAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)

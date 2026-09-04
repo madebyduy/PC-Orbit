@@ -20,9 +20,14 @@
   </shell:WindowChrome.WindowChrome>
 
   <Grid>
+    <!--
+      One row now. The status bar that used to sit under everything is gone: of its five items,
+      four were already on screen — the version and the elevation state in the sidebar, the
+      Windows edition on the machine card, the scan time in the header — and the fifth, drive
+      encryption, belongs with the other protections rather than in furniture.
+    -->
     <Grid.RowDefinitions>
       <RowDefinition Height="*" />
-      <RowDefinition Height="54" />
     </Grid.RowDefinitions>
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="290" />
@@ -1334,6 +1339,66 @@
               </StackPanel>
             </Border>
 
+            <!--
+              For when the firmware cannot be driven from Windows, which is most consumer hardware.
+              The guide packs under data/guides/ have carried the key, the menu path and the
+              vendor's own label for each setting since they were written, and nothing rendered
+              them outside a plan step — so the answer to "I have to go in myself, now what" was a
+              restart button and silence.
+            -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="GuideTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,4" />
+                <TextBlock x:Name="GuideHint" Style="{StaticResource Sub}" TextWrapping="Wrap"
+                           Margin="0,0,0,12" />
+
+                <ItemsControl x:Name="GuideList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="16,14" Background="{Binding RowBg}"
+                              Margin="0,0,0,8">
+                        <StackPanel>
+                          <DockPanel>
+                            <Border DockPanel.Dock="Right" Background="{StaticResource RowBg}" CornerRadius="6"
+                                    Padding="8,3" Margin="10,0,0,0">
+                              <TextBlock Text="{Binding Tier}" FontSize="10.5" FontWeight="SemiBold"
+                                         Foreground="{StaticResource Muted}" />
+                            </Border>
+                            <TextBlock Text="{Binding Goal}" FontSize="13.5" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" VerticalAlignment="Center"
+                                       TextWrapping="Wrap" />
+                          </DockPanel>
+
+                          <!--
+                            The vendor's own English label, on its own line and not translated. The
+                            user has to match it against a screen we do not control (spec 21.11),
+                            and a Vietnamese rendering of it would be the one thing on this card
+                            that cannot be found in the BIOS.
+                          -->
+                          <Border Background="#EEF2FF" CornerRadius="8" Padding="12,9" Margin="0,10,0,0">
+                            <StackPanel>
+                              <TextBlock Text="{Binding SettingLabel}" Style="{StaticResource Tiny}" />
+                              <TextBlock Text="{Binding SettingName}" FontSize="15" FontWeight="SemiBold"
+                                         Foreground="#3730A3" Margin="0,2,0,0" />
+                              <TextBlock Text="{Binding AlsoCalled}" Style="{StaticResource Tiny}"
+                                         Margin="0,4,0,0" TextWrapping="Wrap"
+                                         Visibility="{Binding AlsoCalledVisible}" />
+                            </StackPanel>
+                          </Border>
+
+                          <TextBlock Text="{Binding Steps}" FontSize="12.5" Margin="0,10,0,0"
+                                     TextWrapping="Wrap" Foreground="{StaticResource Ink}" />
+
+                          <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" Margin="0,8,0,0"
+                                     TextWrapping="Wrap" Visibility="{Binding NoteVisible}" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource Card}" Margin="0,0,0,14">
               <StackPanel>
                 <DockPanel Margin="0,0,0,4">
@@ -1675,26 +1740,5 @@
       </Grid>
     </Grid>
 
-    <!-- ============================================================== STATUS BAR -->
-    <Border Grid.Row="1" Grid.ColumnSpan="2" Background="#99FFFFFF" BorderBrush="{StaticResource White}" BorderThickness="0,1,0,0">
-      <ItemsControl x:Name="StatusStrip" Margin="30,0" VerticalAlignment="Center">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate><UniformGrid Rows="1" /></ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-              <Border Width="28" Height="28" CornerRadius="9" Background="{Binding Tone}">
-                <Ellipse Width="9" Height="9" Fill="{Binding Accent}" />
-              </Border>
-              <StackPanel Margin="10,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Name}" FontSize="12.5" FontWeight="Bold" Foreground="{StaticResource Ink}" />
-                <TextBlock Text="{Binding Value}" FontSize="11.5" Foreground="{StaticResource Faint}" TextTrimming="CharacterEllipsis" />
-              </StackPanel>
-            </StackPanel>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </Border>
   </Grid>
 </Window>

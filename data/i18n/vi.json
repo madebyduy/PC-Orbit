@@ -344,12 +344,6 @@
     "app.history.undoing": "Đang hoàn tác, rồi kiểm chứng lại trên máy…",
     "app.history.refresh": "Làm mới",
     "app.history.events": "Sự kiện gần đây",
-    "app.strip.engine": "Engine",
-    "app.strip.build": "bản dựng {build}",
-    "app.strip.rights": "Quyền",
-    "app.strip.admin": "Quản trị viên",
-    "app.strip.standard": "Người dùng thường — các bước chỉ-đọc vẫn chạy đủ",
-    "app.strip.checked": "Kiểm tra lúc",
     "app.soon.body": "Module này có trong tài liệu thiết kế nhưng không thuộc v0.1. Phần dọc làm trước: đọc máy, lập kế hoạch, áp dụng như một transaction, sống qua khởi động lại, kiểm chứng, hoàn tác.",
     "app.soon.phase": "Ở đây không có gì giả vờ hoạt động. Khi nào làm, nó sẽ ngồi trên đúng graph, compiler và transaction engine như mọi phần khác.",
     "app.soon.back": "Về bảng điều khiển",
@@ -781,6 +775,18 @@
     "firmware.consequence.bitlockerUnknown": "Không đọc được ổ này có mã hoá hay không vì thiếu quyền quản trị. Nếu có, lần khởi động sau có thể hỏi khoá khôi phục — nên kiểm tra trước khi tiếp tục.",
     "firmware.consequence.mayNotBoot": "Mục này có thể khiến máy không khởi động được nếu thay đổi không hợp. Muốn đặt lại thì phải vào chính màn hình BIOS.",
     "firmware.consequence.restart": "Có hiệu lực từ lần khởi động lại, không phải ngay bây giờ.",
-    "firmware.consequence.password": "Cần mật khẩu quản trị firmware của bạn."
+    "firmware.consequence.password": "Cần mật khẩu quản trị firmware của bạn.",
+    "app.guide.title": "Nếu bạn phải tự vào BIOS",
+    "app.guide.hint": "Phím cần bấm, thiết lập nằm ở đâu, và hãng của bạn gọi nó là gì. Viết riêng theo từng hãng, nên đây là thứ firmware của bạn sẽ hiện — không phải mô tả chung chung.",
+    "app.guide.none": "Chưa có hướng dẫn cho hãng của máy này. Nút khởi động lại ở trên vẫn đưa bạn vào màn hình BIOS.",
+    "app.guide.settingLabel": "Tìm đúng dòng chữ này, viết y như vậy:",
+    "app.guide.alsoCalled": "Một số firmware gọi là: {names}",
+    "app.guide.steps": "Bấm {enter} ngay khi máy khởi động, vào {path}, rồi lưu bằng {save}.",
+    "app.guide.stepsNoSave": "Bấm {enter} ngay khi máy khởi động, rồi vào {path}.",
+    "app.guide.search": " Bạn cũng có thể bấm {key} để tìm trong BIOS.",
+    "app.guide.goal.enable": "Bật {setting}",
+    "app.guide.goal.disable": "Tắt {setting}",
+    "app.guide.goal.set": "Đặt {setting}",
+    "app.guide.expired": "Hướng dẫn cho mục này đã cũ hơn mức chúng tôi dám để bạn mang vào màn hình firmware, nên không hiện. Một đường dẫn menu bạn tin tưởng mà đã bị đổi thì tệ hơn là không có."
   }
 }

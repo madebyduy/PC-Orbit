@@ -63,8 +63,6 @@ public sealed record TileRow(string Name, string Value, string Note, Brush Accen
 
 public sealed record CheckRow(string Name, string State, Geometry Glyph, Brush Tone);
 
-public sealed record StatusRow(string Name, string Value, Brush Tone, Brush Accent);
-
 public sealed record GaugeRow(
     string Name,
     string Value,
@@ -309,7 +307,6 @@ public partial class MainWindow : Window
         RenderMachineCard();
         RenderDashboard();
         RenderStatusView();
-        RenderStatusStrip();
         RenderInventory();
         RenderDashGauges();
         RenderProcesses();
@@ -697,8 +694,7 @@ public partial class MainWindow : Window
             RenderMachineCard();
             RenderDashboard();
             RenderStatusView();
-            RenderStatusStrip();
-            InvalidatePages();
+                InvalidatePages();
             await ReloadCurrentPageAsync();
 
             LastScanLabel.Text = T("app.scan.cached", Args(
@@ -728,7 +724,6 @@ public partial class MainWindow : Window
         RenderMachineCard();
         RenderDashboard();
         RenderStatusView();
-        RenderStatusStrip();
 
         // Everything the other pages showed was derived from the previous scan. Dropping the cache
         // is what stops a page that is now wrong from staying on screen until the app restarts.
@@ -985,29 +980,6 @@ public partial class MainWindow : Window
             ("hours", N(up.Hours)),
             ("minutes", N(up.Minutes))))
         : T("status.unknown");
-
-    private void RenderStatusStrip()
-    {
-        if (_snapshot is null || _host is null)
-        {
-            return;
-        }
-
-        CapabilityValue encryption = _snapshot.ValueOf(CoreCapabilities.BitLockerSystemDrive);
-
-        StatusStrip.ItemsSource = new List<StatusRow>
-        {
-            new(T("app.strip.engine"), $"PC Orbit {PcOrbitHost.AppVersion}", B("GoodSoft"), B("Good")),
-            new($"Windows {_snapshot.Machine.OsEdition}", T("app.strip.build", Args(("build", N(_snapshot.Machine.OsBuild)))), B("AccentSoft"), B("Accent")),
-            new(T("cap.security.bitlocker.system-drive"), EncryptionText(encryption), B("VioletSoft"), B("Violet")),
-            new(
-                T("app.strip.rights"),
-                _host.Elevation.IsElevated ? T("app.strip.admin") : T("app.strip.standard"),
-                _host.Elevation.IsElevated ? B("GoodSoft") : B("WarnSoft"),
-                _host.Elevation.IsElevated ? B("Good") : B("Warn")),
-            new(T("app.strip.checked"), _snapshot.TakenAt.LocalDateTime.ToString("HH:mm", CultureInfo.CurrentCulture), B("CyanSoft"), B("Cyan")),
-        };
-    }
 
     private string EncryptionText(CapabilityValue value) => value.Canonical switch
     {

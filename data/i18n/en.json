@@ -344,12 +344,6 @@
     "app.history.undoing": "Undoing, then verifying against the machine…",
     "app.history.refresh": "Refresh",
     "app.history.events": "Recent events",
-    "app.strip.engine": "Engine",
-    "app.strip.build": "build {build}",
-    "app.strip.rights": "Rights",
-    "app.strip.admin": "Administrator",
-    "app.strip.standard": "Standard user — read-only checks still work",
-    "app.strip.checked": "Last checked",
     "app.soon.body": "This module is described in the spec but is not part of v0.1. The vertical slice comes first: read the machine, compile a plan, apply it as a transaction, survive a restart, verify, undo.",
     "app.soon.phase": "Nothing here pretends to work. When it ships, it will sit on the same graph, compiler and transaction engine as everything else.",
     "app.soon.back": "Back to the dashboard",
@@ -781,6 +775,18 @@
     "firmware.consequence.bitlockerUnknown": "Whether this drive is encrypted could not be read without administrator rights. If it is, the next start may ask for a recovery key — worth checking before you continue.",
     "firmware.consequence.mayNotBoot": "This setting can stop the PC from starting if the change does not suit it. You would put it back from the BIOS screen itself.",
     "firmware.consequence.restart": "It takes effect at the next restart, not now.",
-    "firmware.consequence.password": "Your firmware supervisor password is needed."
+    "firmware.consequence.password": "Your firmware supervisor password is needed.",
+    "app.guide.title": "If you have to go into the BIOS yourself",
+    "app.guide.hint": "The key to press, where the setting lives, and what your manufacturer calls it. Written per vendor, so this is what your firmware should show — not a generic description.",
+    "app.guide.none": "There are no guides for this machine’s manufacturer yet. The restart button above still takes you into the BIOS screen.",
+    "app.guide.settingLabel": "Look for this, spelled exactly like this:",
+    "app.guide.alsoCalled": "Some firmware calls it: {names}",
+    "app.guide.steps": "Press {enter} as the PC starts, go to {path}, then save with {save}.",
+    "app.guide.stepsNoSave": "Press {enter} as the PC starts, then go to {path}.",
+    "app.guide.search": " You can also press {key} to search the BIOS for it.",
+    "app.guide.goal.enable": "Turn on {setting}",
+    "app.guide.goal.disable": "Turn off {setting}",
+    "app.guide.goal.set": "Set {setting}",
+    "app.guide.expired": "The guide for this is older than we are willing to send anyone into a firmware screen on, so it is not shown. A menu path you trust and that has moved is worse than none."
   }
 }
