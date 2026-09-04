@@ -31,6 +31,12 @@ public enum EventCategory
     Crash,
     Preflight,
     Drift,
+
+    /// <summary>
+    /// A point the machine can be returned to — a Windows restore point, most often created by
+    /// something else that was about to change the system.
+    /// </summary>
+    Checkpoint,
 }
 
 public enum Initiator

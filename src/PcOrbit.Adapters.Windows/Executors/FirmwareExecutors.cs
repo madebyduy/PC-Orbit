@@ -22,10 +22,14 @@ namespace PcOrbit.Adapters.Windows.Executors;
 /// every BIOS build, and able to leave a machine unbootable (spec decision 18).
 /// </para>
 /// </remarks>
-public sealed class GuidedFirmwareExecutor(IReadOnlyDictionary<string, GuideData> guides) : IActionExecutor
+public sealed class GuidedFirmwareExecutor(
+    IReadOnlyDictionary<string, GuideData> guides,
+    IClock? clock = null) : IActionExecutor
 {
     private readonly IReadOnlyDictionary<string, GuideData> _guides = guides
         ?? throw new ArgumentNullException(nameof(guides));
+
+    private readonly IClock _clock = clock ?? SystemClock.Instance;
 
     public string Id => "firmware.guided-change";
 
@@ -99,7 +103,20 @@ public sealed class GuidedFirmwareExecutor(IReadOnlyDictionary<string, GuideData
             return null;
         }
 
-        return guide.SelectFor(machine);
+        GuideEntry? entry = guide.SelectFor(machine, DateOnly.FromDateTime(_clock.Now.LocalDateTime));
+
+        if (entry is null)
+        {
+            // Fail closed, and say which gate closed. An expired knowledge pack is not the same
+            // problem as a missing one, and the fix is different: revalidate the pack against
+            // current vendor firmware (ADR 0004).
+            problem =
+                $"Guide data '{action.GuideId}' expired on {guide.ExpiresOn:yyyy-MM-dd}. Menu names and "
+                + "paths move between BIOS revisions, so it is no longer safe to send someone into "
+                + "firmware setup on it.";
+        }
+
+        return entry;
     }
 
     private static string Describe(GuideEntry entry, ActionExecutionContext context)

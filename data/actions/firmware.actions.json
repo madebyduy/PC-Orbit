@@ -48,6 +48,96 @@
     ]
   },
   {
+    "id": "firmware.secure-boot.enable.guided-generic",
+    "version": "1.0.0",
+    "titleKey": "action.firmware.secure-boot.enable.guided.title",
+    "executor": "firmware.guided-change",
+    "parameters": {
+      "capability": "firmware.secure-boot",
+      "targetState": "enabled"
+    },
+    "provides": [
+      {
+        "capability": "firmware.secure-boot",
+        "state": "enabled"
+      }
+    ],
+    "requires": [
+      {
+        "capability": "firmware.boot-mode",
+        "state": "uefi"
+      }
+    ],
+    "writeMode": "guidedGeneric",
+    "privilege": "user",
+    "risk": "high",
+    "restart": "firmware",
+    "reversible": {
+      "mode": "manualGuided",
+      "strategy": "guided_revert_in_firmware_setup"
+    },
+    "estimatedSeconds": 300,
+    "preflight": [
+      "bitlocker",
+      "powerSource",
+      "unsavedWork",
+      "biosPassword"
+    ],
+    "compatibility": {
+      "osMinBuild": 19041
+    },
+    "guideId": "guide.firmware.secure-boot",
+    "verify": [
+      {
+        "capability": "firmware.secure-boot",
+        "expected": "enabled",
+        "afterRestart": true
+      }
+    ]
+  },
+  {
+    "id": "firmware.tpm.enable.guided-generic",
+    "version": "1.0.0",
+    "titleKey": "action.firmware.tpm.enable.guided.title",
+    "executor": "firmware.guided-change",
+    "parameters": {
+      "capability": "firmware.tpm.ready",
+      "targetState": "enabled"
+    },
+    "provides": [
+      {
+        "capability": "firmware.tpm.ready",
+        "state": "enabled"
+      }
+    ],
+    "writeMode": "guidedGeneric",
+    "privilege": "user",
+    "risk": "high",
+    "restart": "firmware",
+    "reversible": {
+      "mode": "manualGuided",
+      "strategy": "guided_revert_in_firmware_setup"
+    },
+    "estimatedSeconds": 300,
+    "preflight": [
+      "bitlocker",
+      "powerSource",
+      "unsavedWork",
+      "biosPassword"
+    ],
+    "compatibility": {
+      "osMinBuild": 19041
+    },
+    "guideId": "guide.firmware.tpm",
+    "verify": [
+      {
+        "capability": "firmware.tpm.ready",
+        "expected": "enabled",
+        "afterRestart": true
+      }
+    ]
+  },
+  {
     "id": "security.bitlocker.suspend-one-reboot",
     "version": "1.0.0",
     "titleKey": "action.security.bitlocker.suspend-one-reboot.title",

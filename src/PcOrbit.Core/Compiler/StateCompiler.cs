@@ -18,12 +18,23 @@ namespace PcOrbit.Core.Compiler;
 /// False means "only plan what the app can do itself" — used by unattended paths, never the default.
 /// Guided is the normal route for most machines (spec 8.3.2), so it is on by default.
 /// </param>
+/// <param name="MaxSnapshotAge">
+/// How old a scan may be before the plan says so. Null switches the check off, which is only
+/// appropriate for a caller replaying a stored snapshot on purpose.
+/// </param>
 public sealed record CompilerOptions(
     string RuleVersion = "0.1.0",
     RiskClass MaxRisk = RiskClass.High,
-    bool AllowManualSteps = true)
+    bool AllowManualSteps = true,
+    TimeSpan? MaxSnapshotAge = null)
 {
-    public static CompilerOptions Default { get; } = new();
+    /// <summary>
+    /// Fifteen minutes. Long enough to read a plan and think about it, short enough that the
+    /// machine has probably not been changed by something else in between.
+    /// </summary>
+    public static TimeSpan DefaultMaxSnapshotAge { get; } = TimeSpan.FromMinutes(15);
+
+    public static CompilerOptions Default { get; } = new(MaxSnapshotAge: DefaultMaxSnapshotAge);
 }
 
 /// <summary>
@@ -67,6 +78,8 @@ public sealed class StateCompiler
         MachineIdentity machine = snapshot.Machine;
         List<PlanIssue> issues = [];
 
+        NoteStaleSnapshot(snapshot, issues);
+
         Requirements requirements = ExpandRequirements(outcome, machine, issues);
         List<PlanStep> steps = SelectActions(snapshot, requirements, issues);
         List<PlanPhase> phases = BuildPhases(steps, requirements, issues);
@@ -93,6 +106,45 @@ public sealed class StateCompiler
             Hash: string.Empty);
 
         return plan with { Hash = PlanHasher.Hash(plan) };
+    }
+
+    /// <summary>
+    /// Says so when the plan was compiled from a scan old enough to have gone out of date.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// A difference plan is a statement about a machine at a moment. Compile it from a scan taken
+    /// hours ago and it can propose a change that has already happened, or omit one that has since
+    /// become necessary — and the plan hash will happily lock in that stale picture for approval.
+    /// </para>
+    /// <para>
+    /// A warning rather than a blocker, deliberately. The engine verifies by reading the machine
+    /// again before and after every step, so a stale snapshot produces a misleading preview, not an
+    /// unsafe apply. Blocking would also make an offline review of a stored plan impossible, which
+    /// is a thing support engineers legitimately do (ADR 0004).
+    /// </para>
+    /// </remarks>
+    private void NoteStaleSnapshot(StateSnapshot snapshot, List<PlanIssue> issues)
+    {
+        if (_options.MaxSnapshotAge is not { } limit)
+        {
+            return;
+        }
+
+        TimeSpan age = _clock.Now - snapshot.TakenAt;
+
+        if (age <= limit)
+        {
+            return;
+        }
+
+        issues.Add(new PlanIssue(
+            PlanIssueSeverity.Warning,
+            "snapshot.stale",
+            Capability: null,
+            $"This plan was compiled from a scan taken {age.TotalMinutes:0} minutes ago, which is older "
+            + $"than the {limit.TotalMinutes:0}-minute limit. Scan again before applying it: the machine "
+            + "may have changed since."));
     }
 
     /// <summary>
@@ -348,7 +400,7 @@ public sealed class StateCompiler
 
             if (candidates.Count == 0)
             {
-                ReportNoRoute(capability, desired, snapshot.Machine, isOptional, issues);
+                ReportNoRoute(capability, desired, snapshot.Machine, current.IsKnown, isOptional, issues);
                 continue;
             }
 
@@ -460,15 +512,35 @@ public sealed class StateCompiler
         return false;
     }
 
+    /// <param name="currentIsKnown">
+    /// False when the capability could not be read. It changes what this issue means, and therefore
+    /// what it must say: "nothing can set your TPM version to 2.0" reads as "your machine is not
+    /// eligible", when the truth may be that the scan was not elevated and the chip is fine. Those
+    /// two sentences send a person to different places — one to a shop (spec 6.6, 27.13).
+    /// </param>
     private void ReportNoRoute(
         CapabilityId capability,
         CapabilityValue desired,
         MachineIdentity machine,
+        bool currentIsKnown,
         bool isOptional,
         List<PlanIssue> issues)
     {
         IReadOnlyList<(ActionDefinition Action, string Reason)> rejected =
             _catalog.RejectedFor(capability, desired, machine);
+
+        if (rejected.Count == 0 && !currentIsKnown)
+        {
+            issues.Add(new PlanIssue(
+                isOptional ? PlanIssueSeverity.Warning : PlanIssueSeverity.Blocker,
+                "capability.unreadable-and-unwritable",
+                capability,
+                $"'{capability}' could not be read on this machine, and nothing in the action catalog can "
+                + $"set it to '{desired.Canonical}' either. So this outcome cannot be confirmed here — which "
+                + "is not the same as the machine being unable to meet it."));
+
+            return;
+        }
 
         string detail = rejected.Count == 0
             ? $"Nothing in the action catalog can set '{capability}' to '{desired.Canonical}'."

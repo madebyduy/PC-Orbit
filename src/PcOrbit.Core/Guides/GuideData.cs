@@ -88,21 +88,53 @@ public sealed record GuideEntry(
 /// the normal path, so it gets designed and versioned like a feature. Shipped as data so guide
 /// coverage can grow — and be reviewed — without shipping a new app build.
 /// </remarks>
+/// <param name="ExpiresOn">
+/// The date past which this pack stops being treated as evidence. Null means it never expires,
+/// which is only honest for something that does not depend on a vendor's current firmware.
+/// </param>
 public sealed record GuideData(
     string Id,
     string Version,
     CapabilityId Capability,
     CapabilityValue TargetState,
     IReadOnlyList<GuideEntry> Entries,
-    GuideEntry Fallback)
+    GuideEntry Fallback,
+    DateOnly? ExpiresOn = null)
 {
     /// <summary>
-    /// The best instructions we have for this machine. Always returns something: the vendor-level
-    /// or generic entry, clearly labelled as such, beats telling the user nothing.
+    /// True once this pack is too old to send someone into a firmware screen on.
     /// </summary>
-    public GuideEntry SelectFor(MachineIdentity machine)
+    /// <remarks>
+    /// <para>
+    /// Adopted from the deep research, which is right about this: OEM menus move between BIOS
+    /// revisions, and a pack verified eighteen months ago is a claim about a machine that no longer
+    /// exists. Everything else in this codebase already refuses to state something it cannot still
+    /// evidence — an expiry date is that same rule applied to shipped data (ADR 0004).
+    /// </para>
+    /// <para>
+    /// Checked at the point of use rather than at load, deliberately. Refusing to start because a
+    /// data file passed a date would take the whole app down on a calendar boundary; refusing one
+    /// guided firmware step, with the reason, degrades exactly as far as it has to.
+    /// </para>
+    /// </remarks>
+    public bool IsExpired(DateOnly today) => ExpiresOn is { } expiry && today > expiry;
+
+    /// <summary>
+    /// The best instructions we have for this machine, or null once the pack has expired.
+    /// </summary>
+    /// <remarks>
+    /// Within its life it always returns something: the vendor-level or generic entry, clearly
+    /// labelled as such, beats telling the user nothing. Past it, nothing — a stale menu path is
+    /// worse than no menu path, because the user will trust it and go looking.
+    /// </remarks>
+    public GuideEntry? SelectFor(MachineIdentity machine, DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(machine);
+
+        if (IsExpired(today))
+        {
+            return null;
+        }
 
         return Entries
             .Where(e => e.Match?.Matches(machine) ?? false)
@@ -122,7 +154,16 @@ public static class SupportTierResolver
     /// Resolves the tier from evidence we have, not from marketing: a vendor write adapter that
     /// actually matches this machine, or guide data actually verified on this model.
     /// </summary>
-    public static SupportTier Resolve(MachineIdentity machine, ActionCatalog catalog, GuideData? firmwareGuide)
+    /// <param name="today">
+    /// Used to check the knowledge pack's expiry. An expired pack drops the machine to read-only:
+    /// the support tier is a promise about what the app can still do, and it must go down on its
+    /// own when the evidence behind it lapses.
+    /// </param>
+    public static SupportTier Resolve(
+        MachineIdentity machine,
+        ActionCatalog catalog,
+        GuideData? firmwareGuide,
+        DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(machine);
         ArgumentNullException.ThrowIfNull(catalog);
@@ -145,12 +186,10 @@ public static class SupportTierResolver
             return SupportTier.Full;
         }
 
-        if (firmwareGuide is null)
+        if (firmwareGuide?.SelectFor(machine, today) is not { } entry)
         {
             return SupportTier.ReadOnly;
         }
-
-        GuideEntry entry = firmwareGuide.SelectFor(machine);
 
         return entry.Tier == GuideTier.GuidedVerified && entry.VerifiedOn is { Count: > 0 }
             ? SupportTier.GuidedVerified

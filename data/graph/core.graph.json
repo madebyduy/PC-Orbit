@@ -1,6 +1,6 @@
 {
   "$schema": "../../schemas/capability-graph.schema.json",
-  "graphVersion": "0.1.0",
+  "graphVersion": "0.2.0",
   "nodes": [
     {
       "id": "os.build",
@@ -75,6 +75,22 @@
       "displayKey": "cap.firmware.bios.version",
       "valueKind": "version",
       "aliases": ["bios version", "uefi version", "phien ban bios"]
+    },
+    {
+      "id": "firmware.bios.age-days",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.bios.age-days",
+      "valueKind": "scalar",
+      "unit": "days",
+      "observable": true,
+      "aliases": ["bios age", "tuoi bios", "bios release date", "ngay phat hanh bios"]
+    },
+    {
+      "id": "firmware.update-delivery",
+      "kind": "firmwareCapability",
+      "displayKey": "cap.firmware.update-delivery",
+      "observable": true,
+      "aliases": ["esrt", "firmware update", "capsule update", "cap nhat firmware", "uefi capsule"]
     },
     {
       "id": "firmware.rebar",
@@ -156,6 +172,63 @@
     },
 
     {
+      "id": "privacy.advertising-id",
+      "kind": "setting",
+      "displayKey": "cap.privacy.advertising-id",
+      "observable": true,
+      "aliases": ["advertising id", "quang cao", "ma quang cao", "tracking"]
+    },
+    {
+      "id": "privacy.tailored-experiences",
+      "kind": "setting",
+      "displayKey": "cap.privacy.tailored-experiences",
+      "observable": true,
+      "aliases": ["tailored experiences", "goi y ca nhan hoa", "trai nghiem tuy chinh"]
+    },
+    {
+      "id": "privacy.activity-history",
+      "kind": "setting",
+      "displayKey": "cap.privacy.activity-history",
+      "observable": true,
+      "aliases": ["activity history", "lich su hoat dong", "timeline"]
+    },
+    {
+      "id": "privacy.telemetry",
+      "kind": "setting",
+      "displayKey": "cap.privacy.telemetry",
+      "observable": true,
+      "aliases": ["telemetry", "du lieu chan doan", "diagnostic data", "theo doi"]
+    },
+    {
+      "id": "explorer.file-extensions",
+      "kind": "setting",
+      "displayKey": "cap.explorer.file-extensions",
+      "observable": true,
+      "aliases": ["file extension", "duoi file", "hien duoi tep", "hide file extensions"]
+    },
+
+    {
+      "id": "recovery.winre",
+      "kind": "osFeature",
+      "displayKey": "cap.recovery.winre",
+      "aliases": ["winre", "windows recovery environment", "reagentc", "moi truong khoi phuc", "recovery environment"]
+    },
+    {
+      "id": "recovery.partition",
+      "kind": "setting",
+      "displayKey": "cap.recovery.partition",
+      "aliases": ["recovery partition", "phan vung khoi phuc", "winre partition"]
+    },
+    {
+      "id": "recovery.restore-point.age-days",
+      "kind": "setting",
+      "displayKey": "cap.recovery.restore-point.age-days",
+      "valueKind": "scalar",
+      "unit": "days",
+      "aliases": ["latest restore point", "diem khoi phuc gan nhat", "restore point age"]
+    },
+
+    {
       "id": "wsl.installed",
       "kind": "application",
       "displayKey": "cap.wsl.installed",
@@ -180,6 +253,18 @@
       "kind": "workload",
       "displayKey": "cap.workload.docker-wsl2-ready",
       "aliases": ["docker", "docker desktop", "docker ready", "container"]
+    },
+    {
+      "id": "workload.windows11-ready",
+      "kind": "workload",
+      "displayKey": "cap.workload.windows11-ready",
+      "aliases": ["windows 11", "win11", "windows 11 ready", "nang cap windows 11", "tuong thich windows 11", "tpm 2.0", "secure boot"]
+    },
+    {
+      "id": "workload.recovery-ready",
+      "kind": "workload",
+      "displayKey": "cap.workload.recovery-ready",
+      "aliases": ["recovery ready", "san sang cuu ho", "khoi phuc", "emergency kit", "recovery readiness"]
     },
 
     {
@@ -402,6 +487,102 @@
         "source": "Boot-mode / Secure Boot / TPM changes invalidate the TPM measurement and trigger BitLocker recovery (spec 10.3)",
         "confidence": "high",
         "lastVerified": "2026-09-03"
+      }
+    },
+
+    {
+      "from": "workload.windows11-ready",
+      "kind": "requires",
+      "to": "firmware.boot-mode",
+      "expected": "uefi",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft: Windows 11 system requirements - system firmware must be UEFI, Secure Boot capable",
+        "confidence": "high",
+        "lastVerified": "2026-09-04"
+      }
+    },
+    {
+      "from": "workload.windows11-ready",
+      "kind": "requires",
+      "to": "firmware.secure-boot",
+      "expected": "enabled",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft: Windows 11 system requirements - Secure Boot",
+        "confidence": "high",
+        "lastVerified": "2026-09-04"
+      }
+    },
+    {
+      "from": "workload.windows11-ready",
+      "kind": "requires",
+      "to": "firmware.tpm.version",
+      "expected": ">=2.0",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft: Windows 11 system requirements - TPM version 2.0",
+        "confidence": "high",
+        "lastVerified": "2026-09-04"
+      }
+    },
+    {
+      "from": "workload.windows11-ready",
+      "kind": "requires",
+      "to": "firmware.tpm.ready",
+      "expected": "enabled",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft Learn: TPM must be present, enabled and activated for Windows 11 and for BitLocker key protection",
+        "confidence": "high",
+        "lastVerified": "2026-09-04"
+      }
+    },
+
+    {
+      "from": "workload.recovery-ready",
+      "kind": "requires",
+      "to": "recovery.winre",
+      "expected": "enabled",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft Learn: Windows RE technical reference - Startup Repair, reset and rollback all run from WinRE",
+        "confidence": "high",
+        "lastVerified": "2026-09-04"
+      }
+    },
+    {
+      "from": "workload.recovery-ready",
+      "kind": "requires",
+      "to": "windows.system-restore",
+      "expected": "enabled",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft: Recovery options in Windows - System Restore is the least destructive rung of the recovery ladder",
+        "confidence": "high",
+        "lastVerified": "2026-09-04"
+      }
+    },
+    {
+      "from": "recovery.winre",
+      "kind": "supportedBy",
+      "to": "recovery.partition",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Microsoft Learn: WinRE normally lives on its own recovery partition, but a healthy WinRE on the OS partition is still a working recovery path - so this explains a reading, it does not gate one (spec 11.3)",
+        "confidence": "high",
+        "lastVerified": "2026-09-04"
+      }
+    },
+    {
+      "from": "recovery.restore-point.age-days",
+      "kind": "providedBy",
+      "to": "windows.system-restore",
+      "evidence": {
+        "sourceKind": "documentation",
+        "source": "Restore points only exist while System Restore is on; the age of the newest one is how you tell protection from a switch left in the on position",
+        "confidence": "high",
+        "lastVerified": "2026-09-04"
       }
     }
   ]

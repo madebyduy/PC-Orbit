@@ -88,7 +88,20 @@ public interface ISnapshotStore
     Task<StateSnapshot?> LoadAsync(string snapshotId, CancellationToken cancellationToken = default);
 
     Task<StateSnapshot?> LoadLatestAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Recent scans, newest first, without loading their readings.
+    /// </summary>
+    /// <remarks>
+    /// Summaries rather than snapshots because the caller is choosing what to compare, not
+    /// comparing yet — and a machine that has been scanned daily for a year should not have to
+    /// deserialise a year of readings to answer "which scan came before this one?".
+    /// </remarks>
+    Task<IReadOnlyList<SnapshotSummary>> ListRecentAsync(int limit, CancellationToken cancellationToken = default);
 }
+
+/// <summary>Enough of a stored snapshot to pick it out of a list.</summary>
+public sealed record SnapshotSummary(string Id, DateTimeOffset TakenAt, string MachineFingerprint);
 
 /// <summary>
 /// Boot session identity, so the timeline can tie "this change" to "the restart it survived"

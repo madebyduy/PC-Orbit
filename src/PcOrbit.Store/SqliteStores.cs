@@ -16,6 +16,10 @@ internal static class SqliteHelpers
     internal static string ToText(DateTimeOffset value) =>
         value.ToUniversalTime().ToString("o", CultureInfo.InvariantCulture);
 
+    /// <summary>The inverse of <see cref="ToText"/>, for the columns we read back as values.</summary>
+    internal static DateTimeOffset ToTimestamp(string text) =>
+        DateTimeOffset.Parse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
+
     internal static string Serialize<T>(T value) => JsonSerializer.Serialize(value, JsonDefaults.Readable);
 
     internal static T Deserialize<T>(string json, string what) =>
@@ -81,6 +85,44 @@ public sealed class SqliteSnapshotStore(PcOrbitDatabase database) : ISnapshotSto
         return json is string text
             ? SqliteHelpers.Deserialize<SnapshotRecord>(text, "snapshot").ToSnapshot()
             : null;
+    }
+
+    public async Task<IReadOnlyList<SnapshotSummary>> ListRecentAsync(
+        int limit,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(limit);
+
+        await using SqliteConnection connection = _database.Connect();
+        await using SqliteCommand command = connection.CreateCommand();
+
+        // Ordered by id as well as time: two scans in the same second would otherwise come back in
+        // an order SQLite is free to change, and a diff that picks a different "previous scan" on
+        // each run is not a diff anyone can trust.
+        command.CommandText = """
+            SELECT id, taken_at, machine_fingerprint
+            FROM snapshots
+            ORDER BY taken_at DESC, id DESC
+            LIMIT $limit;
+            """;
+
+        command.Parameters.AddWithValue("$limit", limit);
+
+        List<SnapshotSummary> summaries = [];
+
+        await using SqliteDataReader reader = await command
+            .ExecuteReaderAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            summaries.Add(new SnapshotSummary(
+                reader.GetString(0),
+                SqliteHelpers.ToTimestamp(reader.GetString(1)),
+                reader.GetString(2)));
+        }
+
+        return summaries;
     }
 
     /// <summary>

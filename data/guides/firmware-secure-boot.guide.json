@@ -1,0 +1,98 @@
+{
+  "$schema": "../../schemas/guide-data.schema.json",
+  "id": "guide.firmware.secure-boot",
+  "version": "0.1.0",
+  "capability": "firmware.secure-boot",
+  "targetState": "enabled",
+  "expiresOn": "2027-09-04",
+  "entries": [
+    {
+      "match": { "vendors": ["ASUSTeK COMPUTER INC.", "ASUS"] },
+      "tier": "guidedGeneric",
+      "settingName": "OS Type",
+      "alternateNames": ["Windows UEFI mode", "Secure Boot"],
+      "menuPath": ["Boot", "Secure Boot", "OS Type"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "searchKey": "F9",
+      "noteKey": "guide.note.secure-boot-csm",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Gigabyte Technology Co., Ltd.", "GIGABYTE"] },
+      "tier": "guidedGeneric",
+      "settingName": "Secure Boot",
+      "alternateNames": ["Secure Boot Enable"],
+      "menuPath": ["Boot", "Secure Boot", "Secure Boot"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.secure-boot-csm",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Micro-Star International Co., Ltd.", "MSI"] },
+      "tier": "guidedGeneric",
+      "settingName": "Secure Boot",
+      "alternateNames": ["Secure Boot Support"],
+      "menuPath": ["Settings", "Advanced", "Windows OS Configuration", "Secure Boot"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.secure-boot-csm",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["ASRock"] },
+      "tier": "guidedGeneric",
+      "settingName": "Secure Boot",
+      "alternateNames": ["Secure Boot Enable"],
+      "menuPath": ["Security", "Secure Boot"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.secure-boot-csm",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Dell Inc.", "Dell"] },
+      "tier": "guidedGeneric",
+      "settingName": "Secure Boot Enable",
+      "alternateNames": ["Secure Boot"],
+      "menuPath": ["Boot Configuration", "Secure Boot", "Secure Boot Enable"],
+      "enterKeys": ["F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.secure-boot-csm",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["LENOVO", "Lenovo"] },
+      "tier": "guidedGeneric",
+      "settingName": "Secure Boot",
+      "alternateNames": ["Secure Boot Status"],
+      "menuPath": ["Security", "Secure Boot", "Secure Boot"],
+      "enterKeys": ["F1", "F2", "Enter"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.secure-boot-csm",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["HP", "Hewlett-Packard", "HP Inc."] },
+      "tier": "guidedGeneric",
+      "settingName": "Secure Boot",
+      "alternateNames": ["Configure Legacy Support and Secure Boot"],
+      "menuPath": ["Security", "Secure Boot Configuration", "Secure Boot"],
+      "enterKeys": ["F10", "Esc"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.secure-boot-csm",
+      "verifiedOn": []
+    }
+  ],
+  "fallback": {
+    "tier": "guidedGeneric",
+    "settingName": "Secure Boot",
+    "alternateNames": ["Secure Boot Enable", "Secure Boot Support", "OS Type"],
+    "menuPath": ["Boot", "Secure Boot"],
+    "enterKeys": ["Del", "F2", "F10", "Esc"],
+    "saveKeys": ["F10"],
+    "noteKey": "guide.note.unknown-model",
+    "verifiedOn": []
+  }
+}

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using PcOrbit.Core.Guides;
 using PcOrbit.Core.Model;
@@ -66,7 +67,28 @@ public static class GuideDataLoader
             Capability: CapabilityGraphLoader.ParseId(file.Capability, path, "guide capability"),
             TargetState: CapabilityValue.Parse(file.TargetState ?? "enabled"),
             Entries: [.. (file.Entries ?? []).Select(e => ToEntry(e, path, requireMatch: true))],
-            Fallback: ToEntry(file.Fallback, path, requireMatch: false));
+            Fallback: ToEntry(file.Fallback, path, requireMatch: false),
+            ExpiresOn: ParseExpiry(file.ExpiresOn, path));
+    }
+
+    /// <summary>
+    /// A malformed expiry date is a hard error rather than "no expiry".
+    /// </summary>
+    /// <remarks>
+    /// The whole point of the field is to stop a pack outliving its evidence. Treating an
+    /// unparseable date as "never expires" would make a typo the most permissive setting
+    /// available, which is the wrong direction for a gate to fail in.
+    /// </remarks>
+    private static DateOnly? ParseExpiry(string? value, string path)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return DateOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly expiry)
+            ? expiry
+            : throw new DataFileException(path, $"expiresOn is '{value}', which is not a yyyy-MM-dd date.");
     }
 
     private static GuideEntry ToEntry(EntryDto dto, string path, bool requireMatch)
@@ -129,7 +151,8 @@ public static class GuideDataLoader
         string? Capability,
         string? TargetState,
         List<EntryDto>? Entries,
-        EntryDto? Fallback);
+        EntryDto? Fallback,
+        string? ExpiresOn);
 
     private sealed record EntryDto(
         MatchDto? Match,

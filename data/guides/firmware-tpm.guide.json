@@ -1,0 +1,132 @@
+{
+  "$schema": "../../schemas/guide-data.schema.json",
+  "id": "guide.firmware.tpm",
+  "version": "0.1.0",
+  "capability": "firmware.tpm.ready",
+  "targetState": "enabled",
+  "expiresOn": "2027-09-04",
+  "entries": [
+    {
+      "match": { "vendors": ["ASUSTeK COMPUTER INC.", "ASUS"], "cpuVendors": ["amd"] },
+      "tier": "guidedGeneric",
+      "settingName": "AMD fTPM switch",
+      "alternateNames": ["Firmware TPM", "AMD CPU fTPM"],
+      "menuPath": ["Advanced", "AMD fTPM configuration", "AMD fTPM switch"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "searchKey": "F9",
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["ASUSTeK COMPUTER INC.", "ASUS"], "cpuVendors": ["intel"] },
+      "tier": "guidedGeneric",
+      "settingName": "PTT",
+      "alternateNames": ["Intel Platform Trust Technology", "TPM Device Selection"],
+      "menuPath": ["Advanced", "PCH-FW Configuration", "PTT"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "searchKey": "F9",
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Gigabyte Technology Co., Ltd.", "GIGABYTE"], "cpuVendors": ["amd"] },
+      "tier": "guidedGeneric",
+      "settingName": "AMD CPU fTPM",
+      "alternateNames": ["Firmware TPM"],
+      "menuPath": ["Settings", "Miscellaneous", "AMD CPU fTPM"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Gigabyte Technology Co., Ltd.", "GIGABYTE"], "cpuVendors": ["intel"] },
+      "tier": "guidedGeneric",
+      "settingName": "Intel Platform Trust Technology (PTT)",
+      "alternateNames": ["PTT", "Trusted Computing"],
+      "menuPath": ["Settings", "Miscellaneous", "Intel Platform Trust Technology (PTT)"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Micro-Star International Co., Ltd.", "MSI"], "cpuVendors": ["amd"] },
+      "tier": "guidedGeneric",
+      "settingName": "AMD fTPM switch",
+      "alternateNames": ["Security Device Support", "AMD CPU fTPM"],
+      "menuPath": ["Settings", "Security", "Trusted Computing", "AMD fTPM switch"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Micro-Star International Co., Ltd.", "MSI"], "cpuVendors": ["intel"] },
+      "tier": "guidedGeneric",
+      "settingName": "TPM Device Selection",
+      "alternateNames": ["PTT", "Intel Platform Trust Technology"],
+      "menuPath": ["Settings", "Security", "Trusted Computing", "TPM Device Selection"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["ASRock"] },
+      "tier": "guidedGeneric",
+      "settingName": "Security Device Support",
+      "alternateNames": ["AMD fTPM switch", "Intel Platform Trust Technology"],
+      "menuPath": ["Security", "Trusted Computing", "Security Device Support"],
+      "enterKeys": ["Del", "F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["Dell Inc.", "Dell"] },
+      "tier": "guidedGeneric",
+      "settingName": "TPM 2.0 Security",
+      "alternateNames": ["TPM On", "Security Device"],
+      "menuPath": ["Security", "TPM 2.0 Security"],
+      "enterKeys": ["F2"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["LENOVO", "Lenovo"] },
+      "tier": "guidedGeneric",
+      "settingName": "Security Chip",
+      "alternateNames": ["TPM", "Security Chip Selection"],
+      "menuPath": ["Security", "Security Chip", "Security Chip"],
+      "enterKeys": ["F1", "F2", "Enter"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    },
+    {
+      "match": { "vendors": ["HP", "Hewlett-Packard", "HP Inc."] },
+      "tier": "guidedGeneric",
+      "settingName": "TPM State",
+      "alternateNames": ["TPM Device", "Embedded Security Device"],
+      "menuPath": ["Security", "TPM Embedded Security", "TPM State"],
+      "enterKeys": ["F10", "Esc"],
+      "saveKeys": ["F10"],
+      "noteKey": "guide.note.tpm-bitlocker",
+      "verifiedOn": []
+    }
+  ],
+  "fallback": {
+    "tier": "guidedGeneric",
+    "settingName": "Security Device Support",
+    "alternateNames": ["AMD fTPM switch", "Intel PTT", "TPM Device", "Security Chip", "Trusted Computing"],
+    "menuPath": ["Advanced", "Trusted Computing"],
+    "enterKeys": ["Del", "F2", "F10", "Esc"],
+    "saveKeys": ["F10"],
+    "noteKey": "guide.note.unknown-model",
+    "verifiedOn": []
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "$schema": "../../schemas/outcome.schema.json",
+  "id": "outcome.windows11-ready",
+  "version": "1.0.0",
+  "titleKey": "outcome.windows11-ready.title",
+  "descriptionKey": "outcome.windows11-ready.description",
+  "category": "security",
+  "requires": [
+    {
+      "capability": "firmware.boot-mode",
+      "state": "uefi"
+    },
+    {
+      "capability": "firmware.tpm.version",
+      "state": ">=2.0"
+    },
+    {
+      "capability": "firmware.tpm.ready",
+      "state": "enabled"
+    },
+    {
+      "capability": "firmware.secure-boot",
+      "state": "enabled"
+    }
+  ],
+  "verify": [
+    {
+      "check": "workload.windows11-ready",
+      "expected": "ready"
+    }
+  ]
+}

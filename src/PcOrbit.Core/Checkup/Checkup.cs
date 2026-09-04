@@ -39,10 +39,22 @@ public sealed record Finding(
     string? SuggestedActionId = null,
     string? SuggestedOutcomeId = null,
     RestartKind Restart = RestartKind.None,
-    int EstimatedSeconds = 0)
+    int EstimatedSeconds = 0,
+    IReadOnlyList<CapabilityId>? Related = null)
 {
     /// <summary>False when there is nothing to press: the finding is information only.</summary>
     public bool HasFix => SuggestedActionId is not null || SuggestedOutcomeId is not null;
+
+    /// <summary>
+    /// Other capabilities this finding is about, when naming them is the point.
+    /// </summary>
+    /// <remarks>
+    /// Ids, not names: the display name of a capability lives in the string catalog under the
+    /// node's <c>displayKey</c>, so a finding that wanted to list four of them inside one sentence
+    /// would have to put translated text in an ICU argument — which is how a support report ends up
+    /// half in one language (spec 21.11). The surface resolves these and renders them as a list.
+    /// </remarks>
+    public IReadOnlyList<CapabilityId> RelatedCapabilities { get; } = Related ?? [];
 }
 
 public sealed record CheckupContext(StateSnapshot Snapshot, CapabilityGraph Graph, ActionCatalog Catalog);
@@ -71,6 +83,10 @@ public sealed class CheckupEngine(IEnumerable<ICheckupRule> rules)
         new FeatureDependencyRule(),
         new BitLockerRecoveryKeyRule(),
         new DiskSpaceRule(),
+        new RecoveryReadinessRule(),
+        new RestorePointFreshnessRule(),
+        new Windows11ReadinessRule(),
+        new FirmwareAdvisoryRule(),
     ]);
 
     public IReadOnlyList<Finding> Run(CheckupContext context)

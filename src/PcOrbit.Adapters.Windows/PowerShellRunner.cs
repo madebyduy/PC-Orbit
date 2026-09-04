@@ -1,10 +1,70 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace PcOrbit.Adapters.Windows;
 
 /// <param name="Succeeded">True when the process exited 0 <em>and</em> produced output.</param>
-public sealed record PowerShellResult(bool Succeeded, string StandardOutput, string StandardError, int ExitCode);
+public sealed partial record PowerShellResult(bool Succeeded, string StandardOutput, string StandardError, int ExitCode)
+{
+    /// <summary>
+    /// The error, as a person would write it.
+    /// </summary>
+    /// <remarks>
+    /// Windows PowerShell serialises its error stream as CLIXML the moment stderr is redirected, so
+    /// <see cref="StandardError"/> arrives as a wall of XML with the one useful sentence buried in
+    /// it. That sentence ends up in front of users — an unreadable capability says why it is
+    /// unreadable (spec 6.1) — so it gets unwrapped here rather than in every caller.
+    /// </remarks>
+    public string ErrorSummary
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(StandardError))
+            {
+                return string.Empty;
+            }
+
+            if (!StandardError.StartsWith("#< CLIXML", StringComparison.Ordinal))
+            {
+                return Collapse(StandardError);
+            }
+
+            IEnumerable<string> messages = ClixmlError()
+                .Matches(StandardError)
+                .Select(m => Unescape(m.Groups[1].Value))
+                .Where(s => !string.IsNullOrWhiteSpace(s));
+
+            string joined = Collapse(string.Join(" ", messages));
+
+            // The first line of a PowerShell error is the message; everything after it is the
+            // "At line:4 char:13 +" echo of our own script, which tells the reader nothing.
+            int echo = joined.IndexOf("At line:", StringComparison.Ordinal);
+
+            if (echo > 0)
+            {
+                joined = joined[..echo].TrimEnd();
+            }
+
+            return joined.Length == 0 ? "the command reported an error with no message" : joined;
+        }
+    }
+
+    private static string Unescape(string value) => value
+        .Replace("_x000D_", string.Empty, StringComparison.Ordinal)
+        .Replace("_x000A_", " ", StringComparison.Ordinal)
+        .Replace("&lt;", "<", StringComparison.Ordinal)
+        .Replace("&gt;", ">", StringComparison.Ordinal)
+        .Replace("&amp;", "&", StringComparison.Ordinal);
+
+    private static string Collapse(string value) => Whitespace().Replace(value, " ").Trim();
+
+    [GeneratedRegex("<S S=\"Error\">(.*?)</S>", RegexOptions.Singleline)]
+    private static partial Regex ClixmlError();
+
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex Whitespace();
+}
 
 /// <summary>
 /// Runs a fixed PowerShell script and returns its output.
@@ -39,9 +99,38 @@ public sealed class PowerShellRunner
 
     public static PowerShellRunner Default { get; } = new();
 
-    public async Task<PowerShellResult> RunAsync(string script, CancellationToken cancellationToken = default)
+    public Task<PowerShellResult> RunAsync(string script, CancellationToken cancellationToken = default) =>
+        RunWithArgumentsAsync(script, [], cancellationToken);
+
+    /// <summary>
+    /// Runs a fixed script with values supplied separately, reachable as
+    /// <c>$env:PCORBIT_ARG0</c>, <c>PCORBIT_ARG1</c> and so on.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The only way a value that did not come from this assembly may reach PowerShell. Values
+    /// travel in the child process's environment, so a name containing a quote, a semicolon or a
+    /// newline is a string to the script and never a second command — the script itself stays a
+    /// compile-time constant, which is the property spec 19.1 is actually asking for.
+    /// </para>
+    /// <para>
+    /// Not positional arguments: <c>powershell.exe -EncodedCommand &lt;b64&gt; value</c> is refused
+    /// outright with "a command is already specified", because anything after the encoded command
+    /// is read as a second command rather than as <c>$args</c>. That refusal reached a user as an
+    /// error dialog when they tried to switch off a startup entry.
+    /// </para>
+    /// <para>
+    /// Callers still validate the value against an allowlist before getting here. The environment
+    /// makes injection impossible; the allowlist makes the operation <em>intended</em>. Both.
+    /// </para>
+    /// </remarks>
+    public async Task<PowerShellResult> RunWithArgumentsAsync(
+        string script,
+        IReadOnlyList<string> arguments,
+        CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(script);
+        ArgumentNullException.ThrowIfNull(arguments);
 
         string encoded = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
 
@@ -63,6 +152,11 @@ public sealed class PowerShellRunner
         startInfo.ArgumentList.Add("Bypass");
         startInfo.ArgumentList.Add("-EncodedCommand");
         startInfo.ArgumentList.Add(encoded);
+
+        for (int i = 0; i < arguments.Count; i++)
+        {
+            startInfo.Environment[$"PCORBIT_ARG{i}"] = arguments[i];
+        }
 
         using var process = new Process { StartInfo = startInfo };
 

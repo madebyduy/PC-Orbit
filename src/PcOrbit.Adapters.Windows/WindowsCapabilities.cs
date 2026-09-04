@@ -22,6 +22,8 @@ public static class WindowsCapabilities
     public static CapabilityId BootMode { get; } = CapabilityId.Parse("firmware.boot-mode");
     public static CapabilityId Iommu { get; } = CapabilityId.Parse("firmware.iommu");
     public static CapabilityId BiosVersion { get; } = CapabilityId.Parse("firmware.bios.version");
+    public static CapabilityId BiosAgeDays { get; } = CapabilityId.Parse("firmware.bios.age-days");
+    public static CapabilityId FirmwareUpdateDelivery { get; } = CapabilityId.Parse("firmware.update-delivery");
     public static CapabilityId ResizableBar { get; } = CapabilityId.Parse("firmware.rebar");
     public static CapabilityId MemoryRatedSpeed { get; } = CapabilityId.Parse("memory.rated-speed");
     public static CapabilityId MemoryCurrentSpeed { get; } = CapabilityId.Parse("memory.current-speed");
@@ -33,6 +35,9 @@ public static class WindowsCapabilities
     public static CapabilityId FeatureHyperV { get; } = CapabilityId.Parse("windows.feature.hyper-v");
     public static CapabilityId FeatureSandbox { get; } = CapabilityId.Parse("windows.feature.sandbox");
     public static CapabilityId SystemRestore { get; } = CapabilityId.Parse("windows.system-restore");
+    public static CapabilityId RecoveryEnvironment { get; } = CapabilityId.Parse("recovery.winre");
+    public static CapabilityId RecoveryPartition { get; } = CapabilityId.Parse("recovery.partition");
+    public static CapabilityId RestorePointAgeDays { get; } = CapabilityId.Parse("recovery.restore-point.age-days");
     public static CapabilityId WslInstalled { get; } = CapabilityId.Parse("wsl.installed");
     public static CapabilityId WslDefaultVersion { get; } = CapabilityId.Parse("wsl.default-version");
     public static CapabilityId BitLockerSystemDrive { get; } = CapabilityId.Parse("security.bitlocker.system-drive");

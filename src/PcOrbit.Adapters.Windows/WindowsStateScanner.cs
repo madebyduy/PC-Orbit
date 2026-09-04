@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using PcOrbit.Adapters.Windows.Interop;
 using PcOrbit.Core.Abstractions;
 using PcOrbit.Core.Graph;
@@ -21,12 +22,15 @@ namespace PcOrbit.Adapters.Windows;
 /// "how do you know?" and lets a support report be audited months later (spec 6.1, 6.4, 8.3.1).
 /// </para>
 /// </remarks>
-public sealed class WindowsStateScanner : IStateScanner
+public sealed partial class WindowsStateScanner : IStateScanner
 {
     private readonly PowerShellRunner _powerShell;
     private readonly CapabilityGraph _graph;
     private readonly IClock _clock;
     private readonly IIdGenerator _ids;
+
+    /// <summary>The clock reading for the scan in flight, so the static probes can use it.</summary>
+    private static DateTimeOffset _lastScanAt;
 
     public WindowsStateScanner(
         CapabilityGraph graph,
@@ -58,11 +62,14 @@ public sealed class WindowsStateScanner : IStateScanner
         var builder = StateSnapshot.Builder(_ids.NewId("snap"), now, machine);
 
         AddOsReadings(builder, machine, inventory);
+        _lastScanAt = now;
         AddCpuAndFirmwareReadings(builder, inventory);
         AddMemoryReadings(builder, inventory);
         AddFeatureReadings(builder, inventory);
+        AddRecoveryReadings(builder, inventory, now);
         AddWslReadings(builder, inventory);
         AddSecurityReadings(builder, inventory);
+        AddTweakReadings(builder);
         AddDisplayReadings(builder);
         AddPowerAndStorageReadings(builder);
 
@@ -223,6 +230,7 @@ public sealed class WindowsStateScanner : IStateScanner
         AddSecureBootReading(builder, inventory);
         AddTpmReadings(builder, inventory);
         AddBootModeReading(builder);
+        AddFirmwareDeliveryReadings(builder, inventory, _lastScanAt);
         AddIommuReading(builder, inventory);
 
         WindowsInventory.BiosInfo? bios = inventory.Section<WindowsInventory.BiosInfo>(Sections.Bios);
@@ -291,45 +299,168 @@ public sealed class WindowsStateScanner : IStateScanner
                 + "which is normal on a machine that boots in legacy BIOS mode"));
     }
 
+    /// <summary>
+    /// The TPM, from the privileged class when we have the rights and from the device tree when we
+    /// do not.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>Win32_Tpm</c> needs administrator rights, and for a long time that meant this app told
+    /// ordinary users "could not be read" about the one component Windows 11 turns on. It need not:
+    /// the TPM is also an ordinary PnP device, <c>Win32_PnPEntity</c> is readable by anyone, and
+    /// Windows' own friendly name for it carries the spec version verbatim — "Trusted Platform
+    /// Module 2.0". <c>ConfigManagerErrorCode</c> 0 means Windows has the device started, which is
+    /// what "enabled and activated" amounts to from outside the firmware.
+    /// </para>
+    /// <para>
+    /// Confidence is graded accordingly: High from the privileged class, Medium from the device
+    /// name. A reading with a stated source and an honest confidence beats an Unknown that is only
+    /// Unknown because nobody looked for a second route (spec 6.1, 21.10).
+    /// </para>
+    /// </remarks>
     private static void AddTpmReadings(StateSnapshot.SnapshotBuilder builder, InventoryDocument inventory)
     {
         WindowsInventory.TpmInfo? tpm = inventory.Section<WindowsInventory.TpmInfo>(Sections.Tpm);
+        WindowsInventory.TpmDeviceInfo? device = inventory.Section<WindowsInventory.TpmDeviceInfo>(Sections.TpmDevice);
+
         string? spec = tpm?.SpecVersion?.Split(',').FirstOrDefault()?.Trim();
 
-        const string needsAdmin =
-            "Win32_Tpm could not be read. That class needs administrator rights, so this is not evidence that the machine has no TPM";
+        // "Trusted Platform Module 2.0" -> "2.0". Anchored to the end so a future name with a
+        // build number in it does not silently produce a wrong version.
+        string? fromName = device?.Name is { } name
+            ? TpmVersionInName().Match(name) is { Success: true } m ? m.Groups[1].Value : null
+            : null;
 
-        builder.Add(
-            WindowsCapabilities.TpmVersion,
-            string.IsNullOrWhiteSpace(spec) ? CapabilityValue.Unknown : CapabilityValue.Scalar(spec),
-            string.IsNullOrWhiteSpace(spec)
-                ? Evidence.Missing(inventory.ProblemFor(Sections.Tpm) ?? needsAdmin)
-                : new Evidence(
+        (CapabilityValue value, Evidence evidence) version = spec is { Length: > 0 }
+            ? (CapabilityValue.Scalar(spec), new Evidence(
+                EvidenceSourceKind.Wmi,
+                "Win32_Tpm.SpecVersion",
+                Confidence.High,
+                Query: @"root\CIMV2\Security\MicrosoftTpm:Win32_Tpm",
+                RawResult: tpm?.SpecVersion))
+            : fromName is { Length: > 0 }
+                ? (CapabilityValue.Scalar(fromName), new Evidence(
                     EvidenceSourceKind.Wmi,
-                    "Win32_Tpm.SpecVersion",
-                    Confidence.High,
-                    Query: @"root\CIMV2\Security\MicrosoftTpm:Win32_Tpm",
-                    RawResult: tpm?.SpecVersion));
+                    "Win32_PnPEntity — the version Windows itself prints in the device's name",
+                    Confidence.Medium,
+                    Query: "Win32_PnPEntity WHERE Name LIKE 'Trusted Platform Module%'",
+                    RawResult: device?.Name))
+                : (CapabilityValue.Unknown, Evidence.Missing(
+                    inventory.ProblemFor(Sections.TpmDevice)
+                    ?? "no Trusted Platform Module device is present in the device tree, and Win32_Tpm "
+                       + "needs administrator rights — so this machine may simply have no TPM"));
 
-        bool? ready = tpm is null
-            ? null
-            : tpm.IsEnabled_InitialValue == true && tpm.IsActivated_InitialValue == true;
+        builder.Add(WindowsCapabilities.TpmVersion, version.value, version.evidence);
 
-        builder.Add(
-            WindowsCapabilities.TpmReady,
-            ready switch
-            {
-                true => CapabilityValue.Enabled,
-                false => CapabilityValue.Disabled,
-                null => CapabilityValue.Unknown,
-            },
-            ready is null
-                ? Evidence.Missing(inventory.ProblemFor(Sections.Tpm) ?? needsAdmin)
-                : new Evidence(
+        // Both flags have to be present. Win32_Tpm can come back as an object whose properties are
+        // all null when the caller lacks the rights to read them, and `x == true` on a null bool?
+        // is false — which quietly turned "we could not read the TPM" into "the TPM is off", the
+        // one inference this codebase is built to refuse (spec 6.6, 27.13).
+        bool? ready = (tpm?.IsEnabled_InitialValue, tpm?.IsActivated_InitialValue) switch
+        {
+            (bool enabled, bool activated) => enabled && activated,
+            _ => null,
+        };
+
+        if (ready is { } confirmed)
+        {
+            builder.Add(
+                WindowsCapabilities.TpmReady,
+                confirmed ? CapabilityValue.Enabled : CapabilityValue.Disabled,
+                new Evidence(
                     EvidenceSourceKind.Wmi,
                     "Win32_Tpm.IsEnabled_InitialValue and IsActivated_InitialValue",
                     Confidence.High,
-                    RawResult: ready.ToString()));
+                    RawResult: confirmed.ToString()));
+
+            return;
+        }
+
+        if (device?.ConfigManagerErrorCode is { } code)
+        {
+            builder.Add(
+                WindowsCapabilities.TpmReady,
+                code == 0 ? CapabilityValue.Enabled : CapabilityValue.Disabled,
+                new Evidence(
+                    EvidenceSourceKind.Wmi,
+                    "Win32_PnPEntity.ConfigManagerErrorCode — Windows has the TPM device started, "
+                    + "which it cannot do while the chip is switched off in firmware",
+                    Confidence.Medium,
+                    Query: "Win32_PnPEntity WHERE Name LIKE 'Trusted Platform Module%'",
+                    RawResult: $"ConfigManagerErrorCode={code}"));
+
+            return;
+        }
+
+        builder.Add(
+            WindowsCapabilities.TpmReady,
+            CapabilityValue.Unknown,
+            Evidence.Missing(
+                inventory.ProblemFor(Sections.TpmDevice)
+                ?? "no TPM device is present in the device tree, and Win32_Tpm needs administrator rights"));
+    }
+
+    [GeneratedRegex(@"Trusted Platform Module\s+(\d+\.\d+)", RegexOptions.IgnoreCase)]
+    private static partial Regex TpmVersionInName();
+
+    /// <summary>
+    /// Whether Windows can deliver firmware updates to this machine, and how old its BIOS is.
+    /// </summary>
+    /// <remarks>
+    /// A machine with an entry under <c>Control\FirmwareResources</c> publishes an EFI System
+    /// Resource Table, which is what lets Windows Update ship a UEFI capsule to it. A machine
+    /// without one can only be updated from the vendor's own tool — and that is a fact worth
+    /// stating plainly, because it decides whether "check for updates" will ever help.
+    /// </remarks>
+    private static void AddFirmwareDeliveryReadings(
+        StateSnapshot.SnapshotBuilder builder,
+        InventoryDocument inventory,
+        DateTimeOffset now)
+    {
+        // Nulls filtered here as well as in the script: PowerShell's @($null) is a one-element
+        // array, which briefly had this reporting "Windows Update can deliver firmware" on a
+        // machine whose ESRT key does not exist at all.
+        List<WindowsInventory.FirmwareResource> resources =
+        [
+            .. inventory.List<WindowsInventory.FirmwareResource>(Sections.Firmware)
+                .Where(r => r is not null && !string.IsNullOrWhiteSpace(r.Version)),
+        ];
+
+        builder.Add(
+            WindowsCapabilities.FirmwareUpdateDelivery,
+            resources.Count > 0 ? CapabilityValue.Present : CapabilityValue.Absent,
+            new Evidence(
+                EvidenceSourceKind.Registry,
+                resources.Count > 0
+                    ? @"HKLM\SYSTEM\CurrentControlSet\Control\FirmwareResources — this machine publishes an "
+                      + "EFI System Resource Table, so Windows Update can deliver firmware to it"
+                    : @"HKLM\SYSTEM\CurrentControlSet\Control\FirmwareResources is absent, so this machine "
+                      + "takes firmware only from the manufacturer's own tool",
+                Confidence.High,
+                RawResult: $"{resources.Count} firmware resource(s)"));
+
+        WindowsInventory.BiosInfo? bios = inventory.Section<WindowsInventory.BiosInfo>(Sections.Bios);
+
+        if (!DateTime.TryParse(bios?.ReleaseDate, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime released))
+        {
+            builder.Add(
+                WindowsCapabilities.BiosAgeDays,
+                CapabilityValue.Unknown,
+                Evidence.Missing("Win32_BIOS.ReleaseDate was not reported by this machine"));
+
+            return;
+        }
+
+        int ageDays = Math.Max(0, (int)(now.LocalDateTime - released).TotalDays);
+
+        builder.Add(
+            WindowsCapabilities.BiosAgeDays,
+            CapabilityValue.Scalar(ageDays),
+            new Evidence(
+                EvidenceSourceKind.Wmi,
+                "Win32_BIOS.ReleaseDate",
+                Confidence.High,
+                RawResult: released.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)));
     }
 
     private static void AddBootModeReading(StateSnapshot.SnapshotBuilder builder)
@@ -482,6 +613,133 @@ public sealed class WindowsStateScanner : IStateScanner
         builder.Add(WindowsCapabilities.SystemRestore, value, evidence);
     }
 
+    // ---------------------------------------------------------------- recovery readiness
+
+    /// <summary>
+    /// Whether this machine can still rescue itself: a working recovery environment, a recovery
+    /// partition behind it, and a restore point recent enough to be worth rolling back to.
+    /// </summary>
+    /// <remarks>
+    /// Every source here is restricted to administrators. That is the whole reason these readings
+    /// are careful: a standard-user scan that reported "no recovery environment" would be telling
+    /// someone their safety net is gone on the strength of a permission error (spec 6.6, 27.13).
+    /// So each one reports Unknown and names the rights it needed.
+    /// </remarks>
+    private static void AddRecoveryReadings(
+        StateSnapshot.SnapshotBuilder builder,
+        InventoryDocument inventory,
+        DateTimeOffset now)
+    {
+        AddWinreReading(builder, inventory);
+
+        bool? partition = inventory.Bool(Sections.RecoveryPartition);
+
+        builder.Add(
+            WindowsCapabilities.RecoveryPartition,
+            partition switch
+            {
+                true => CapabilityValue.Present,
+                false => CapabilityValue.Absent,
+                null => CapabilityValue.Unknown,
+            },
+            partition is null
+                ? Evidence.Missing(
+                    inventory.ProblemFor(Sections.RecoveryPartition)
+                    ?? "Get-Partition could not enumerate this machine's partitions, so whether a recovery "
+                       + "partition exists is genuinely unknown")
+                : new Evidence(
+                    EvidenceSourceKind.PowerShell,
+                    "Get-Partition, looking for a partition of type 'Recovery'",
+                    Confidence.High,
+                    Query: "Get-Partition | Where-Object Type -eq 'Recovery'",
+                    RawResult: partition.Value.ToString()));
+
+        AddRestorePointAgeReading(builder, inventory, now);
+    }
+
+    private static void AddWinreReading(StateSnapshot.SnapshotBuilder builder, InventoryDocument inventory)
+    {
+        WindowsInventory.WinreInfo? winre = inventory.Section<WindowsInventory.WinreInfo>(Sections.Winre);
+
+        const string nullGuid = "{00000000-0000-0000-0000-000000000000}";
+
+        if (winre is null)
+        {
+            builder.Add(
+                WindowsCapabilities.RecoveryEnvironment,
+                CapabilityValue.Unknown,
+                Evidence.Missing(
+                    inventory.ProblemFor(Sections.Winre)
+                    ?? @"System32\Recovery\ReAgent.xml could not be read. That folder is restricted to "
+                       + "administrators, so this is not evidence that the recovery environment is missing"));
+            return;
+        }
+
+        bool registered = !string.IsNullOrWhiteSpace(winre.BcdId)
+            && !string.Equals(winre.BcdId, nullGuid, StringComparison.OrdinalIgnoreCase);
+
+        bool hasImage = !string.IsNullOrWhiteSpace(winre.Location);
+
+        // A staged update leaves WinRE half-replaced. It is registered and it has a location, and
+        // it still will not boot — so it is reported as its own state rather than as Enabled.
+        bool staged = string.Equals(winre.Staged, "1", StringComparison.Ordinal);
+
+        (CapabilityValue value, string raw) = (registered && hasImage, staged) switch
+        {
+            (true, true) => (CapabilityValue.Scalar("staged"), "registered, image present, update part-applied"),
+            (true, false) => (CapabilityValue.Enabled, "registered with a WinRE image"),
+            (false, _) => (CapabilityValue.Disabled, $"WinreBCD='{winre.BcdId}', WinreLocation='{winre.Location}'"),
+        };
+
+        builder.Add(
+            WindowsCapabilities.RecoveryEnvironment,
+            value,
+
+            // Medium, not High: this is the configuration reagentc reports on rather than reagentc
+            // itself, and the mapping from these two fields to "Enabled" is read off the file's
+            // documented meaning rather than from an API that answers the question directly.
+            new Evidence(
+                EvidenceSourceKind.PowerShell,
+                @"System32\Recovery\ReAgent.xml — WinRE is enabled when it is registered to a boot entry and has an image",
+                Confidence.Medium,
+                Query: @"[xml] Get-Content $env:SystemRoot\System32\Recovery\ReAgent.xml",
+                RawResult: raw));
+    }
+
+    private static void AddRestorePointAgeReading(
+        StateSnapshot.SnapshotBuilder builder,
+        InventoryDocument inventory,
+        DateTimeOffset now)
+    {
+        string? latest = inventory.String(Sections.RestorePointLatest);
+
+        if (!DateTime.TryParse(latest, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime created))
+        {
+            builder.Add(
+                WindowsCapabilities.RestorePointAgeDays,
+                CapabilityValue.Unknown,
+                Evidence.Missing(
+                    inventory.ProblemFor(Sections.RestorePointLatest)
+                    ?? "no restore point was returned. Get-ComputerRestorePoint needs administrator rights, so "
+                       + "this is not evidence that no restore point exists"));
+            return;
+        }
+
+        // Clamped at zero: a restore point stamped in the future is a clock problem, and a negative
+        // age would make every rule downstream read as "brand new".
+        int ageDays = Math.Max(0, (int)(now.LocalDateTime - created).TotalDays);
+
+        builder.Add(
+            WindowsCapabilities.RestorePointAgeDays,
+            CapabilityValue.Scalar(ageDays),
+            new Evidence(
+                EvidenceSourceKind.PowerShell,
+                "Get-ComputerRestorePoint, newest CreationTime",
+                Confidence.High,
+                Query: "Get-ComputerRestorePoint | Sort-Object CreationTime -Descending | Select-Object -First 1",
+                RawResult: created.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)));
+    }
+
     // ---------------------------------------------------------------- WSL
 
     private static void AddWslReadings(StateSnapshot.SnapshotBuilder builder, InventoryDocument inventory)
@@ -557,6 +815,25 @@ public sealed class WindowsStateScanner : IStateScanner
             Confidence.High,
             Query: "Win32_EncryptableVolume WHERE DriveLetter=%SystemDrive%",
             RawResult: raw);
+    }
+
+    // ---------------------------------------------------------------- tweaks
+
+    /// <summary>
+    /// The allowlisted registry settings, read straight from the registry.
+    /// </summary>
+    /// <remarks>
+    /// No PowerShell for these: they are single values under known keys, and going through the
+    /// inventory script would add a second place the path is written down. The table in
+    /// <see cref="Executors.RegistryTweaks"/> is the only one.
+    /// </remarks>
+    private static void AddTweakReadings(StateSnapshot.SnapshotBuilder builder)
+    {
+        foreach (Executors.RegistryTweak tweak in Executors.RegistryTweaks.All)
+        {
+            (CapabilityValue value, Evidence evidence) = Executors.RegistryTweaks.Read(tweak);
+            builder.Add(tweak.Capability, value, evidence);
+        }
     }
 
     // ---------------------------------------------------------------- display, power, storage

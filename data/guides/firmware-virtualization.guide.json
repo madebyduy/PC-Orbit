@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "capability": "firmware.cpu.virtualization",
   "targetState": "enabled",
+  "expiresOn": "2027-09-04",
   "entries": [
     {
       "match": { "vendors": ["Gigabyte Technology Co., Ltd.", "GIGABYTE"], "cpuVendors": ["amd"] },

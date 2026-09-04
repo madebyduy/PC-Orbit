@@ -12,7 +12,12 @@
     "capability": { "type": "string" },
     "targetState": { "type": "string" },
     "entries": { "type": "array", "items": { "$ref": "#/$defs/entry" } },
-    "fallback": { "$ref": "#/$defs/entry" }
+    "fallback": { "$ref": "#/$defs/entry" },
+    "expiresOn": {
+      "type": "string",
+      "format": "date",
+      "description": "Past this date the pack stops counting as evidence: guided steps for it are refused and the machine drops to read-only. OEM menus move between BIOS revisions, so a pack has to be revalidated rather than trusted indefinitely (ADR 0004). Omit only for guidance that does not depend on a vendor's current firmware."
+    }
   },
   "$defs": {
     "entry": {

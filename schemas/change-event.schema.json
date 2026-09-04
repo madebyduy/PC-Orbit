@@ -13,7 +13,7 @@
       "enum": ["pcOrbit", "windowsUpdate", "driver", "firmware", "app", "device", "user", "eventLog", "restore", "unknown"]
     },
     "category": {
-      "enum": ["setting", "feature", "firmware", "driver", "update", "device", "profile", "transaction", "restart", "rollback", "crash", "preflight", "drift"]
+      "enum": ["setting", "feature", "firmware", "driver", "update", "device", "profile", "transaction", "restart", "rollback", "crash", "preflight", "drift", "checkpoint"]
     },
     "component": { "type": "string", "description": "Capability id or component identifier." },
     "before": { "type": ["string", "null"] },
