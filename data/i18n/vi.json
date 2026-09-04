@@ -385,11 +385,6 @@
     "cli.startup.heading": "Có {count} thứ khởi động cùng Windows",
     "cli.startup.empty": "Không tìm thấy gì ở các nơi Windows dùng để khởi động chương trình.",
     "cli.startup.readOnly": "Phiên bản này chỉ liệt kê những gì khởi động cùng Windows, không tắt thứ gì. Thẻ Startup trong Task Manager làm việc đó, và cũng là danh sách này.",
-    "startup.location.userRegistry": "Khởi động cho bạn (registry)",
-    "startup.location.machineRegistry": "Khởi động cho mọi người trên máy này (registry)",
-    "startup.location.startupFolder": "Thư mục Startup",
-    "startup.location.scheduledTask": "Tác vụ theo lịch, kích hoạt khi đăng nhập",
-    "startup.location.unknown": "Ở nơi chúng tôi không phân loại được",
     "cleanup.category.temporaryFiles": "Tệp tạm cũ hơn một tuần",
     "cleanup.category.thumbnailCache": "Bộ nhớ đệm ảnh thu nhỏ và biểu tượng",
     "cleanup.category.errorReports": "Báo cáo lỗi chưa gửi",
@@ -645,6 +640,7 @@
     "app.apps.install": "Cài",
     "app.apps.remove": "Gỡ",
     "app.apps.isInstalled": "Đã cài",
+    "app.apps.installedAs": "Đã cài, máy gọi là “{name}”",
     "app.apps.notInstalled": "Chưa cài",
     "app.apps.unknownState": "Chưa kiểm tra",
     "app.apps.working": "Đang xử lý {name}…",
@@ -709,6 +705,13 @@
     "app.office.stageName.tool": "lấy công cụ triển khai",
     "app.office.stageName.download": "tải Office",
     "app.office.stageName.configure": "cài Office",
-    "app.office.failedAt": "Office chưa xong ở bước {stage}: {problem}"
+    "app.office.failedAt": "Office chưa xong ở bước {stage}: {problem}",
+    "startup.location.userRegistry": "Chạy khi bạn đăng nhập",
+    "startup.location.machineRegistry": "Chạy cho mọi người dùng máy này",
+    "startup.location.startupFolder": "Lối tắt trong thư mục Khởi động của bạn",
+    "startup.location.packagedApp": "Ứng dụng Microsoft Store xin tự chạy",
+    "startup.location.scheduledTask": "Tác vụ theo lịch, kích hoạt khi bạn đăng nhập",
+    "startup.location.unknown": "Ở nơi ứng dụng này chưa phân loại được",
+    "app.startup.unknownPublisher": "Không ghi nhà phát hành"
   }
 }

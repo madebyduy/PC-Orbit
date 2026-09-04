@@ -80,7 +80,8 @@ public static class AppCatalogLoader
                 dto.Name,
                 dto.Publisher ?? "Unknown",
                 dto.DescriptionKey,
-                dto.CategoryKey));
+                dto.CategoryKey,
+                dto.InstalledAs));
         }
 
         return apps;
@@ -92,6 +93,7 @@ public static class AppCatalogLoader
         string? Id,
         string? Name,
         string? Publisher,
+        List<string>? InstalledAs,
         string? CategoryKey,
         string? DescriptionKey);
 }

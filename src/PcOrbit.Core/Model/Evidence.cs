@@ -17,6 +17,14 @@ public enum EvidenceSourceKind
     Registry,
     PowerShell,
     Win32Api,
+
+    /// <summary>
+    /// A file or folder read directly. Distinct from <see cref="Win32Api"/> because what makes it
+    /// trustworthy is different: the answer is whatever is on the disk at that moment, and it can
+    /// change between the reading and the change made from it.
+    /// </summary>
+    FileSystem,
+
     VendorApi,
     Documentation,
 

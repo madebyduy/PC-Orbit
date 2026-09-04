@@ -160,8 +160,18 @@ public partial class MainWindow
                 // rather than showing a confident Not installed it has no basis for.
                 bool? isInstalled = installed.IsKnown ? installed.Ids.Contains(app.Id) : null;
 
+                // When the machine calls it something else, say so. "Đã cài" beside a row labelled
+                // Google Chrome, on a PC running Chrome Beta, is true but looks like a mistake -
+                // naming what was actually found is what makes it checkable.
+                string? foundAs = installed.NameOnThisMachine(app.Id);
+
                 string state = isInstalled switch
                 {
+                    true when foundAs is not null && !foundAs.Equals(app.Name, StringComparison.Ordinal) =>
+                        T("app.apps.installedAs", new Dictionary<string, string>(StringComparer.Ordinal)
+                        {
+                            ["name"] = foundAs,
+                        }),
                     true => T("app.apps.isInstalled"),
                     false => T("app.apps.notInstalled"),
                     null => T("app.apps.unknownState"),

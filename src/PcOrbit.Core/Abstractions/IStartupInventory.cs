@@ -18,6 +18,16 @@ public enum StartupLocation
 
     /// <summary>A scheduled task with a logon trigger.</summary>
     ScheduledTask,
+
+    /// <summary>
+    /// A packaged application's own startup task.
+    /// </summary>
+    /// <remarks>
+    /// Store and MSIX applications do not write to a Run key. They declare a startup task in their
+    /// manifest, and Windows records whether it is on in per-package state of its own — which is
+    /// why an inventory that only reads Run keys shows fewer entries than Task Manager does.
+    /// </remarks>
+    PackagedApp,
 }
 
 /// <param name="Enabled">

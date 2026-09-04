@@ -4,16 +4,30 @@
   "title": "PC Orbit Application Catalogue",
   "description": "The applications this product will install, and only these. Every id is a package in Microsoft's winget repository, which hashes what it downloads. The catalogue is the allowlist: an id that is not here never reaches a command (ADR 0006, spec 17.1).",
   "type": "object",
-  "required": ["version", "apps"],
+  "required": [
+    "version",
+    "apps"
+  ],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
-    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "$schema": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
     "apps": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["id", "name", "publisher", "categoryKey", "descriptionKey"],
+        "required": [
+          "id",
+          "name",
+          "publisher",
+          "categoryKey",
+          "descriptionKey"
+        ],
         "additionalProperties": false,
         "properties": {
           "id": {
@@ -30,8 +44,23 @@
             "type": "string",
             "description": "Who makes it. Shown because 'who am I trusting' is the question before installing anything."
           },
-          "categoryKey": { "type": "string", "description": "i18n key for the group heading." },
-          "descriptionKey": { "type": "string", "description": "i18n key for the one line of prose." }
+          "categoryKey": {
+            "type": "string",
+            "description": "i18n key for the group heading."
+          },
+          "descriptionKey": {
+            "type": "string",
+            "description": "i18n key for the one line of prose."
+          },
+          "installedAs": {
+            "type": "array",
+            "description": "Names this product goes by in Add or Remove Programs, when they differ from `name`. A row counts as installed when one of these equals an installed program's display name or is followed in it by a space - so \"Google Chrome\" finds \"Google Chrome Beta\", and \"Git\" does not find \"GitHub Desktop\". Omit when `name` is already what Windows shows.",
+            "items": {
+              "type": "string",
+              "minLength": 2
+            },
+            "minItems": 1
+          }
         }
       }
     }

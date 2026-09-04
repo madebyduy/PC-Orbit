@@ -568,7 +568,11 @@ public partial class MainWindow
 
             return new SwitchRow(
                 Name: FriendlyStartupName(entry),
-                Detail: T($"startup.location.{Camel(entry.Location.ToString())}"),
+                // Publisher first, because it is the thing that answers "should this be here?".
+                // The location follows in plain language; the user does not want a registry path
+                // and, on this page, does not need one — the evidence still carries it.
+                Detail: $"{entry.Publisher ?? T("app.startup.unknownPublisher")} · "
+                    + T($"startup.location.{Camel(entry.Location.ToString())}"),
                 State: entry.Enabled switch
                 {
                     true => T("status.enabled"),

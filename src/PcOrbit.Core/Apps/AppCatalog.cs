@@ -12,12 +12,36 @@ namespace PcOrbit.Core.Apps;
 /// </param>
 /// <param name="DescriptionKey">i18n key. The one line of prose about the app.</param>
 /// <param name="CategoryKey">i18n key for the group this sits in.</param>
+/// <param name="InstalledAs">
+/// Names this product goes by in Add or Remove Programs, when they differ from <paramref name="Name"/>.
+/// </param>
 public sealed record CatalogApp(
     string Id,
     string Name,
     string Publisher,
     string DescriptionKey,
-    string CategoryKey);
+    string CategoryKey,
+    IReadOnlyList<string>? InstalledAs = null)
+{
+    /// <summary>
+    /// Every display name this product might appear under, <see cref="Name"/> included.
+    /// </summary>
+    public IReadOnlyList<string> DisplayNames => InstalledAs is { Count: > 0 } names ? names : [Name];
+
+    /// <summary>
+    /// Whether an installed program's display name is this product.
+    /// </summary>
+    /// <remarks>
+    /// Equal, or followed by a space. The trailing space is what keeps the rule useful rather than
+    /// merely permissive: "Google Chrome" has to find "Google Chrome Beta", because someone running
+    /// Beta has Chrome and being told otherwise is a lie they can see. But "Git" must not find
+    /// "GitHub Desktop", and a bare prefix test would.
+    /// </remarks>
+    public bool IsCalled(string displayName) =>
+        DisplayNames.Any(n =>
+            displayName.Equals(n, StringComparison.OrdinalIgnoreCase)
+            || displayName.StartsWith(n + " ", StringComparison.OrdinalIgnoreCase));
+}
 
 /// <summary>
 /// The applications this product will install, and only these.
@@ -73,12 +97,35 @@ public sealed record AppChangeResult(
     string? Problem = null);
 
 /// <param name="Problem">Non-null when the installed set could not be read, with the reason.</param>
-public sealed record InstalledApps(IReadOnlySet<string> Ids, string? Problem = null)
+/// <param name="FoundAs">
+/// For each id, the name the machine actually calls it.
+/// </param>
+/// <remarks>
+/// <para>
+/// Two sources, because one was not enough. winget knows what it installed and what it can
+/// correlate to its repository, and it correlates by exact package id — so a machine running
+/// Chrome Beta answers "no" to <c>Google.Chrome</c>, which is technically true and useless to the
+/// person looking at a row labelled Google Chrome and knowing perfectly well that they have it.
+/// </para>
+/// <para>
+/// So Add or Remove Programs is read as well. It is the list Windows itself shows, and a product
+/// that put an entry there is installed whether or not any package manager claims it.
+/// <see cref="FoundAs"/> carries the name that proved it, so the row can say which.
+/// </para>
+/// </remarks>
+public sealed record InstalledApps(
+    IReadOnlySet<string> Ids,
+    string? Problem = null,
+    IReadOnlyDictionary<string, string>? FoundAs = null)
 {
     public static InstalledApps Unknown(string problem) =>
         new(new HashSet<string>(StringComparer.OrdinalIgnoreCase), problem);
 
     public bool IsKnown => Problem is null;
+
+    /// <summary>The name the machine calls this, when it differs from the catalogue's own.</summary>
+    public string? NameOnThisMachine(string id) =>
+        FoundAs is not null && FoundAs.TryGetValue(id, out string? name) ? name : null;
 }
 
 /// <summary>

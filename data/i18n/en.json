@@ -385,11 +385,6 @@
     "cli.startup.heading": "{count, plural, one {# thing starts with Windows} other {# things start with Windows}}",
     "cli.startup.empty": "Nothing was found in any of the places Windows starts programs from.",
     "cli.startup.readOnly": "This version lists what starts with Windows; it does not switch anything off. Task Manager's Startup tab does that, and it is the same list.",
-    "startup.location.userRegistry": "Starts for you (registry)",
-    "startup.location.machineRegistry": "Starts for everyone on this PC (registry)",
-    "startup.location.startupFolder": "Startup folder",
-    "startup.location.scheduledTask": "Scheduled task, triggered at sign-in",
-    "startup.location.unknown": "Somewhere we could not classify",
     "cleanup.category.temporaryFiles": "Temporary files older than a week",
     "cleanup.category.thumbnailCache": "Thumbnail and icon cache",
     "cleanup.category.errorReports": "Unsent error reports",
@@ -645,6 +640,7 @@
     "app.apps.install": "Install",
     "app.apps.remove": "Remove",
     "app.apps.isInstalled": "Installed",
+    "app.apps.installedAs": "Installed as “{name}”",
     "app.apps.notInstalled": "Not installed",
     "app.apps.unknownState": "Not checked",
     "app.apps.working": "Working on {name}…",
@@ -709,6 +705,13 @@
     "app.office.stageName.tool": "fetching the deployment tool",
     "app.office.stageName.download": "downloading Office",
     "app.office.stageName.configure": "installing Office",
-    "app.office.failedAt": "Office did not finish while {stage}: {problem}"
+    "app.office.failedAt": "Office did not finish while {stage}: {problem}",
+    "startup.location.userRegistry": "Runs when you sign in",
+    "startup.location.machineRegistry": "Runs for everyone who uses this PC",
+    "startup.location.startupFolder": "A shortcut in your Startup folder",
+    "startup.location.packagedApp": "A Microsoft Store app that asked to start",
+    "startup.location.scheduledTask": "A scheduled job, triggered when you sign in",
+    "startup.location.unknown": "Somewhere this app could not classify",
+    "app.startup.unknownPublisher": "Publisher not stated"
   }
 }

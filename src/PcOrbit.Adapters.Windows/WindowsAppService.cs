@@ -29,12 +29,21 @@ public sealed class WindowsAppService(AppCatalog catalog, PowerShellRunner? powe
         """;
 
     /// <summary>
-    /// The installed set, via <c>winget export</c>.
+    /// What is installed, from two places.
     /// </summary>
     /// <remarks>
-    /// Export writes to a file rather than to the pipe, so this writes to a temporary one and reads
-    /// it back. Its warnings about packages that came from outside the repository go to the error
-    /// stream and are expected — every machine has some.
+    /// <para>
+    /// <c>winget export</c> writes the installed set as JSON — to a file rather than to the pipe,
+    /// so this writes a temporary one and reads it back. Its warnings about packages that came from
+    /// outside the repository go to the error stream and are expected; every machine has some.
+    /// </para>
+    /// <para>
+    /// Add or Remove Programs is read as well, and it is the half that fixes a real complaint. A
+    /// machine with Chrome Beta on it exports <c>Google.Chrome.Beta.EXE</c>, so asking winget about
+    /// <c>Google.Chrome</c> answers no — correct about package ids, wrong about the question the
+    /// user is asking, which is whether they have Chrome. The uninstall keys say "Google Chrome"
+    /// and that is the answer they can see for themselves.
+    /// </para>
     /// </remarks>
     private const string InstalledScript = """
         $ProgressPreference = 'SilentlyContinue'
@@ -68,9 +77,29 @@ public sealed class WindowsAppService(AppCatalog catalog, PowerShellRunner? powe
             Remove-Item -LiteralPath $file -Force -ErrorAction SilentlyContinue
         }
 
+        # Add or Remove Programs, from all three uninstall roots. SystemComponent entries are the
+        # ones Windows hides from its own list, and hiding them here too keeps the two agreeing.
+        $programs = @()
+        try {
+            $roots = @(
+                'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+                'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*')
+
+            $programs = @(Get-ItemProperty $roots -ErrorAction SilentlyContinue |
+                Where-Object { $_.DisplayName -and -not $_.SystemComponent } |
+                ForEach-Object { [string] $_.DisplayName } |
+                Sort-Object -Unique)
+        }
+        catch {
+            # Left empty rather than failing the whole read: winget's answer is still worth having.
+            $programs = @()
+        }
+
         # Always JSON, always one shape. A script that sometimes prints nothing gives the caller
         # nothing to report except that it gave nothing.
-        [pscustomobject]@{ Ids = @($ids); Problem = $problem } | ConvertTo-Json -Depth 3 -Compress
+        [pscustomobject]@{ Ids = @($ids); Programs = @($programs); Problem = $problem } |
+            ConvertTo-Json -Depth 3 -Compress
 
         exit 0
         """;
@@ -141,6 +170,7 @@ public sealed class WindowsAppService(AppCatalog catalog, PowerShellRunner? powe
         }
 
         HashSet<string> ids = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, string> foundAs = new(StringComparer.OrdinalIgnoreCase);
 
         if (document is null)
         {
@@ -156,24 +186,56 @@ public sealed class WindowsAppService(AppCatalog catalog, PowerShellRunner? powe
                 return InstalledApps.Unknown($"the installed package list could not be read: {reported}");
             }
 
-            if (root.TryGetProperty("Ids", out JsonElement list))
+            foreach (string id in Strings(root, "Ids"))
             {
-                // PowerShell renders a one-element array as the element, so both shapes arrive.
-                IEnumerable<JsonElement> entries = list.ValueKind == JsonValueKind.Array
-                    ? list.EnumerateArray()
-                    : new[] { list };
+                ids.Add(id);
 
-                foreach (JsonElement entry in entries)
+                if (_catalog.Find(id) is { } known)
                 {
-                    if (entry.ValueKind == JsonValueKind.String && entry.GetString() is { Length: > 0 } id)
+                    foundAs[known.Id] = known.Name;
+                }
+            }
+
+            // The second source. A catalogue entry counts as installed when Windows' own list of
+            // programs calls something by one of its names, whatever winget managed to correlate.
+            foreach (string displayName in Strings(root, "Programs"))
+            {
+                foreach (CatalogApp app in _catalog.All)
+                {
+                    if (app.IsCalled(displayName))
                     {
-                        ids.Add(id);
+                        ids.Add(app.Id);
+                        foundAs[app.Id] = displayName;
                     }
                 }
             }
         }
 
-        return new InstalledApps(ids);
+        return new InstalledApps(ids, null, foundAs);
+    }
+
+    /// <summary>
+    /// A string array out of the payload, tolerating the shape PowerShell renders for one element.
+    /// </summary>
+    private static IEnumerable<string> Strings(JsonElement root, string property)
+    {
+        if (!root.TryGetProperty(property, out JsonElement list))
+        {
+            yield break;
+        }
+
+        // PowerShell renders a one-element array as the element, so both shapes arrive.
+        IEnumerable<JsonElement> entries = list.ValueKind == JsonValueKind.Array
+            ? list.EnumerateArray()
+            : [list];
+
+        foreach (JsonElement entry in entries)
+        {
+            if (entry.ValueKind == JsonValueKind.String && entry.GetString() is { Length: > 0 } value)
+            {
+                yield return value;
+            }
+        }
     }
 
     public Task<AppChangeResult> InstallAsync(string id, CancellationToken cancellationToken = default) =>

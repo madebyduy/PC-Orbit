@@ -14,21 +14,30 @@
       "name": "Mozilla Firefox",
       "publisher": "Mozilla",
       "categoryKey": "apps.category.browsers",
-      "descriptionKey": "apps.description.Mozilla.Firefox"
+      "descriptionKey": "apps.description.Mozilla.Firefox",
+      "installedAs": [
+        "Mozilla Firefox"
+      ]
     },
     {
       "id": "Brave.Brave",
       "name": "Brave",
       "publisher": "Brave Software",
       "categoryKey": "apps.category.browsers",
-      "descriptionKey": "apps.description.Brave.Brave"
+      "descriptionKey": "apps.description.Brave.Brave",
+      "installedAs": [
+        "Brave"
+      ]
     },
     {
       "id": "VideoLAN.VLC",
       "name": "VLC media player",
       "publisher": "VideoLAN",
       "categoryKey": "apps.category.media",
-      "descriptionKey": "apps.description.VideoLAN.VLC"
+      "descriptionKey": "apps.description.VideoLAN.VLC",
+      "installedAs": [
+        "VLC media player"
+      ]
     },
     {
       "id": "IrfanSkiljan.IrfanView",
@@ -49,35 +58,50 @@
       "name": "7-Zip",
       "publisher": "Igor Pavlov",
       "categoryKey": "apps.category.utilities",
-      "descriptionKey": "apps.description.7zip.7zip"
+      "descriptionKey": "apps.description.7zip.7zip",
+      "installedAs": [
+        "7-Zip"
+      ]
     },
     {
       "id": "Notepad++.Notepad++",
       "name": "Notepad++",
       "publisher": "Notepad++ Team",
       "categoryKey": "apps.category.utilities",
-      "descriptionKey": "apps.description.Notepad++.Notepad++"
+      "descriptionKey": "apps.description.Notepad++.Notepad++",
+      "installedAs": [
+        "Notepad++"
+      ]
     },
     {
       "id": "voidtools.Everything",
       "name": "Everything",
       "publisher": "voidtools",
       "categoryKey": "apps.category.utilities",
-      "descriptionKey": "apps.description.voidtools.Everything"
+      "descriptionKey": "apps.description.voidtools.Everything",
+      "installedAs": [
+        "Everything"
+      ]
     },
     {
       "id": "Adobe.Acrobat.Reader.64-bit",
       "name": "Adobe Acrobat Reader",
       "publisher": "Adobe",
       "categoryKey": "apps.category.utilities",
-      "descriptionKey": "apps.description.Adobe.Acrobat.Reader.64-bit"
+      "descriptionKey": "apps.description.Adobe.Acrobat.Reader.64-bit",
+      "installedAs": [
+        "Adobe Acrobat"
+      ]
     },
     {
       "id": "Zoom.Zoom",
       "name": "Zoom Workplace",
       "publisher": "Zoom",
       "categoryKey": "apps.category.communication",
-      "descriptionKey": "apps.description.Zoom.Zoom"
+      "descriptionKey": "apps.description.Zoom.Zoom",
+      "installedAs": [
+        "Zoom"
+      ]
     },
     {
       "id": "Microsoft.Teams",
@@ -105,7 +129,10 @@
       "name": "Visual Studio Code",
       "publisher": "Microsoft",
       "categoryKey": "apps.category.development",
-      "descriptionKey": "apps.description.Microsoft.VisualStudioCode"
+      "descriptionKey": "apps.description.Microsoft.VisualStudioCode",
+      "installedAs": [
+        "Microsoft Visual Studio Code"
+      ]
     },
     {
       "id": "Git.Git",
@@ -119,7 +146,10 @@
       "name": "Python 3.12",
       "publisher": "Python Software Foundation",
       "categoryKey": "apps.category.development",
-      "descriptionKey": "apps.description.Python.Python.3.12"
+      "descriptionKey": "apps.description.Python.Python.3.12",
+      "installedAs": [
+        "Python 3.12"
+      ]
     },
     {
       "id": "Microsoft.PowerToys",
@@ -133,21 +163,31 @@
       "name": "Visual C++ Runtime (x64)",
       "publisher": "Microsoft",
       "categoryKey": "apps.category.runtimes",
-      "descriptionKey": "apps.description.Microsoft.VCRedist.2015+.x64"
+      "descriptionKey": "apps.description.Microsoft.VCRedist.2015+.x64",
+      "installedAs": [
+        "Microsoft Visual C++"
+      ]
     },
     {
       "id": "Microsoft.DotNet.DesktopRuntime.8",
       "name": ".NET Desktop Runtime 8",
       "publisher": "Microsoft",
       "categoryKey": "apps.category.runtimes",
-      "descriptionKey": "apps.description.Microsoft.DotNet.DesktopRuntime.8"
+      "descriptionKey": "apps.description.Microsoft.DotNet.DesktopRuntime.8",
+      "installedAs": [
+        "Microsoft Windows Desktop Runtime - 8"
+      ]
     },
     {
       "id": "Oracle.JavaRuntimeEnvironment",
       "name": "Java Runtime",
       "publisher": "Oracle",
       "categoryKey": "apps.category.runtimes",
-      "descriptionKey": "apps.description.Oracle.JavaRuntimeEnvironment"
+      "descriptionKey": "apps.description.Oracle.JavaRuntimeEnvironment",
+      "installedAs": [
+        "Java 8",
+        "Java(TM)"
+      ]
     },
     {
       "id": "Bitwarden.Bitwarden",
