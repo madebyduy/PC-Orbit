@@ -12,6 +12,7 @@ using PcOrbit.Core.Guides;
 using PcOrbit.Core.Localization;
 using PcOrbit.Core.Outcomes;
 using PcOrbit.Core.Serialization;
+using PcOrbit.Core.Setup;
 using PcOrbit.Core.Transactions;
 using PcOrbit.Store;
 
@@ -79,6 +80,17 @@ public sealed class PcOrbitHost : IDisposable
 
     /// <summary>Installing and removing them, verified by asking winget again afterwards.</summary>
     public IAppService AppService { get; }
+
+    /// <summary>
+    /// Office through Microsoft own deployment tool. Ships no keys and bypasses no licensing.
+    /// </summary>
+    public IOfficeService Office { get; } = new WindowsOfficeService();
+
+    /// <summary>
+    /// Reinstalling Windows over itself from an ISO. The repair install only — laying an image onto
+    /// a chosen partition is not here and will not be (ADR 0006).
+    /// </summary>
+    public IWindowsMediaService Media { get; } = new WindowsMediaService();
 
     public IStringCatalog Strings { get; }
 

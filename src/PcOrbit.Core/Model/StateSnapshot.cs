@@ -26,8 +26,21 @@ public sealed class StateSnapshot
         TakenAt = takenAt;
         Machine = machine;
 
-        // Last write wins: a probe with better evidence may deliberately override an earlier one.
-        _readings = readings.ToImmutableDictionary(r => r.Capability, r => r);
+        // Last write wins: a probe with better evidence may deliberately override an earlier one —
+        // the TPM is read from the privileged class when we have the rights and from the device
+        // tree when we do not, and the better reading should be the one that survives.
+        //
+        // Built through a mutable dictionary rather than ToImmutableDictionary, which throws on a
+        // duplicate key instead of overwriting. That made the documented behaviour a lie and left a
+        // crash waiting for the first probe pair that both reported a capability.
+        Dictionary<CapabilityId, CapabilityReading> latest = [];
+
+        foreach (CapabilityReading reading in readings)
+        {
+            latest[reading.Capability] = reading;
+        }
+
+        _readings = latest.ToImmutableDictionary();
         _ordered = [.. _readings.Values.OrderBy(r => r.Capability)];
     }
 
