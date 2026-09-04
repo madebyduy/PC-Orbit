@@ -28,11 +28,13 @@ public sealed record GuideRow(
 /// </summary>
 /// <remarks>
 /// <para>
-/// The honest scope of this page is narrower than the request that produced it, and saying so is
-/// the point. Writing BIOS settings from Windows needs a vendor interface, and the machine this was
-/// built against registers Lenovo's WMI classes but returns no instances from them — that provider
-/// only populates on the commercial ThinkPad and ThinkCentre lines. A page that offered switches
-/// which silently did nothing would be worse than one that says what it can and cannot reach.
+/// Writing BIOS settings from Windows needs an interface the firmware itself implements. Whether
+/// this machine has one is a question that cannot be answered without administrator rights — every
+/// ACPI-WMI class returns nothing to a process that lacks them — so the page distinguishes "your
+/// firmware does not offer this" from "nobody has been able to ask yet", and offers a different
+/// thing for each. A page that offered switches which silently did nothing would be worse than one
+/// that says what it can and cannot reach; a page that said "your hardware cannot" when it had not
+/// looked would be worse still.
 /// </para>
 /// <para>
 /// What it can do is real. Restarting into the firmware's own settings screen is a documented UEFI

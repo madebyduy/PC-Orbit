@@ -100,11 +100,23 @@ never put in a plan. This product has no feature that remembers a firmware passw
 
 ## What we cannot claim
 
-**The write path is unverified on hardware.** The machine this was built on is a consumer Lenovo:
-all four Lenovo WMI classes are registered by its driver and every one returns zero instances,
-because that provider only populates on the ThinkPad and ThinkCentre lines. So detection, refusal,
-classification, preflight and the "no interface here" path are all exercised against a real
-machine — and the vendor call itself is not.
+**The write path is unverified on hardware.** The machine this was built on is a consumer Lenovo
+whose Lenovo WMI classes are all registered and all return zero instances. Detection, refusal,
+classification, preflight and the "nothing to show" path are exercised against a real machine; the
+vendor call itself is not.
+
+**A correction, recorded because it is the more useful half of this section.** The first version of
+this ADR said that zero instances meant the provider "only populates on the ThinkPad and
+ThinkCentre lines" — stated as fact. It was not established. Every ACPI-WMI class under `root\WMI`
+returns zero instances to a process without administrator rights, `MSAcpi_ThermalZoneTemperature`
+included, and the probe that produced that conclusion was not elevated. So the product told standard
+users, definitively, that their hardware lacked a feature nobody had been able to ask about — which
+is precisely the inference spec 6.6 exists to forbid, made by the code that was written to enforce
+it.
+
+`FirmwareAvailability` now has five values instead of a boolean, and `NeedsElevation` is a separate
+answer with a separate remedy: a button, not a menu path. Whether that consumer Lenovo implements
+the interface remains **open**, and `docs/capability-matrix.md` records it as open.
 
 That is stated in three places rather than hidden: here, in `docs/capability-matrix.md`, and in the
 suite that covers it. What follows from it:
@@ -119,9 +131,9 @@ suite that covers it. What follows from it:
 
 ## Consequences
 
-- Most consumer hardware will see the "your model does not expose this" message. That is the
-  correct answer for that hardware and it is worth saying plainly, rather than showing switches
-  that quietly do nothing.
+- Some consumer hardware will see "your model does not expose this". That is worth saying plainly
+  rather than showing switches that quietly do nothing — but only once the question has actually
+  been asked with the rights to get an answer. Unelevated, the honest message is a different one.
 - `data/actions/pending-verification/firmware.dell.actions.json` stays where it is. Nothing here
   promotes it, and the compiler still cannot select a firmware write.
 - If a future model reports a setting whose name lands in the wrong risk bucket, the fix is a table

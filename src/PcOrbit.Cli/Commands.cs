@@ -606,7 +606,7 @@ public static class Commands
         // Developer output, so the vendor's own names and the query behind them stay as they are
         // (spec 21.11). This is the page a support engineer reads six months later.
         Output.Line($"  vendor              {firmware.Vendor ?? "(none)"}");
-        Output.Line($"  interface answers   {firmware.InterfacePresent}");
+        Output.Line($"  availability        {firmware.Availability}");
         Output.Line($"  supervisor password {firmware.PasswordRequired}");
         Output.Line($"  settings            {firmware.Settings.Count}");
 
@@ -620,7 +620,13 @@ public static class Commands
         if (firmware.Settings.Count == 0)
         {
             Output.Line("  " + host.Strings.Format(
-                firmware.Vendor is { Length: > 0 } vendor ? "app.firmware.modelHasNone" : "app.firmware.noInterface",
+                firmware.Availability switch
+                {
+                    FirmwareAvailability.NeedsElevation => "app.firmware.needsElevation",
+                    FirmwareAvailability.NeedsVendorTool => "app.firmware.dellNeedsTool",
+                    FirmwareAvailability.ModelDoesNotImplement => "app.firmware.modelHasNone",
+                    _ => "app.firmware.noInterface",
+                },
                 new Dictionary<string, string>(StringComparer.Ordinal) { ["vendor"] = firmware.Vendor ?? "" }));
 
             // From the stored scan rather than a fresh one: the guides are chosen by manufacturer,

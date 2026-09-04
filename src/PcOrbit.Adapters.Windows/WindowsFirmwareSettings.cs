@@ -17,12 +17,16 @@ namespace PcOrbit.Adapters.Windows;
 /// Dell is detected and reported rather than driven.
 /// </para>
 /// <para>
-/// Registration is not availability. This was written against a Lenovo that has all four Lenovo
-/// classes registered by its driver and returns <em>zero instances</em> from every one of them:
-/// that provider only populates on the commercial ThinkPad and ThinkCentre lines. So "the classes
-/// exist" and "the firmware will talk to us" are read as two separate facts, and a consumer model
-/// is told plainly that its firmware does not expose this rather than being shown switches that
-/// quietly do nothing.
+/// Registration is not availability, and neither is an empty answer. Every ACPI-WMI class under
+/// <c>root\WMI</c> returns zero instances to a process without administrator rights — including
+/// <c>MSAcpi_ThermalZoneTemperature</c>, which works on every machine ever made. The first version
+/// of this read that emptiness as "your model does not have this feature" and told standard users
+/// so, definitively, about hardware nobody had been able to ask about.
+/// </para>
+/// <para>
+/// So elevation is established first and reported as part of the answer. Three separate facts: the
+/// classes exist, we were allowed to enumerate them, and the firmware returned something. Only the
+/// third is a statement about the machine.
 /// </para>
 /// <para>
 /// Never by writing UEFI <c>Setup</c> variables at an offset (spec decision 18).
@@ -45,13 +49,19 @@ public sealed class WindowsFirmwareSettings(PowerShellRunner? powerShell = null)
         $ProgressPreference = 'SilentlyContinue'
         [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
-        function Emit($vendor, $present, $password, $settings, $problem) {
+        # Administrator rights decide whether an empty result means anything at all.
+        $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+        $elevated = (New-Object Security.Principal.WindowsPrincipal($identity)).IsInRole(
+            [Security.Principal.WindowsBuiltInRole]::Administrator)
+
+        function Emit($vendor, $registered, $password, $settings, $problem) {
             [pscustomobject]@{
-                Vendor   = $vendor
-                Present  = [bool] $present
-                Password = [bool] $password
-                Settings = @($settings)
-                Problem  = $problem
+                Vendor     = $vendor
+                Registered = [bool] $registered
+                Elevated   = [bool] $elevated
+                Password   = [bool] $password
+                Settings   = @($settings)
+                Problem    = $problem
             } | ConvertTo-Json -Depth 4 -Compress
             exit 0
         }
@@ -95,8 +105,9 @@ public sealed class WindowsFirmwareSettings(PowerShellRunner? powerShell = null)
                 $settings += [pscustomobject]@{ Name = $name; Value = $value; Options = @($options) }
             }
 
-            # Registered but silent is the consumer-model answer, and it is reported as such.
-            Emit 'Lenovo' ($rows.Count -gt 0) $password $settings $null
+            # Registered, not "present". What an empty list means is the caller's to decide, and
+            # it cannot be decided here without knowing whether this process was allowed to ask.
+            Emit 'Lenovo' $true $password $settings $null
         }
 
         # ---------------------------------------------------------------- HP
@@ -119,7 +130,7 @@ public sealed class WindowsFirmwareSettings(PowerShellRunner? powerShell = null)
                   Where-Object { $_.Name -eq 'Setup Password' }
             if ($pw -and $pw.IsSet) { $password = $true }
 
-            Emit 'HP' ($settings.Count -gt 0) $password $settings $null
+            Emit 'HP' $true $password $settings $null
         }
 
         # ---------------------------------------------------------------- Dell
@@ -138,7 +149,7 @@ public sealed class WindowsFirmwareSettings(PowerShellRunner? powerShell = null)
                 }
             }
 
-            Emit 'Dell' ($settings.Count -gt 0) $false $settings $null
+            Emit 'Dell' $true $false $settings $null
         }
 
         Emit $null $false $false @() $null
@@ -228,7 +239,7 @@ public sealed class WindowsFirmwareSettings(PowerShellRunner? powerShell = null)
 
         if (problem is not null)
         {
-            return new FirmwareInterface(false, null, false, [], problem);
+            return new FirmwareInterface(FirmwareAvailability.NoInterface, null, false, [], problem);
         }
 
         if (document is null)
@@ -241,7 +252,8 @@ public sealed class WindowsFirmwareSettings(PowerShellRunner? powerShell = null)
             JsonElement root = document.RootElement;
 
             string? vendor = WindowsChangeSources.Text(root, "Vendor");
-            bool present = WindowsChangeSources.Flag(root, "Present") ?? false;
+            bool registered = WindowsChangeSources.Flag(root, "Registered") ?? false;
+            bool elevated = WindowsChangeSources.Flag(root, "Elevated") ?? false;
             bool password = WindowsChangeSources.Flag(root, "Password") ?? false;
 
             List<FirmwareSetting> settings = [];
@@ -270,7 +282,7 @@ public sealed class WindowsFirmwareSettings(PowerShellRunner? powerShell = null)
             }
 
             return new FirmwareInterface(
-                present,
+                Availability(registered, elevated, settings.Count, vendor),
                 vendor,
                 password,
                 [.. settings.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase)],
@@ -348,6 +360,39 @@ public sealed class WindowsFirmwareSettings(PowerShellRunner? powerShell = null)
             && string.Equals(s.Current, value, StringComparison.OrdinalIgnoreCase));
 
         return new FirmwareWriteResult(setting.Name, value, true, verified, RestartRequired: true, reported);
+    }
+
+    /// <summary>
+    /// What an answer of "nothing" actually means.
+    /// </summary>
+    /// <remarks>
+    /// The whole point of this method is the middle case. Registered classes returning nothing to a
+    /// process that was never allowed to enumerate them says nothing about the firmware, and the
+    /// first version of this reported it as a settled fact about the hardware. It is
+    /// <see cref="FirmwareAvailability.NeedsElevation"/>, and the answer to it is a button, not a
+    /// menu path.
+    /// </remarks>
+    private static FirmwareAvailability Availability(bool registered, bool elevated, int settings, string? vendor)
+    {
+        if (settings > 0)
+        {
+            return FirmwareAvailability.Available;
+        }
+
+        if (!registered)
+        {
+            return FirmwareAvailability.NoInterface;
+        }
+
+        if (!elevated)
+        {
+            return FirmwareAvailability.NeedsElevation;
+        }
+
+        // Dell registers the namespace through Command | Monitor. Without it the classes are absent
+        // entirely, so reaching here with Dell named means something odder — treat it as the tool
+        // being the missing piece, which is the actionable reading.
+        return vendor == "Dell" ? FirmwareAvailability.NeedsVendorTool : FirmwareAvailability.ModelDoesNotImplement;
     }
 
     private static string VendorQuery(string? vendor) => vendor switch

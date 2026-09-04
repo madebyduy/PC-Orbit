@@ -756,6 +756,7 @@
     "app.firmware.risk.serious": "Nghiêm trọng",
     "app.firmware.risk.refused": "Không cho đổi",
     "app.firmware.noInterface": "Firmware của máy này không mở giao diện để đổi thiết lập từ Windows. Hãy dùng chính màn hình BIOS — nút ở trên đưa bạn vào đó.",
+    "app.firmware.needsElevation": "Chưa trả lời được. Windows chỉ cho chương trình có quyền quản trị hỏi firmware xem nó có những thiết lập nào — thiếu quyền đó thì mọi máy đều trông như không có gì, nên ứng dụng này sẽ không đoán. Bấm “Chạy với quyền quản trị” ở cuối thanh bên rồi quay lại.",
     "app.firmware.modelHasNone": "{vendor} có công bố giao diện này, nhưng model này không trả lời — ở hầu hết các hãng, nó chỉ lắp cho dòng doanh nghiệp. Hãy dùng chính màn hình BIOS; nút ở trên đưa bạn vào đó.",
     "app.firmware.dellNeedsTool": "Dell chỉ mở phần này khi đã cài Dell Command | Monitor, một bản tải riêng và miễn phí của Dell. Chưa có nó thì dùng chính màn hình BIOS.",
     "app.firmware.problem": "Không đọc được giao diện firmware: {problem}",

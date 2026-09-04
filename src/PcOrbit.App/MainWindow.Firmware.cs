@@ -112,16 +112,25 @@ public partial class MainWindow
     /// Why there is nothing to show, in the words of the actual reason.
     /// </summary>
     /// <remarks>
-    /// Three different answers, and collapsing them into "not available" would throw away the one
-    /// piece of information the reader can act on. Classes registered but silent is the consumer
-    /// model case — nothing to be done, and worth saying so plainly. Dell needs a download. No
-    /// interface at all is most self-built and older hardware.
+    /// Four different answers, and collapsing them into "not available" would throw away the one
+    /// piece of information the reader can act on. Needing administrator rights is a fact about
+    /// this process and is fixed by a button. A model that answered and had nothing is a fact about
+    /// the hardware. Dell needs a download. No interface at all is most self-built and older
+    /// hardware. Only the second of those is a reason to stop looking.
     /// </remarks>
     private string UnavailableReason() => _firmware switch
     {
         { Problem: { } problem } => T("app.firmware.problem", Args(("problem", problem))),
-        { Vendor: "Dell" } => T("app.firmware.dellNeedsTool"),
-        { Vendor: { Length: > 0 } vendor } => T("app.firmware.modelHasNone", Args(("vendor", vendor))),
+
+        // First, and it is the one that was missing. Without it a standard user was told their
+        // hardware lacked a feature that nobody had been allowed to ask about.
+        { Availability: FirmwareAvailability.NeedsElevation } => T("app.firmware.needsElevation"),
+
+        { Availability: FirmwareAvailability.NeedsVendorTool } => T("app.firmware.dellNeedsTool"),
+
+        { Availability: FirmwareAvailability.ModelDoesNotImplement, Vendor: { Length: > 0 } vendor } =>
+            T("app.firmware.modelHasNone", Args(("vendor", vendor))),
+
         _ => T("app.firmware.noInterface"),
     };
 

@@ -54,29 +54,74 @@ public sealed record FirmwareSetting(
         Options.Any(o => string.Equals(o, value, StringComparison.OrdinalIgnoreCase));
 }
 
-/// <param name="InterfacePresent">
-/// False when this machine exposes no vendor interface at all — which is most consumer hardware,
-/// and is a thing to say plainly rather than a failure.
-/// </param>
-/// <param name="Settings">
-/// Empty with <see cref="InterfacePresent"/> true is its own answer: the classes are registered but
-/// the provider returns nothing, which is what a consumer model does with a commercial-line
-/// interface. Reported as "your model does not expose these", not as an error.
-/// </param>
+/// <summary>
+/// Whether this machine's firmware can be driven from Windows, and if not, why not.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Five answers rather than a boolean, because the first version of this had two and got one of
+/// them badly wrong. It reported "your model does not expose this" whenever the vendor classes
+/// returned no instances — and every ACPI-WMI class under <c>root\WMI</c> returns no instances to
+/// a process without administrator rights, including ones that work on every machine ever made.
+/// So a standard-user run was told, definitively, that its hardware lacked a feature nobody had
+/// been able to ask about.
+/// </para>
+/// <para>
+/// That is the mistake this whole product exists to not make: a failed read is
+/// <see cref="NeedsElevation"/>, never a confident no (spec 6.6).
+/// </para>
+/// </remarks>
+public enum FirmwareAvailability
+{
+    /// <summary>No manufacturer interface is registered at all. Common on self-built machines.</summary>
+    NoInterface = 0,
+
+    /// <summary>
+    /// The classes are there and we lacked the rights to enumerate them. Not an answer about the
+    /// hardware — an answer about this process.
+    /// </summary>
+    NeedsElevation,
+
+    /// <summary>
+    /// Asked with the rights to get an answer, and the firmware returned nothing. This is what a
+    /// consumer model does with a commercial-line interface, and it is a real finding.
+    /// </summary>
+    ModelDoesNotImplement,
+
+    /// <summary>The vendor publishes the interface behind a tool that is not installed here.</summary>
+    NeedsVendorTool,
+
+    /// <summary>Settings were returned.</summary>
+    Available,
+}
+
+/// <param name="Settings">Empty unless <see cref="FirmwareInterface.Availability"/> is Available.</param>
 /// <param name="PasswordRequired">
 /// True when the firmware has a supervisor password set, so a write will be refused without it.
 /// </param>
 public sealed record FirmwareInterface(
-    bool InterfacePresent,
+    FirmwareAvailability Availability,
     string? Vendor,
     bool PasswordRequired,
     IReadOnlyList<FirmwareSetting> Settings,
     string? Problem = null)
 {
-    public static FirmwareInterface None(string? vendor = null) => new(false, vendor, false, []);
+    public static FirmwareInterface None(string? vendor = null) =>
+        new(FirmwareAvailability.NoInterface, vendor, false, []);
 
     /// <summary>The interface answered, and it had something to say.</summary>
-    public bool IsUsable => InterfacePresent && Settings.Count > 0 && Problem is null;
+    public bool IsUsable =>
+        Availability == FirmwareAvailability.Available && Settings.Count > 0 && Problem is null;
+
+    /// <summary>
+    /// Whether the answer is about the hardware or about this process.
+    /// </summary>
+    /// <remarks>
+    /// The caller shows a different thing for each: a machine that genuinely cannot do this gets a
+    /// menu path, and a process that was not allowed to ask gets a button that relaunches with the
+    /// rights to ask properly.
+    /// </remarks>
+    public bool AnswerIsAboutTheMachine => Availability != FirmwareAvailability.NeedsElevation;
 }
 
 /// <param name="Verified">

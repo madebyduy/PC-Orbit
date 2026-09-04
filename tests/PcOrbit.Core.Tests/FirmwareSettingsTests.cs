@@ -211,24 +211,54 @@ public sealed class FirmwareSettingsTests
 
     // ---------------------------------------------------------------- the interface
 
+    /// <summary>
+    /// The bug this enum exists for.
+    /// </summary>
+    /// <remarks>
+    /// Every ACPI-WMI class under <c>root\WMI</c> returns zero instances to a process without
+    /// administrator rights — <c>MSAcpi_ThermalZoneTemperature</c> included, and that one works on
+    /// every machine ever made. The first version read that emptiness as "your model does not have
+    /// this" and said so to standard users as settled fact. An empty answer nobody had the rights
+    /// to obtain is not an answer about the hardware.
+    /// </remarks>
     [Fact]
-    public void ClassesRegisteredButSilentIsNotAUsableInterface()
+    public void NotBeingAllowedToAskIsNotTheSameAsBeingToldNo()
     {
-        // What a consumer Lenovo does with the commercial line's interface: all four classes are
-        // registered by the driver, and every one of them returns nothing.
-        var registered = new FirmwareInterface(InterfacePresent: false, "Lenovo", false, []);
+        var unasked = new FirmwareInterface(FirmwareAvailability.NeedsElevation, "Lenovo", false, []);
+        var asked = new FirmwareInterface(FirmwareAvailability.ModelDoesNotImplement, "Lenovo", false, []);
 
-        Assert.False(registered.IsUsable);
-        Assert.False(FirmwareInterface.None("Lenovo").IsUsable);
+        Assert.False(unasked.IsUsable);
+        Assert.False(asked.IsUsable);
+
+        // Both show no settings. Only one of them is a finding about the machine.
+        Assert.False(unasked.AnswerIsAboutTheMachine);
+        Assert.True(asked.AnswerIsAboutTheMachine);
     }
+
+    [Theory]
+    [InlineData(FirmwareAvailability.NoInterface)]
+    [InlineData(FirmwareAvailability.ModelDoesNotImplement)]
+    [InlineData(FirmwareAvailability.NeedsVendorTool)]
+    public void EveryAnswerExceptElevationIsAboutTheMachine(FirmwareAvailability availability) =>
+        Assert.True(new FirmwareInterface(availability, "Lenovo", false, []).AnswerIsAboutTheMachine);
 
     [Fact]
     public void AnInterfaceThatAnsweredWithSettingsIsUsable()
     {
-        var live = new FirmwareInterface(true, "Lenovo", false, [Setting("SecureBoot")]);
+        var live = new FirmwareInterface(
+            FirmwareAvailability.Available, "Lenovo", false, [Setting("SecureBoot")]);
 
         Assert.True(live.IsUsable);
     }
+
+    /// <summary>Available with nothing in it would be a contradiction, and is not treated as usable.</summary>
+    [Fact]
+    public void AvailableWithNoSettingsIsStillNotUsable() =>
+        Assert.False(new FirmwareInterface(FirmwareAvailability.Available, "HP", false, []).IsUsable);
+
+    [Fact]
+    public void NoneMeansNoInterfaceRatherThanAnUnaskedQuestion() =>
+        Assert.Equal(FirmwareAvailability.NoInterface, FirmwareInterface.None("Lenovo").Availability);
 
     /// <summary>A machine whose only interesting fact is whether its system drive is encrypted.</summary>
     private static StateSnapshot Snapshot(CapabilityValue? encrypted = null) =>

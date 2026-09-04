@@ -756,6 +756,7 @@
     "app.firmware.risk.serious": "Serious",
     "app.firmware.risk.refused": "Not offered",
     "app.firmware.noInterface": "This PC’s firmware does not offer an interface for changing settings from Windows. Use the BIOS screen itself — the button above restarts you into it.",
+    "app.firmware.needsElevation": "This cannot be answered yet. Windows only lets a program with administrator rights ask the firmware what settings it has — without them every machine looks like it has none, so this app will not guess. Use “Run as administrator” at the bottom of the sidebar and come back.",
     "app.firmware.modelHasNone": "{vendor} publishes an interface for this, but this model does not answer it — on most makers it is only fitted to their business lines. Use the BIOS screen itself; the button above restarts you into it.",
     "app.firmware.dellNeedsTool": "Dell exposes this only once Dell Command | Monitor is installed, which is a separate free download from Dell. Without it, use the BIOS screen itself.",
     "app.firmware.problem": "The firmware interface could not be read: {problem}",

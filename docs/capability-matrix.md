@@ -106,23 +106,30 @@ reads `no`, and the reason travels with the value rather than being lost.
 A separate axis from the tiers above. Those describe how a *capability* is reached; this describes
 whether the machine will let Windows change a BIOS setting at all (ADR 0007).
 
-The interface has three states, and they are three different answers to the user:
+**Elevation comes first, and the first version of this table forgot it.** Every ACPI-WMI class
+under `root\WMI` returns zero instances to a process without administrator rights —
+`MSAcpi_ThermalZoneTemperature` included, and that one works on every machine ever made. So an
+empty result from a standard-user run says nothing at all about the firmware, and reading it as
+"this model does not have the interface" was inferring a definite negative from a failed read. That
+is the one thing this product is built not to do (spec 6.6).
 
 | State | What it means | What the app says |
 |---|---|---|
-| No classes | The maker publishes no interface, or this machine has no driver for it. | Use the BIOS screen; here is the button that restarts you into it. |
-| Classes present, zero instances | The driver registers the classes, the provider does not populate. This is what a consumer model does with a commercial-line interface. | Your model does not answer it — same button. |
+| No classes | The maker publishes no interface, or this machine has no driver for it. | Use the BIOS screen; here is the button that restarts you into it, and here is the menu path. |
+| Classes present, **not elevated** | Nothing. Windows will not let this process enumerate them. | This cannot be answered yet — run as administrator. |
+| Classes present, elevated, zero instances | The firmware does not implement the methods behind them. A real finding. | Your model does not answer it — menu path instead. |
 | Classes present, settings returned | Usable. | The settings, with their risk and their accepted values. |
 
-| Machine | Vendor | Interface | Settings | Verified |
-|---|---|---|---|---|
-| LENOVO 21SR002JVA, Windows Pro 26200 | Lenovo | `Lenovo_BiosSetting` and the three companion classes **registered** | **0** | 2026-09-04, `pco bios --verbose`. Detection, the "model does not answer" message and every refusal path exercised. **No write performed — this machine cannot.** |
+| Machine | Vendor | Classes | Elevated? | Settings | Verified |
+|---|---|---|---|---|---|
+| LENOVO 21SR002JVA, Windows Pro 26200 | Lenovo | `Lenovo_BiosSetting` + 90 companion classes registered | **no** | 0 — *and therefore unknown* | 2026-09-04, `pco bios --verbose`. Detection, the needs-elevation path, the guide fallback and every refusal path exercised. **Whether this model implements the interface is still an open question**, and the earlier row here claiming it does not was wrong. |
 
 ### Rows needed before a firmware write has been seen to work
 
 | Machine class | Why it matters |
 |---|---|
-| ThinkPad or ThinkCentre, elevated, no supervisor password | The only Lenovo hardware where `Lenovo_BiosSetting` populates. First real exercise of `SetBiosSetting` + `SaveBiosSettings`, and of the verify-by-re-reading path. |
+| **The machine above, elevated** | The cheapest row on this list and the one that settles an open question: whether a consumer Lenovo implements `Lenovo_BiosSetting` at all. One `pco bios` from an elevated terminal answers it. |
+| ThinkPad or ThinkCentre, elevated, no supervisor password | Lenovo's documented hardware for this. First real exercise of `SetBiosSetting` + `SaveBiosSettings`, and of the verify-by-re-reading path. |
 | ThinkPad or ThinkCentre **with** a supervisor password | The `,password,ascii,us` suffix is written from Lenovo's documentation and has never been sent. |
 | HP EliteBook or ProDesk | `HP_BIOSSettingInterface.SetBIOSSetting`, including the `<utf-16/>` password prefix HP requires. Written from documentation. |
 | Dell with Command \| Monitor installed | Confirms the Dell branch detects rather than misreports. The Dell write remains unimplemented on purpose. |
