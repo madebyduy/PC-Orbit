@@ -137,6 +137,47 @@ public sealed partial class XamlResourceTests
         }
     }
 
+    /// <summary>
+    /// Every style the code looks up by name exists too.
+    /// </summary>
+    /// <remarks>
+    /// The same bug as the one above, one level over, and a worse one: a lookup that misses throws
+    /// at the moment the user reaches the control, with no XAML to inspect afterwards. The pivot
+    /// strip is built in code precisely so that the tabs cannot disagree with the section table,
+    /// which means its style is reached this way and nothing in the XAML mentions it.
+    ///
+    /// Covers the three one-letter helpers as well as the direct lookups, because they are where
+    /// most of these keys are actually written: <c>B</c> for a brush, <c>G</c> for a drawn icon,
+    /// <c>GlyphOf</c> for a font character.
+    /// </remarks>
+    [Fact]
+    public void EveryStyleTheCodeLooksUpByNameIsDefined()
+    {
+        IReadOnlySet<string> defined = DefinedKeys();
+        List<string> missing = [];
+
+        foreach (string file in Directory.EnumerateFiles(AppDirectory, "*.cs", SearchOption.TopDirectoryOnly))
+        {
+            foreach (Match match in CodeResourceUse().Matches(File.ReadAllText(file)))
+            {
+                string key = match.Groups[1].Value;
+
+                if (!defined.Contains(key))
+                {
+                    missing.Add($"{Path.GetFileName(file)} looks up '{key}'");
+                }
+            }
+        }
+
+        Assert.True(
+            missing.Count == 0,
+            "These resource keys are looked up from code but never defined, which throws when the "
+            + "user reaches the control rather than at startup: " + string.Join("; ", missing.Distinct()));
+    }
+
+    [GeneratedRegex(@"(?:FindResource\(|Resources\[|\bB\(|\bG\(|\bGlyphOf\()""([^""]+)""")]
+    private static partial Regex CodeResourceUse();
+
     [GeneratedRegex(@"x:Key=""([^""]+)""")]
     private static partial Regex KeyDefinition();
 

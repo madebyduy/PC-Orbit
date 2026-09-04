@@ -80,25 +80,12 @@
 
         <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,0,4,0" Margin="0,4,0,10">
           <StackPanel>
-            <TextBlock x:Name="NavGroupMachine" Style="{StaticResource NavGroup}" />
-            <RadioButton x:Name="NavDashboard" Style="{StaticResource NavItem}" BorderBrush="#2563EB" Tag="{StaticResource GlyphHome}" IsChecked="True" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavStatus" Style="{StaticResource NavItem}" BorderBrush="#0E7490" Tag="{StaticResource GlyphStatus}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavHardware" Style="{StaticResource NavItem}" BorderBrush="#4F46E5" Tag="{StaticResource GlyphHardware}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavPerf" Style="{StaticResource NavItem}" BorderBrush="#7C3AED" Tag="{StaticResource GlyphPerf}" Checked="OnNavChanged" />
-
-            <TextBlock x:Name="NavGroupSafety" Style="{StaticResource NavGroup}" />
-            <RadioButton x:Name="NavSecurity" Style="{StaticResource NavItem}" BorderBrush="#047857" Tag="{StaticResource GlyphSecurity}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavRecovery" Style="{StaticResource NavItem}" BorderBrush="#B45309" Tag="{StaticResource GlyphRecovery}" Checked="OnNavChanged" />
-
-            <TextBlock x:Name="NavGroupUpkeep" Style="{StaticResource NavGroup}" />
-            <RadioButton x:Name="NavCleanup" Style="{StaticResource NavItem}" BorderBrush="#0891B2" Tag="{StaticResource GlyphCleanup}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavStartup" Style="{StaticResource NavItem}" BorderBrush="#DB2777" Tag="{StaticResource GlyphStartup}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavDrivers" Style="{StaticResource NavItem}" BorderBrush="#475569" Tag="{StaticResource GlyphDrivers}" Checked="OnNavChanged" />
-
-            <TextBlock x:Name="NavGroupChange" Style="{StaticResource NavGroup}" />
-            <RadioButton x:Name="NavPlan" Style="{StaticResource NavItem}" BorderBrush="#D97706" Tag="{StaticResource GlyphPlan}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavTimeline" Style="{StaticResource NavItem}" BorderBrush="#2563EB" Tag="{StaticResource GlyphTimeline}" Checked="OnNavChanged" />
-            <RadioButton x:Name="NavCompare" Style="{StaticResource NavItem}" BorderBrush="#7C3AED" Tag="{StaticResource GlyphCompare}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavOverview" Style="{StaticResource NavItem}" BorderBrush="#2563EB" Tag="{StaticResource GlyphHome}" IsChecked="True" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavMachine" Style="{StaticResource NavItem}" BorderBrush="#4F46E5" Tag="{StaticResource GlyphHardware}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavProtect" Style="{StaticResource NavItem}" BorderBrush="#047857" Tag="{StaticResource GlyphSecurity}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavTune" Style="{StaticResource NavItem}" BorderBrush="#0891B2" Tag="{StaticResource GlyphCleanup}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavApps" Style="{StaticResource NavItem}" BorderBrush="#DB2777" Tag="{StaticResource GlyphList}" Checked="OnNavChanged" />
+            <RadioButton x:Name="NavChanges" Style="{StaticResource NavItem}" BorderBrush="#D97706" Tag="{StaticResource GlyphTimeline}" Checked="OnNavChanged" />
           </StackPanel>
         </ScrollViewer>
       </DockPanel>
@@ -109,6 +96,7 @@
       <Grid>
       <Grid.RowDefinitions>
         <RowDefinition Height="76" />
+        <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
       </Grid.RowDefinitions>
 
@@ -154,7 +142,17 @@
       </Grid>
 
       <!-- ========================================================== views -->
-      <Grid Grid.Row="1">
+      <!--
+        Sub-navigation. Filled from the section table in code rather than written out here: the
+        pages a section holds is one fact, and a hand-written strip beside a hand-written table is
+        two places for it to be wrong. Hidden entirely for a section with a single page, so
+        Overview does not carry a tab strip with one tab in it.
+      -->
+      <Border x:Name="SubNavHost" Grid.Row="1" Margin="26,0,26,10" Visibility="Collapsed">
+        <StackPanel x:Name="SubNav" Orientation="Horizontal" />
+      </Border>
+
+      <Grid Grid.Row="2">
 
         <!-- ================================= DASHBOARD -->
         <ScrollViewer x:Name="ViewDashboard" VerticalScrollBarVisibility="Auto" Padding="26,0,26,18">
@@ -1231,6 +1229,215 @@
               </StackPanel>
             </Border>
 
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= APP CATALOGUE -->
+        <!--
+          A curated list, not a search box. The catalogue is the allowlist: an id that is not in
+          the shipped data cannot reach a command, so a search over the whole winget repository
+          would not just widen the list, it would delete the guarantee.
+        -->
+        <ScrollViewer x:Name="ViewApps" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <DockPanel>
+                <Border DockPanel.Dock="Left" Width="40" Height="40" CornerRadius="11" Background="#FCE7F3"
+                        VerticalAlignment="Top">
+                  <TextBlock Text="{StaticResource GlyphList}" Style="{StaticResource Glyph}" FontSize="19"
+                             Foreground="#DB2777" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Margin="14,0,0,0">
+                  <TextBlock x:Name="AppsTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="AppsHint" Style="{StaticResource Sub}" Margin="0,3,0,0" TextWrapping="Wrap" />
+                  <TextBlock x:Name="AppsProblem" Style="{StaticResource Tiny}" Margin="0,7,0,0"
+                             TextWrapping="Wrap" Foreground="{StaticResource Warn}" Visibility="Collapsed" />
+                </StackPanel>
+              </DockPanel>
+            </Border>
+
+            <ItemsControl x:Name="AppGroups">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Margin="0,0,0,16">
+                    <TextBlock Text="{Binding Name}" Style="{StaticResource Sect}" Margin="4,0,0,7" />
+                    <Border Style="{StaticResource Card}" Margin="0" Padding="10">
+                      <ItemsControl ItemsSource="{Binding Apps}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate>
+                            <Border Style="{StaticResource SettingsRow}" Padding="12,11" Background="{Binding RowBg}">
+                              <Grid>
+                                <Grid.ColumnDefinitions>
+                                  <ColumnDefinition Width="Auto" />
+                                  <ColumnDefinition Width="*" />
+                                  <ColumnDefinition Width="Auto" />
+                                  <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!--
+                                  The product's initial in its own tile. A real icon would mean
+                                  shipping two dozen logos we have no licence for, and a generic
+                                  box for every row would tell the eye nothing.
+                                -->
+                                <Border Grid.Column="0" Width="34" Height="34" CornerRadius="9"
+                                        Background="{Binding Accent}" VerticalAlignment="Center">
+                                  <TextBlock Text="{Binding Initial}" FontSize="15" FontWeight="SemiBold"
+                                             Foreground="White" HorizontalAlignment="Center"
+                                             VerticalAlignment="Center" />
+                                </Border>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,14,0">
+                                  <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                             Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                                  <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}"
+                                             Margin="0,2,0,0" TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+
+                                <TextBlock Grid.Column="2" Text="{Binding State}" FontSize="12"
+                                           Foreground="{Binding Tone}" VerticalAlignment="Center"
+                                           Margin="0,0,12,0" />
+
+                                <Button Grid.Column="3" Content="{Binding ActionLabel}" Tag="{Binding Id}"
+                                        Visibility="{Binding ActionVisible}" VerticalAlignment="Center"
+                                        Style="{StaticResource RowButton}" Click="OnAppAction" />
+                              </Grid>
+                            </Border>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Border>
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= OFFICE -->
+        <ScrollViewer x:Name="ViewOffice" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="OfficeStateTitle" Style="{StaticResource CardTitle}" />
+                <TextBlock x:Name="OfficeStateValue" Style="{StaticResource BigValue}" Margin="0,6,0,0" />
+                <TextBlock x:Name="OfficeStateNote" Style="{StaticResource Sub}" Margin="0,4,0,0"
+                           TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="OfficePlanTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,4" />
+                <TextBlock x:Name="OfficePlanHint" Style="{StaticResource Sub}" TextWrapping="Wrap"
+                           Margin="0,0,0,12" />
+
+                <TextBlock x:Name="OfficeProductLabel" Style="{StaticResource Tiny}" Margin="2,0,0,5" />
+                <ComboBox x:Name="OfficeProductBox" Width="330" HorizontalAlignment="Left" Height="34"
+                          SelectionChanged="OnOfficePlanChanged" />
+
+                <TextBlock x:Name="OfficeLanguageLabel" Style="{StaticResource Tiny}" Margin="2,14,0,5" />
+                <ComboBox x:Name="OfficeLanguage" Width="330" HorizontalAlignment="Left" Height="34"
+                          SelectionChanged="OnOfficePlanChanged" />
+
+                <TextBlock x:Name="OfficeExcludeLabel" Style="{StaticResource Tiny}" Margin="2,16,0,6" />
+                <ItemsControl x:Name="OfficeExclude">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                </ItemsControl>
+
+                <Border Background="{StaticResource RowBg}" CornerRadius="9" Padding="13,11" Margin="0,16,0,0">
+                  <TextBlock x:Name="OfficeSummary" Style="{StaticResource Sub}" TextWrapping="Wrap" />
+                </Border>
+
+                <DockPanel Margin="0,14,0,0">
+                  <Button x:Name="OfficeInstall" Style="{StaticResource PrimaryButton}"
+                          HorizontalAlignment="Left" Click="OnOfficeInstall" />
+                  <TextBlock x:Name="OfficeProgress" Style="{StaticResource Sub}" VerticalAlignment="Center"
+                             Margin="14,0,0,0" TextWrapping="Wrap" />
+                </DockPanel>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================================= WINDOWS ITSELF -->
+        <ScrollViewer x:Name="ViewWindows" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="LicenceTitle" Style="{StaticResource CardTitle}" />
+                <TextBlock x:Name="LicenceStateValue" Style="{StaticResource BigValue}" Margin="0,6,0,0" />
+                <TextBlock x:Name="LicenceNote" Style="{StaticResource Sub}" Margin="0,4,0,0" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="EditionTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,4" />
+                <TextBlock x:Name="EditionHint" Style="{StaticResource Sub}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                <TextBlock x:Name="EditionCurrent" Style="{StaticResource Metric}" FontWeight="SemiBold" />
+
+                <ItemsControl x:Name="EditionTargets" Margin="0,12,0,0">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="13,11" Background="{Binding RowBg}">
+                        <DockPanel>
+                          <TextBlock Text="{Binding Name}" FontSize="13" Foreground="{StaticResource Ink}"
+                                     VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}"
+                                     HorizontalAlignment="Right" VerticalAlignment="Center" />
+                        </DockPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Border Background="#FEF3C7" CornerRadius="9" Padding="13,11" Margin="0,12,0,0">
+                  <TextBlock x:Name="EditionKeyNote" Style="{StaticResource Sub}" TextWrapping="Wrap" />
+                </Border>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0">
+              <StackPanel>
+                <TextBlock x:Name="ReinstallTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,4" />
+                <TextBlock x:Name="ReinstallHint" Style="{StaticResource Sub}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+                <DockPanel>
+                  <Button x:Name="ReinstallPick" Style="{StaticResource SecondaryButton}"
+                          HorizontalAlignment="Left" Click="OnPickIso" />
+                  <TextBlock x:Name="ReinstallFile" Style="{StaticResource Sub}" VerticalAlignment="Center"
+                             Margin="12,0,0,0" TextTrimming="CharacterEllipsis" />
+                </DockPanel>
+
+                <StackPanel x:Name="ReinstallDetail" Margin="0,14,0,0" Visibility="Collapsed">
+                  <TextBlock x:Name="ReinstallMedia" Style="{StaticResource Metric}" FontWeight="SemiBold" />
+
+                  <TextBlock x:Name="ReinstallScopeLabel" Style="{StaticResource Tiny}" Margin="2,14,0,5" />
+                  <ComboBox x:Name="ReinstallScopeBox" Width="330" HorizontalAlignment="Left" Height="34"
+                            SelectionChanged="OnReinstallScopeChanged" />
+
+                  <ItemsControl x:Name="ReinstallChecks" Margin="0,14,0,0">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Style="{StaticResource SettingsRow}" Padding="13,11" Background="{Binding RowBg}">
+                          <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Glyph}"
+                                       FontSize="15" Foreground="{Binding Tone}" VerticalAlignment="Center" />
+                            <TextBlock Text="{Binding Name}" FontSize="12.5" Foreground="{StaticResource Ink}"
+                                       Margin="11,0,0,0" TextWrapping="Wrap" VerticalAlignment="Center" />
+                          </DockPanel>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+
+                  <Button x:Name="ReinstallStartBtn" Style="{StaticResource PrimaryButton}" Margin="0,14,0,0"
+                          HorizontalAlignment="Left" Click="OnReinstallStart" />
+                </StackPanel>
+              </StackPanel>
+            </Border>
           </StackPanel>
         </ScrollViewer>
 

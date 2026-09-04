@@ -56,8 +56,24 @@ public sealed record TimelineRow(
     Brush Accent,
     Brush RowBg);
 
-/// <param name="TitleKey">Also the label in the rail, so the two can never disagree.</param>
-public sealed record Page(UIElement View, string TitleKey, string SubtitleKey);
+/// <param name="TabKey">The label on the pivot tab. Also the section name for a single-page section.</param>
+/// <param name="SubtitleKey">The line under the section name: what this particular view is for.</param>
+public sealed record Page(FrameworkElement View, string TabKey, string SubtitleKey)
+{
+    /// <summary>
+    /// The page's identity for bookkeeping - its XAML name, which is unique by construction.
+    /// </summary>
+    /// <remarks>
+    /// Used as the key for "has this page been filled in" and "which tab was this section left on".
+    /// The <see cref="Page"/> object itself is rebuilt whenever the table is, so identity has to
+    /// come from the view it wraps rather than from the record.
+    /// </remarks>
+    public string Key => View.Name;
+}
+
+/// <param name="Nav">The rail button. One per section, not one per page.</param>
+/// <param name="TitleKey">The section name, shown in the rail and as the page heading.</param>
+public sealed record Section(RadioButton Nav, string TitleKey, IReadOnlyList<Page> Pages);
 
 /// <summary>
 /// The pages added from the deep research, and the chrome that keeps them consistent.
@@ -93,15 +109,16 @@ public partial class MainWindow
             return;
         }
 
-        foreach ((RadioButton nav, Page page) in Pages)
+        if (_section is null || _page is null)
         {
-            if (nav.IsChecked == true)
-            {
-                PageTitle.Text = T(page.TitleKey);
-                PageSubtitle.Text = T(page.SubtitleKey);
-                return;
-            }
+            return;
         }
+
+        // The heading names the section, not the page: the pivot right below it already says which
+        // page, and a title that repeated the tab under it would say the same word twice. The line
+        // beneath is the page's own, so the header still changes when the tab does.
+        PageTitle.Text = T(_section.TitleKey);
+        PageSubtitle.Text = T(_page.SubtitleKey);
     }
 
     /// <summary>Static labels for the pages in this file. Live text is set by each renderer.</summary>
@@ -129,6 +146,8 @@ public partial class MainWindow
         TimelineListTitle.Text = T("app.timeline.list");
         TimelineGapTitle.Text = T("app.timeline.gap");
 
+        ApplyAppsPageStrings();
+
         CompareRun.Content = T("app.compare.run");
         CompareChangedTitle.Text = T("app.compare.changed");
         CompareVisibilityTitle.Text = T("app.compare.visibility");
@@ -141,9 +160,9 @@ public partial class MainWindow
     /// Cleared by <see cref="InvalidatePages"/> after anything that could change what the pages
     /// show — a rescan, or a language switch — so a stale page is never left on screen.
     /// </remarks>
-    private async Task EnsurePageLoadedAsync(RadioButton nav)
+    private async Task EnsurePageLoadedAsync(Page page)
     {
-        if (_host is null || !_loaded.Add(nav.Name))
+        if (_host is null || !_loaded.Add(page.Key))
         {
             return;
         }
@@ -155,7 +174,7 @@ public partial class MainWindow
 
         try
         {
-            await LoadPageAsync(nav);
+            await LoadPageAsync(page);
         }
         finally
         {
@@ -163,36 +182,47 @@ public partial class MainWindow
         }
     }
 
-    private async Task LoadPageAsync(RadioButton nav)
+    private async Task LoadPageAsync(Page page)
     {
-
-        if (ReferenceEquals(nav, NavSecurity))
+        if (ReferenceEquals(page.View, ViewSecurity))
         {
             RenderSecurity();
         }
-        else if (ReferenceEquals(nav, NavRecovery))
+        else if (ReferenceEquals(page.View, ViewRecovery))
         {
             await RenderRecoveryAsync();
         }
-        else if (ReferenceEquals(nav, NavCleanup))
+        else if (ReferenceEquals(page.View, ViewCleanup))
         {
             await RenderCleanupAsync();
         }
-        else if (ReferenceEquals(nav, NavStartup))
+        else if (ReferenceEquals(page.View, ViewStartup))
         {
             await RenderStartupAsync();
         }
-        else if (ReferenceEquals(nav, NavDrivers))
+        else if (ReferenceEquals(page.View, ViewDrivers))
         {
             await RenderDriversAsync();
         }
-        else if (ReferenceEquals(nav, NavTimeline))
+        else if (ReferenceEquals(page.View, ViewTimeline))
         {
             await RenderTimelineAsync();
         }
-        else if (ReferenceEquals(nav, NavCompare))
+        else if (ReferenceEquals(page.View, ViewCompare))
         {
             await RenderCompareAsync();
+        }
+        else if (ReferenceEquals(page.View, ViewApps))
+        {
+            await RenderAppsAsync();
+        }
+        else if (ReferenceEquals(page.View, ViewOffice))
+        {
+            await RenderOfficeAsync();
+        }
+        else if (ReferenceEquals(page.View, ViewWindows))
+        {
+            await RenderWindowsAsync();
         }
     }
 
@@ -368,7 +398,7 @@ public partial class MainWindow
 
     private void OnOpenWin11Plan(object sender, RoutedEventArgs e)
     {
-        NavPlan.IsChecked = true;
+        GoTo(ViewPlan);
         SelectOutcome("outcome.windows11-ready");
     }
 
@@ -455,7 +485,7 @@ public partial class MainWindow
         CleanupList.ItemsSource = _cleanup.Candidates.Select((candidate, i) => new MeterRow(
             Name: T($"cleanup.item.{candidate.Id}"),
             Value: $"{candidate.MegaBytes:N0} MB",
-            Note: candidate.Trust != CleanupTrust.Reclaimable
+            Note: candidate.Trust is CleanupTrust.ReportOnly or CleanupTrust.Protected
                 ? T("cli.clean.reportOnly")
                 : candidate.CanReclaim
                     ? T("app.cleanup.willMove", Args(("count", N(candidate.FileCount))))
@@ -514,7 +544,7 @@ public partial class MainWindow
         await RenderCleanupAsync();
 
         // The quarantine list on Recovery is now out of date.
-        _loaded.Remove(NavRecovery.Name);
+        _loaded.Remove(nameof(ViewRecovery));
     }
 
     // ---------------------------------------------------------------- startup

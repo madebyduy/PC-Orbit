@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using PcOrbit.Adapters.Windows;
@@ -143,7 +144,27 @@ public partial class MainWindow : Window
     private LiveMetrics _live = LiveMetrics.None;
     private Plan? _plan;
     private int _tick;
-    private IReadOnlyList<(RadioButton Nav, Page Page)>? _pages;
+    private IReadOnlyList<Section>? _sections;
+
+    /// <summary>The page on screen, and the section it belongs to.</summary>
+    private Section? _section;
+    private Page? _page;
+
+    /// <summary>
+    /// Which page each section was last left on, keyed by section.
+    /// </summary>
+    /// <remarks>
+    /// Coming back to Tune-up and landing on Drivers because that is where you were is the
+    /// difference between navigation and a reset button. Deliberately not persisted across runs:
+    /// on a fresh launch the first tab of a section is the one that introduces it.
+    /// </remarks>
+    private readonly Dictionary<string, string> _lastPage = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Set while navigation is moving the controls itself, so a programmatic
+    /// <c>IsChecked</c> does not come back round as a user's click.
+    /// </summary>
+    private bool _switching;
 
     public MainWindow()
     {
@@ -296,15 +317,20 @@ public partial class MainWindow : Window
         AppTagline.Text = T("app.tagline");
         BusyText.Text = T("app.status.scanning");
 
-        NavGroupMachine.Text = T("app.navgroup.machine");
-        NavGroupSafety.Text = T("app.navgroup.safety");
-        NavGroupUpkeep.Text = T("app.navgroup.upkeep");
-        NavGroupChange.Text = T("app.navgroup.change");
 
-        foreach ((RadioButton nav, Page page) in Pages)
+
+        foreach (Section section in Sections)
         {
-            nav.Content = T(page.TitleKey);
+            section.Nav.Content = T(section.TitleKey);
         }
+
+        // First run lands on the section the rail already has checked. The views themselves start
+        // in the right visibility from XAML, so this only has to agree with them.
+        _section ??= Sections[0];
+        _page ??= _section.Pages[0];
+
+        // The pivot's labels are built, not bound, so a language switch has to rebuild them.
+        BuildSubNav(_section, _page);
 
         AppVersionLabel.Text = "v" + PcOrbitHost.AppVersion;
         TopRescan.Content = T("app.rescan");
@@ -366,48 +392,220 @@ public partial class MainWindow : Window
     // ---------------------------------------------------------------- navigation
 
     /// <summary>
-    /// The pages, in rail order.
+    /// The rail, and the pages inside each of its destinations.
     /// </summary>
     /// <remarks>
-    /// A table rather than a chain of <c>if</c>s. The old version had one branch per destination
-    /// and an <c>else</c> that showed a "not in this version" placeholder — which is how seven of
-    /// the fourteen entries came to lead nowhere. With the list in one place, a page that has no
-    /// view cannot be added to the rail by accident.
+    /// <para>
+    /// Twelve flat destinations was one per page, which is not navigation so much as a list of
+    /// everything the app can do. Five sections, each holding the pages that answer the same
+    /// question, is: the rail says <em>which part of my PC</em>, and the pivot inside the page says
+    /// <em>which view of it</em>. Nothing was removed - every page that was in the rail is still
+    /// reachable, one level in.
+    /// </para>
+    /// <para>
+    /// A table rather than a chain of <c>if</c>s, for the reason the flat version was one: with the
+    /// list in a single place, a page with no view cannot be added to the rail by accident, and the
+    /// pivot cannot disagree with what the rail leads to.
+    /// </para>
     /// </remarks>
-    private IReadOnlyList<(RadioButton Nav, Page Page)> Pages => _pages ??=
+    private IReadOnlyList<Section> Sections => _sections ??=
     [
-        (NavDashboard, new Page(ViewDashboard, "app.nav.dashboard", "app.dash.sub")),
-        (NavStatus, new Page(ViewStatus, "app.nav.status", "app.status.sub")),
-        (NavHardware, new Page(ViewHardware, "app.nav.hardware", "app.hardware.sub")),
-        (NavPerf, new Page(ViewPerf, "app.nav.perf", "app.perf.sub")),
-        (NavSecurity, new Page(ViewSecurity, "app.nav.security", "app.security.sub")),
-        (NavRecovery, new Page(ViewRecovery, "app.nav.recovery", "app.recovery.sub")),
-        (NavCleanup, new Page(ViewCleanup, "app.nav.cleanup", "app.cleanup.sub")),
-        (NavStartup, new Page(ViewStartup, "app.nav.startup", "app.startupPage.sub")),
-        (NavDrivers, new Page(ViewDrivers, "app.nav.drivers", "app.drivers.sub")),
-        (NavPlan, new Page(ViewPlan, "app.nav.plan", "app.plan.sub")),
-        (NavTimeline, new Page(ViewTimeline, "app.nav.timeline", "app.timeline.sub")),
-        (NavCompare, new Page(ViewCompare, "app.nav.compare", "app.compare.sub")),
+        new(NavOverview, "app.section.overview",
+        [
+            new(ViewDashboard, "app.section.overview", "app.dash.sub"),
+        ]),
+
+        new(NavMachine, "app.section.machine",
+        [
+            new(ViewStatus, "app.tab.status", "app.status.sub"),
+            new(ViewHardware, "app.tab.hardware", "app.hardware.sub"),
+            new(ViewPerf, "app.tab.perf", "app.perf.sub"),
+        ]),
+
+        new(NavProtect, "app.section.protect",
+        [
+            new(ViewSecurity, "app.tab.security", "app.security.sub"),
+            new(ViewRecovery, "app.tab.recovery", "app.recovery.sub"),
+        ]),
+
+        new(NavTune, "app.section.tune",
+        [
+            new(ViewCleanup, "app.tab.cleanup", "app.cleanup.sub"),
+            new(ViewStartup, "app.tab.startup", "app.startupPage.sub"),
+            new(ViewDrivers, "app.tab.drivers", "app.drivers.sub"),
+        ]),
+
+        new(NavApps, "app.section.apps",
+        [
+            new(ViewApps, "app.tab.apps", "app.section.apps.sub"),
+            new(ViewOffice, "app.tab.office", "app.office.planHint"),
+            new(ViewWindows, "app.tab.windows", "app.edition.hint"),
+        ]),
+
+        new(NavChanges, "app.section.changes",
+        [
+            new(ViewPlan, "app.tab.plan", "app.plan.sub"),
+            new(ViewTimeline, "app.tab.timeline", "app.timeline.sub"),
+            new(ViewCompare, "app.tab.compare", "app.compare.sub"),
+        ]),
     ];
+
+    private IEnumerable<Page> AllPages => Sections.SelectMany(s => s.Pages);
 
     private void OnNavChanged(object sender, RoutedEventArgs e)
     {
-        if (!Ready || ViewDashboard is null || sender is not RadioButton nav)
+        if (_switching || !Ready || ViewDashboard is null || sender is not RadioButton nav)
         {
             return;
         }
 
-        foreach ((RadioButton item, Page page) in Pages)
+        foreach (Section section in Sections)
         {
-            page.View.Visibility = ReferenceEquals(item, nav) ? Visibility.Visible : Visibility.Collapsed;
+            if (ReferenceEquals(section.Nav, nav))
+            {
+                ShowSection(section);
+                return;
+            }
+        }
+    }
+
+    /// <summary>Opens a section, on the page it was last left on.</summary>
+    private void ShowSection(Section section, Page? want = null)
+    {
+        Page page = want
+            ?? section.Pages.FirstOrDefault(p => p.Key == _lastPage.GetValueOrDefault(section.TitleKey))
+            ?? section.Pages[0];
+
+        BuildSubNav(section, page);
+        ShowPage(section, page);
+    }
+
+    /// <summary>
+    /// Rebuilds the pivot strip for a section.
+    /// </summary>
+    /// <remarks>
+    /// Built from <see cref="Sections"/> rather than written out in XAML: which pages a section
+    /// holds is one fact, and a hand-written strip beside the table would be a second place for it
+    /// to go stale. A section with one page shows no strip at all - a single tab is furniture.
+    /// </remarks>
+    private void BuildSubNav(Section section, Page? selected)
+    {
+        SubNav.Children.Clear();
+
+        if (section.Pages.Count < 2)
+        {
+            SubNavHost.Visibility = Visibility.Collapsed;
+            return;
         }
 
+        SubNavHost.Visibility = Visibility.Visible;
+
+        _switching = true;
+
+        try
+        {
+            foreach (Page page in section.Pages)
+            {
+                var tab = new RadioButton
+                {
+                    Style = (Style)FindResource("PivotTab"),
+                    GroupName = "PcOrbitSubNav",
+                    Content = T(page.TabKey),
+                    Tag = page,
+                    IsChecked = ReferenceEquals(page, selected),
+                };
+
+                tab.Checked += OnSubNavChanged;
+                SubNav.Children.Add(tab);
+            }
+        }
+        finally
+        {
+            _switching = false;
+        }
+    }
+
+    private void OnSubNavChanged(object sender, RoutedEventArgs e)
+    {
+        if (_switching || _section is null || sender is not RadioButton { Tag: Page page })
+        {
+            return;
+        }
+
+        ShowPage(_section, page);
+    }
+
+    private void ShowPage(Section section, Page page)
+    {
+        foreach (Page other in AllPages)
+        {
+            other.View.Visibility = ReferenceEquals(other, page) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        _section = section;
+        _page = page;
+        _lastPage[section.TitleKey] = page.Key;
+
+        Reveal(page.View);
         ApplyPageChrome();
 
         // Loaded on arrival rather than at startup: each of these runs a PowerShell batch, and
         // paying for all of them before the first frame would make the app slow to open in order
         // to populate pages nobody has asked for yet.
-        _ = EnsurePageLoadedAsync(nav);
+        _ = EnsurePageLoadedAsync(page);
+    }
+
+    /// <summary>
+    /// The page arrives rather than appears: a fade and a few pixels of rise.
+    /// </summary>
+    /// <remarks>
+    /// Short enough that nobody waits for it, long enough that the eye follows the content instead
+    /// of re-finding it. Kept to opacity and a transform, both of which the compositor handles off
+    /// the UI thread, so a page that is still filling itself in does not stutter its own entrance.
+    /// </remarks>
+    private static void Reveal(FrameworkElement view)
+    {
+        var slide = new TranslateTransform();
+        view.RenderTransform = slide;
+
+        var ease = new CubicEase { EasingMode = EasingMode.EaseOut };
+
+        view.BeginAnimation(
+            OpacityProperty,
+            new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(140)) { EasingFunction = ease });
+
+        slide.BeginAnimation(
+            TranslateTransform.YProperty,
+            new DoubleAnimation(8, 0, TimeSpan.FromMilliseconds(180)) { EasingFunction = ease });
+    }
+
+    /// <summary>Navigates to a page from somewhere other than the rail - a link on another page.</summary>
+    private void GoTo(FrameworkElement view)
+    {
+        foreach (Section section in Sections)
+        {
+            foreach (Page page in section.Pages)
+            {
+                if (!ReferenceEquals(page.View, view))
+                {
+                    continue;
+                }
+
+                _switching = true;
+
+                try
+                {
+                    section.Nav.IsChecked = true;
+                }
+                finally
+                {
+                    _switching = false;
+                }
+
+                ShowSection(section, page);
+                return;
+            }
+        }
     }
 
     private async Task<bool> BusyAsync(string messageKey, Func<Task> work)
@@ -529,13 +727,9 @@ public partial class MainWindow : Window
     /// <summary>Re-fills whichever page is open, so a rescan is visible without navigating away.</summary>
     private async Task ReloadCurrentPageAsync()
     {
-        foreach ((RadioButton nav, Page _) in Pages)
+        if (_page is not null)
         {
-            if (nav.IsChecked == true)
-            {
-                await EnsurePageLoadedAsync(nav);
-                return;
-            }
+            await EnsurePageLoadedAsync(_page);
         }
     }
 
@@ -925,10 +1119,10 @@ public partial class MainWindow : Window
 
         string? outcomeId = _findings.Select(f => f.SuggestedOutcomeId).FirstOrDefault(id => id is not null);
         SelectOutcome(outcomeId);
-        NavPlan.IsChecked = true;
+        GoTo(ViewPlan);
     }
 
-    private void OnHeroDetails(object sender, RoutedEventArgs e) => NavStatus.IsChecked = true;
+    private void OnHeroDetails(object sender, RoutedEventArgs e) => GoTo(ViewStatus);
 
     // ---------------------------------------------------------------- status view
 
@@ -1100,7 +1294,7 @@ public partial class MainWindow : Window
             SelectOutcome(outcomeId);
         }
 
-        NavPlan.IsChecked = true;
+        GoTo(ViewPlan);
     }
 
     private void OnOutcomeChanged(object sender, SelectionChangedEventArgs e)

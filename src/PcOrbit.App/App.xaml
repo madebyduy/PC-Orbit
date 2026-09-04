@@ -413,6 +413,78 @@
       </Setter>
     </Style>
 
+    <!--
+      Pivot tab: the second level of navigation.
+
+      The rail now carries five destinations instead of twelve, and the pages that used to sit
+      beside each other in it sit inside one of them. That is the whole point of the change — the
+      rail answers "which part of my PC", and the pivot answers "which view of it" — so the pivot
+      has to read as a level below the rail, not as a second rail. Hence an underline rather than a
+      filled block: it marks a position without competing with the item that is lit on the left.
+    -->
+    <Style x:Key="PivotTab" TargetType="RadioButton">
+      <Setter Property="Foreground" Value="{StaticResource Muted}" />
+      <Setter Property="FontSize" Value="13.5" />
+      <Setter Property="Height" Value="36" />
+      <Setter Property="Margin" Value="0,0,4,0" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="SnapsToDevicePixels" Value="True" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="RadioButton">
+            <Grid>
+              <Border x:Name="Bg" CornerRadius="8" Padding="13,0" Background="Transparent">
+                <ContentPresenter VerticalAlignment="Center" />
+              </Border>
+
+              <!--
+                The underline animates its width rather than appearing at full size. It is the one
+                piece of motion on the page and it exists to carry the eye from the old tab to the
+                new one, which is the difference between a page that switched and a page that
+                flickered.
+              -->
+              <Border x:Name="Rule" Height="2.5" CornerRadius="2" VerticalAlignment="Bottom"
+                      HorizontalAlignment="Center" Width="0" Background="{StaticResource AccentBar}" />
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource Ink}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
+                <Trigger.EnterActions>
+                  <BeginStoryboard>
+                    <Storyboard>
+                      <DoubleAnimation Storyboard.TargetName="Rule" Storyboard.TargetProperty="Width"
+                                       To="22" Duration="0:0:0.18">
+                        <DoubleAnimation.EasingFunction>
+                          <CubicEase EasingMode="EaseOut" />
+                        </DoubleAnimation.EasingFunction>
+                      </DoubleAnimation>
+                    </Storyboard>
+                  </BeginStoryboard>
+                </Trigger.EnterActions>
+                <Trigger.ExitActions>
+                  <BeginStoryboard>
+                    <Storyboard>
+                      <DoubleAnimation Storyboard.TargetName="Rule" Storyboard.TargetProperty="Width"
+                                       To="0" Duration="0:0:0.12" />
+                    </Storyboard>
+                  </BeginStoryboard>
+                </Trigger.ExitActions>
+              </Trigger>
+              <MultiTrigger>
+                <MultiTrigger.Conditions>
+                  <Condition Property="IsMouseOver" Value="True" />
+                  <Condition Property="IsChecked" Value="False" />
+                </MultiTrigger.Conditions>
+                <Setter TargetName="Bg" Property="Background" Value="#F0F1F6" />
+                <Setter Property="Foreground" Value="{StaticResource Ink}" />
+              </MultiTrigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
     <!-- Group heading inside the rail, so fourteen destinations read as four groups. -->
     <Style x:Key="NavGroup" TargetType="TextBlock">
       <Setter Property="FontSize" Value="10.5" />
