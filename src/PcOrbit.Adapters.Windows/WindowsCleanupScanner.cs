@@ -64,20 +64,39 @@ public sealed class WindowsCleanupScanner(
     private readonly TimeSpan _minimumAge = minimumAge ?? DefaultMinimumAge;
     private readonly IReadOnlyList<CleanupLocation>? _locations = locations;
 
+    /// <summary>
+    /// Measures every location. Read-only: surveying never deletes or moves anything.
+    /// </summary>
+    /// <remarks>
+    /// The locations are walked in parallel because they are genuinely independent — different
+    /// folders, no shared state — and the survey is almost entirely waiting on the file system.
+    /// Sequentially it took fifteen seconds on the machine it was written against, which is fifteen
+    /// seconds of a page sitting there with its headings and no numbers. Each location still
+    /// collects its own results into its own list, and they are merged after, so parallelism cannot
+    /// interleave two locations' problems into one.
+    /// </remarks>
     public Task<CleanupSurvey> SurveyAsync(CancellationToken cancellationToken = default)
     {
-        List<CleanupCandidate> candidates = [];
-        List<string> problems = [];
+        IReadOnlyList<CleanupLocation> locations = _locations ?? Locations(_minimumAge);
 
-        foreach (CleanupLocation location in _locations ?? Locations(_minimumAge))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            Measure(candidates, problems, location, cancellationToken);
-        }
+        var found = new List<CleanupCandidate>[locations.Count];
+        var trouble = new List<string>[locations.Count];
+
+        Parallel.For(
+            0,
+            locations.Count,
+            new ParallelOptions { CancellationToken = cancellationToken },
+            i =>
+            {
+                found[i] = [];
+                trouble[i] = [];
+
+                Measure(found[i], trouble[i], locations[i], cancellationToken);
+            });
 
         return Task.FromResult(new CleanupSurvey(
-            [.. candidates.OrderByDescending(c => c.Bytes)],
-            problems));
+            [.. found.SelectMany(f => f).OrderByDescending(c => c.Bytes)],
+            [.. trouble.SelectMany(t => t)]));
     }
 
     // ---------------------------------------------------------------- where the space goes
@@ -87,6 +106,8 @@ public sealed class WindowsCleanupScanner(
     private static string Roaming => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
     private static string WindowsDir => Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+    private static string ProgramData => Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
 
     /// <summary>
     /// The cache folders every Chromium browser keeps under its profile.
@@ -101,17 +122,106 @@ public sealed class WindowsCleanupScanner(
     private static IEnumerable<string> ChromiumCaches(string profile) =>
         ChromiumCacheFolders.Select(leaf => Path.Combine(profile, leaf));
 
+    /// <summary>
+    /// Every profile under a Chromium browser's User Data, not just the first.
+    /// </summary>
+    /// <remarks>
+    /// Only <c>Default</c> was measured, which on a machine with a work profile and a personal one
+    /// reports half the cache and then reclaims half of what it promised. Profiles are named
+    /// <c>Default</c> and <c>Profile 1</c>, <c>Profile 2</c>… plus two Chromium keeps for itself;
+    /// they are listed by looking, because the count is the user's business and not something to
+    /// hard-code.
+    /// </remarks>
+    private static IEnumerable<string> ChromiumProfileCaches(string userData)
+    {
+        if (!Directory.Exists(userData))
+        {
+            yield break;
+        }
+
+        string[] profiles;
+
+        try
+        {
+            profiles =
+            [
+                .. Directory.EnumerateDirectories(userData)
+                    .Where(d =>
+                    {
+                        string name = Path.GetFileName(d);
+
+                        return name.Equals("Default", StringComparison.OrdinalIgnoreCase)
+                            || name.StartsWith("Profile ", StringComparison.OrdinalIgnoreCase)
+                            || name.Equals("Guest Profile", StringComparison.OrdinalIgnoreCase)
+                            || name.Equals("System Profile", StringComparison.OrdinalIgnoreCase);
+                    }),
+            ];
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            yield break;
+        }
+
+        foreach (string profile in profiles)
+        {
+            foreach (string cache in ChromiumCaches(profile))
+            {
+                yield return cache;
+            }
+        }
+
+        // Shared across profiles, and often the largest single folder of the three.
+        yield return Path.Combine(userData, "ShaderCache");
+        yield return Path.Combine(userData, "GrShaderCache");
+        yield return Path.Combine(userData, "GraphiteDawnCache");
+    }
+
+    /// <summary>
+    /// The per-package caches of Store applications.
+    /// </summary>
+    /// <remarks>
+    /// <c>TempState</c> is what its name says and is rebuilt; <c>AC\INetCache</c> is the packaged
+    /// equivalent of a browser cache. <c>LocalState</c> is deliberately absent — that is where a
+    /// Store app keeps the things you would miss.
+    /// </remarks>
+    private static IEnumerable<string> PackagedCaches()
+    {
+        string packages = Path.Combine(Local, "Packages");
+
+        if (!Directory.Exists(packages))
+        {
+            yield break;
+        }
+
+        string[] families;
+
+        try
+        {
+            families = Directory.GetDirectories(packages);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            yield break;
+        }
+
+        foreach (string family in families)
+        {
+            yield return Path.Combine(family, "TempState");
+            yield return Path.Combine(family, @"AC\INetCache");
+        }
+    }
+
     public static IReadOnlyList<CleanupLocation> Locations(TimeSpan age) =>
     [
         // ---------------------------------------------------------------- rebuilt on demand
         new("cache.browser.chrome", CleanupCategory.BrowserCache, CleanupTrust.Regenerable,
-            [.. ChromiumCaches(Path.Combine(Local, @"Google\Chrome\User Data\Default"))]),
+            [.. ChromiumProfileCaches(Path.Combine(Local, @"Google\Chrome\User Data"))]),
 
         new("cache.browser.edge", CleanupCategory.BrowserCache, CleanupTrust.Regenerable,
-            [.. ChromiumCaches(Path.Combine(Local, @"Microsoft\Edge\User Data\Default"))]),
+            [.. ChromiumProfileCaches(Path.Combine(Local, @"Microsoft\Edge\User Data"))]),
 
         new("cache.browser.brave", CleanupCategory.BrowserCache, CleanupTrust.Regenerable,
-            [.. ChromiumCaches(Path.Combine(Local, @"BraveSoftware\Brave-Browser\User Data\Default"))]),
+            [.. ChromiumProfileCaches(Path.Combine(Local, @"BraveSoftware\Brave-Browser\User Data"))]),
 
         // Firefox names its profiles randomly, so the whole profile parent is walked. Only the
         // cache subtrees inside it are removed — see CacheSubfolders.
@@ -128,7 +238,20 @@ public sealed class WindowsCleanupScanner(
             Path.Combine(Local, @"NVIDIA\DXCache"),
             Path.Combine(Local, @"NVIDIA\GLCache"),
             Path.Combine(Local, @"AMD\DxCache"),
+            Path.Combine(Local, @"Intel\ShaderCache"),
+            Path.Combine(Local, @"Steam\htmlcache"),
         ]),
+
+        // Internet Explorer's cache is not gone; it is what WebView and anything hosting a browser
+        // control still writes into.
+        new("cache.inetcache", CleanupCategory.BrowserCache, CleanupTrust.Regenerable,
+            [Path.Combine(Local, @"Microsoft\Windows\INetCache")]),
+
+        new("cache.store-apps", CleanupCategory.StoreAppCache, CleanupTrust.Regenerable,
+            [.. PackagedCaches()]),
+
+        new("cache.remote-desktop", CleanupCategory.RemoteDesktopCache, CleanupTrust.Regenerable,
+            [Path.Combine(Local, @"Microsoft\Terminal Server Client\Cache")]),
 
         // ---------------------------------------------------------------- worth keeping a while
         new("temp.user", CleanupCategory.TemporaryFiles, CleanupTrust.Reclaimable,
@@ -144,8 +267,17 @@ public sealed class WindowsCleanupScanner(
         [
             Path.Combine(WindowsDir, @"Logs\CBS"),
             Path.Combine(WindowsDir, @"Logs\DISM"),
+            Path.Combine(WindowsDir, @"Logs\WindowsUpdate"),
+            Path.Combine(WindowsDir, @"Logs\MoSetup"),
+            Path.Combine(WindowsDir, @"Logs\SIH"),
             Path.Combine(WindowsDir, "Panther"),
+            Path.Combine(WindowsDir, @"System32\LogFiles"),
         ], MinimumAge: age),
+
+        // Rebuilt the next time each program is launched, at the cost of one slower launch each.
+        // That cost is why it waits in quarantine rather than going straight out.
+        new("cache.prefetch", CleanupCategory.Prefetch, CleanupTrust.Reclaimable,
+            [Path.Combine(WindowsDir, "Prefetch")], MinimumAge: age),
 
         // No age threshold, unlike the temp folders. An entry here is a copy of something that is
         // still on the network; how old it is says nothing about whether it is needed. It stays
@@ -169,7 +301,10 @@ public sealed class WindowsCleanupScanner(
         ]),
 
         new("wer.queue", CleanupCategory.ErrorReports, CleanupTrust.Reclaimable,
-            [Path.Combine(Local, @"Microsoft\Windows\WER")], MinimumAge: age),
+        [
+            Path.Combine(Local, @"Microsoft\Windows\WER"),
+            Path.Combine(ProgramData, @"Microsoft\Windows\WER"),
+        ], MinimumAge: age),
 
         // ---------------------------------------------------------------- shown, never removed
         new("bin.recycle", CleanupCategory.RecycleBin, CleanupTrust.ReportOnly,
@@ -181,6 +316,13 @@ public sealed class WindowsCleanupScanner(
 
         new("cache.delivery", CleanupCategory.UpdateDeliveryCache, CleanupTrust.ReportOnly,
             [Path.Combine(WindowsDir, @"SoftwareDistribution\DeliveryOptimization")]),
+
+        // Frequently the largest single thing on a disk after an upgrade, and the one this product
+        // will not touch: it is the only way back to the Windows you had before. Windows removes it
+        // itself after ten days, and Storage Sense will do it sooner if asked. Reported so the
+        // number is not a mystery, never removed here.
+        new("windows.old", CleanupCategory.PreviousWindows, CleanupTrust.Protected,
+            [Path.Combine(Path.GetPathRoot(WindowsDir) ?? @"C:\", "Windows.old")]),
     ];
 
     /// <summary>

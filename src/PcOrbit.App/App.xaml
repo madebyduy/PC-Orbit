@@ -157,6 +157,17 @@
     <sys:String x:Key="GlyphPlan">&#xE945;</sys:String>
     <sys:String x:Key="GlyphTimeline">&#xE81C;</sys:String>
     <sys:String x:Key="GlyphCompare">&#xE8AB;</sys:String>
+    <!--
+      Catalogue categories. Every code point below was checked against both SegoeIcons.ttf and
+      segmdl2.ttf before being used: a glyph the font does not have renders as an empty box, which
+      is a worse icon than no icon.
+    -->
+    <sys:String x:Key="GlyphBrowser">&#xE774;</sys:String>
+    <sys:String x:Key="GlyphMedia">&#xE768;</sys:String>
+    <sys:String x:Key="GlyphUtility">&#xE912;</sys:String>
+    <sys:String x:Key="GlyphChat">&#xE8BD;</sys:String>
+    <sys:String x:Key="GlyphCode">&#xE943;</sys:String>
+    <sys:String x:Key="GlyphPackage">&#xE7B8;</sys:String>
     <sys:String x:Key="GlyphCpu">&#xE950;</sys:String>
     <sys:String x:Key="GlyphRam">&#xEEA0;</sys:String>
     <sys:String x:Key="GlyphDisk">&#xEDA2;</sys:String>
@@ -583,6 +594,17 @@
     </Style>
 
     <!-- A small button that lives inside a list row. -->
+    <!--
+      For an action that cannot be undone. Outlined in the warning colour rather than filled with
+      it: filled reads as "press me", and this one should read as "read the label first". Loud
+      enough to be found, quiet enough not to be the default.
+    -->
+    <Style x:Key="DangerButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
+      <Setter Property="Foreground" Value="{StaticResource Bad}" />
+      <Setter Property="BorderBrush" Value="{StaticResource Bad}" />
+      <Setter Property="FontSize" Value="12.5" />
+    </Style>
+
     <Style x:Key="RowButton" TargetType="Button" BasedOn="{StaticResource SecondaryButton}">
       <Setter Property="Height" Value="30" />
       <Setter Property="FontSize" Value="12" />

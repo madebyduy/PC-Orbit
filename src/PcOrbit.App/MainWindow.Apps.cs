@@ -20,11 +20,12 @@ public sealed record AppRow(
     string Name,
     string Detail,
     string State,
-    string Initial,
+    string Glyph,
     string ActionLabel,
     Visibility ActionVisible,
     Brush Tone,
     Brush Accent,
+    Brush Tile,
     Brush RowBg);
 
 public sealed record AppGroup(string Name, IReadOnlyList<AppRow> Apps);
@@ -182,11 +183,12 @@ public partial class MainWindow
                     app.Name,
                     $"{app.Publisher} · {T(app.DescriptionKey)}",
                     state,
-                    app.Name[..1].ToUpperInvariant(),
+                    GlyphOf(CategoryGlyph(category)),
                     isInstalled == true ? T("app.apps.remove") : T("app.apps.install"),
                     available ? Visibility.Visible : Visibility.Collapsed,
                     isInstalled == true ? B("Good") : B("Muted"),
-                    TileColour(app.Id),
+                    CategoryInk(category),
+                    CategoryTint(category),
                     Stripe(index++)));
             }
 
@@ -197,25 +199,60 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// A stable colour for a product's initial tile.
+    /// The icon, and the two colours around it, for a catalogue category.
     /// </summary>
     /// <remarks>
-    /// Derived from the id rather than assigned, so adding an app to the catalogue is a data change
-    /// and nothing else. FNV-1a rather than <c>string.GetHashCode</c>, which is randomised per
-    /// process and would repaint the page every launch.
+    /// Keyed on the category rather than the product for the same reason the description is: adding
+    /// an application to the catalogue should be a data change and nothing else. An unrecognised
+    /// category falls back to the generic package icon rather than to nothing, so a category added
+    /// to the data before this table cannot produce a blank tile.
     /// </remarks>
-    private static Brush TileColour(string id)
+    private static string CategoryGlyph(string categoryKey) => categoryKey switch
     {
-        string[] palette = ["#2563EB", "#7C3AED", "#DB2777", "#0891B2", "#047857", "#D97706", "#4F46E5"];
+        "apps.category.browsers" => "GlyphBrowser",
+        "apps.category.media" => "GlyphMedia",
+        "apps.category.utilities" => "GlyphUtility",
+        "apps.category.communication" => "GlyphChat",
+        "apps.category.development" => "GlyphCode",
+        "apps.category.security" => "GlyphSecurity",
+        _ => "GlyphPackage",
+    };
 
-        uint hash = 2166136261;
+    private static Brush CategoryInk(string categoryKey) => Tone(categoryKey).Ink;
 
-        foreach (char c in id)
+    private static Brush CategoryTint(string categoryKey) => Tone(categoryKey).Tint;
+
+    /// <summary>
+    /// A saturated colour for the icon and a pale one for the tile behind it.
+    /// </summary>
+    /// <remarks>
+    /// Pale tile, saturated glyph — rather than the reverse — because a grid of two dozen fully
+    /// saturated squares fights the text beside it for the eye, and the text is what the reader is
+    /// here for.
+    /// </remarks>
+    private static (Brush Tint, Brush Ink) Tone(string categoryKey)
+    {
+        (string tint, string ink) = categoryKey switch
         {
-            hash = (hash ^ c) * 16777619;
-        }
+            "apps.category.browsers" => ("#DBEAFE", "#1D4ED8"),
+            "apps.category.media" => ("#FCE7F3", "#BE185D"),
+            "apps.category.utilities" => ("#E0F2FE", "#0369A1"),
+            "apps.category.communication" => ("#EDE9FE", "#6D28D9"),
+            "apps.category.development" => ("#DCFCE7", "#15803D"),
+            "apps.category.security" => ("#FEF3C7", "#B45309"),
+            _ => ("#E2E8F0", "#475569"),
+        };
 
-        return (Brush)new BrushConverter().ConvertFromString(palette[hash % palette.Length])!;
+        return (Freeze(tint), Freeze(ink));
+    }
+
+    private static Brush Freeze(string colour)
+    {
+        var brush = (SolidColorBrush)new BrushConverter().ConvertFromString(colour)!;
+
+        brush.Freeze();
+
+        return brush;
     }
 
     private async void OnAppAction(object sender, RoutedEventArgs e)

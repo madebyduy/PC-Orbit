@@ -48,6 +48,47 @@ public sealed record SwitchRow(
     Brush Accent,
     Brush RowBg);
 
+/// <param name="Chosen">
+/// Whether this row is included in the next clean. Two-way bound, so the tick box is the state
+/// rather than a picture of it.
+/// </param>
+/// <param name="CanChoose">
+/// False for a row with nothing in it, and for one this product does not remove. Disabled and
+/// still visible: the row's job is to account for the space, and a missing row accounts for
+/// nothing.
+/// </param>
+public sealed class CleanupRow(
+    string id,
+    string name,
+    string value,
+    string note,
+    string glyph,
+    double percent,
+    bool canChoose,
+    Brush accent,
+    Brush rowBg)
+{
+    public string Id { get; } = id;
+
+    public string Name { get; } = name;
+
+    public string Value { get; } = value;
+
+    public string Note { get; } = note;
+
+    public string Glyph { get; } = glyph;
+
+    public double Percent { get; } = percent;
+
+    public bool CanChoose { get; } = canChoose;
+
+    public bool Chosen { get; set; } = canChoose;
+
+    public Brush Accent { get; } = accent;
+
+    public Brush RowBg { get; } = rowBg;
+}
+
 public sealed record TimelineRow(
     string When,
     string Category,
@@ -94,7 +135,16 @@ public sealed record Section(RadioButton Nav, string TitleKey, IReadOnlyList<Pag
 /// </remarks>
 public partial class MainWindow
 {
-    private readonly HashSet<string> _loaded = new(StringComparer.Ordinal);
+    /// <summary>
+    /// The load each page is on, by page key: running, finished, or absent for never started.
+    /// </summary>
+    /// <remarks>
+    /// A set of names was enough while a page only ever loaded because somebody opened it. Now that
+    /// they warm in the background, arriving at a page mid-load has to join that load rather than
+    /// see its name in a set and conclude there is nothing to wait for — which would leave the
+    /// progress bar off while the page was still empty.
+    /// </remarks>
+    private readonly Dictionary<string, Task> _loading = new(StringComparer.Ordinal);
 
     private CleanupSurvey _cleanup = CleanupSurvey.Empty;
     private StartupInventoryResult _startup = new([]);
@@ -136,6 +186,7 @@ public partial class MainWindow
 
         CleanupTotalLabel.Text = T("app.cleanup.total");
         CleanupApply.Content = T("app.cleanup.apply");
+        CleanupPurge.Content = T("app.cleanup.purge");
         CleanupListTitle.Text = T("app.cleanup.list");
 
         StartupListTitle.Text = T("app.startup.list");
@@ -160,25 +211,101 @@ public partial class MainWindow
     /// Cleared by <see cref="InvalidatePages"/> after anything that could change what the pages
     /// show — a rescan, or a language switch — so a stale page is never left on screen.
     /// </remarks>
-    private async Task EnsurePageLoadedAsync(Page page)
+    private Task EnsurePageLoadedAsync(Page page)
     {
-        if (_host is null || !_loaded.Add(page.Key))
+        if (_host is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        if (_loading.TryGetValue(page.Key, out Task? running))
+        {
+            return running;
+        }
+
+        Task load = LoadPageAsync(page);
+
+        _loading[page.Key] = load;
+
+        return load;
+    }
+
+    /// <summary>
+    /// Opens a page and shows the bar until whatever is filling it has finished.
+    /// </summary>
+    /// <remarks>
+    /// Several of these read the machine and take seconds doing it. Without the bar the page sits
+    /// there with its headings and no content, which reads as broken rather than as busy.
+    /// </remarks>
+    private async Task ShowAndLoadAsync(Page page)
+    {
+        Task load = EnsurePageLoadedAsync(page);
+
+        if (load.IsCompleted)
         {
             return;
         }
 
-        // Several of these read the machine and take seconds doing it. Without this the page sits
-        // there with its headings and no content, which reads as broken rather than as busy — and
-        // did: a cleanup survey walks every temp folder on the disk before it can name a figure.
         PageBusy.Visibility = Visibility.Visible;
 
         try
         {
-            await LoadPageAsync(page);
+            await load;
         }
         finally
         {
-            PageBusy.Visibility = Visibility.Collapsed;
+            // Only if this is still the page on screen. A slow page the user has already navigated
+            // away from must not clear the bar of the one they moved to.
+            if (_page is not null && ReferenceEquals(_page, page))
+            {
+                PageBusy.Visibility = Visibility.Collapsed;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Fills every page that is not on screen, one at a time, in the background.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The complaint this answers is that changing tab meant waiting, every time. Each page runs
+    /// its own PowerShell batch or disk walk, and doing that on arrival means the wait lands
+    /// exactly when the user is looking at an empty page. Doing it beforehand means it lands while
+    /// they are reading the page they are already on.
+    /// </para>
+    /// <para>
+    /// One at a time rather than all at once, deliberately: eight concurrent PowerShell sessions
+    /// would make the machine slower than the wait they were meant to remove. And started only
+    /// after the first scan is in, so it competes with nothing the user is actually waiting for.
+    /// </para>
+    /// </remarks>
+    private async Task WarmPagesAsync()
+    {
+        foreach (Page page in AllPages)
+        {
+            if (_host is null)
+            {
+                return;
+            }
+
+            if (_page is not null && ReferenceEquals(page, _page))
+            {
+                continue;
+            }
+
+            try
+            {
+                await EnsurePageLoadedAsync(page);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.IO.IOException)
+            {
+                // A page that cannot fill itself in the background is not an error worth a dialog.
+                // It will report its own problem when the user opens it.
+                _loading.Remove(page.Key);
+            }
+
+            // Back of the queue between pages, so warming never competes with a click.
+            await Task.Delay(150);
         }
     }
 
@@ -226,7 +353,7 @@ public partial class MainWindow
         }
     }
 
-    private void InvalidatePages() => _loaded.Clear();
+    private void InvalidatePages() => _loading.Clear();
 
     // ---------------------------------------------------------------- shared helpers
 
@@ -453,6 +580,9 @@ public partial class MainWindow
 
     // ---------------------------------------------------------------- cleanup
 
+    /// <summary>The rows the user has left ticked, by id.</summary>
+    private readonly HashSet<string> _cleanupSkipped = new(StringComparer.Ordinal);
+
     private async Task RenderCleanupAsync()
     {
         if (_host is null)
@@ -462,17 +592,7 @@ public partial class MainWindow
 
         _cleanup = await Task.Run(() => _host.CleanupScanner.SurveyAsync());
 
-        double reclaimableMb = _cleanup.ReclaimableBytes / 1024d / 1024d;
-
-        CleanupTotal.Text = $"{reclaimableMb:N0} MB";
-
-        // The honest sentence, on the page rather than buried in a confirmation: this moves files
-        // into quarantine, and the disk gets smaller when the window closes, not when you click.
-        CleanupNote.Text = T("app.cleanup.note", Args(
-            ("days", N((int)_host.Quarantine.Retention.TotalDays)),
-            ("reported", N((int)Math.Round(_cleanup.ReportedBytes / 1024d / 1024d)))));
-
-        CleanupApply.IsEnabled = _cleanup.Candidates.Any(c => c.CanReclaim);
+        RenderCleanupTotals();
 
         CleanupListHint.Text = _cleanup.IsComplete
             ? string.Empty
@@ -482,69 +602,222 @@ public partial class MainWindow
         // is" rather than as a set of unrelated numbers.
         double largest = _cleanup.Candidates.Count == 0 ? 1 : Math.Max(1, _cleanup.Candidates.Max(c => c.Bytes));
 
-        CleanupList.ItemsSource = _cleanup.Candidates.Select((candidate, i) => new MeterRow(
-            Name: T($"cleanup.item.{candidate.Id}"),
-            Value: $"{candidate.MegaBytes:N0} MB",
-            Note: candidate.Trust is CleanupTrust.ReportOnly or CleanupTrust.Protected
-                ? T("cli.clean.reportOnly")
-                : candidate.CanReclaim
-                    ? T("app.cleanup.willMove", Args(("count", N(candidate.FileCount))))
-                    : T("cli.clean.alreadyClear"),
-            Percent: candidate.Bytes / largest * 100d,
-            Accent: candidate.CanReclaim ? B("Accent") : B("Faint"),
-            RowBg: Stripe(i))).ToList();
+        CleanupList.ItemsSource = _cleanup.Candidates.Select((candidate, i) => new CleanupRow(
+            candidate.Id,
+            T($"cleanup.item.{candidate.Id}"),
+            $"{candidate.MegaBytes:N0} MB",
+            NoteFor(candidate),
+            GlyphFor(candidate),
+            candidate.Bytes / largest * 100d,
+            candidate.CanReclaim,
+            candidate.Trust switch
+            {
+                CleanupTrust.Regenerable when candidate.CanReclaim => B("Good"),
+                CleanupTrust.Reclaimable when candidate.CanReclaim => B("Accent"),
+                CleanupTrust.Protected => B("Warn"),
+                _ => B("Faint"),
+            },
+            Stripe(i))
+        {
+            Chosen = candidate.CanReclaim && !_cleanupSkipped.Contains(candidate.Id),
+        }).ToList();
     }
 
-    private async void OnCleanupApply(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// What happens to this row, in one line, for every row.
+    /// </summary>
+    /// <remarks>
+    /// Including the ones nothing happens to. "Shown only" with no reason attached is the sort of
+    /// line that makes a tool feel like it is hiding something; the reason is short and it is the
+    /// whole justification for the row existing.
+    /// </remarks>
+    private string NoteFor(CleanupCandidate candidate) => candidate switch
+    {
+        { Trust: CleanupTrust.Protected } => T($"cleanup.why.{candidate.Id}"),
+        { CanReclaim: false, Trust: CleanupTrust.ReportOnly } => T($"cleanup.why.{candidate.Id}"),
+        { CanReclaim: false } => T("cli.clean.alreadyClear"),
+
+        { Trust: CleanupTrust.Regenerable } =>
+            T("app.cleanup.deletesNow", Args(("count", N(candidate.FileCount)))),
+
+        _ => T("app.cleanup.willMove", Args(
+            ("count", N(candidate.FileCount)),
+            ("days", N((int)(_host?.Quarantine.Retention.TotalDays ?? 30))))),
+    };
+
+    private static string GlyphFor(CleanupCandidate candidate) => candidate switch
+    {
+        { Trust: CleanupTrust.Protected } => GlyphOf("GlyphWarn"),
+        { CanReclaim: false } => GlyphOf("GlyphInfo"),
+        { Trust: CleanupTrust.Regenerable } => GlyphOf("GlyphCleanup"),
+        _ => GlyphOf("GlyphRecovery"),
+    };
+
+    private void RenderCleanupTotals()
     {
         if (_host is null)
         {
             return;
         }
 
-        List<CleanupCandidate> actionable = [.. _cleanup.Candidates.Where(c => c.CanReclaim)];
+        IReadOnlyList<CleanupCandidate> chosen = ChosenCandidates();
 
-        if (actionable.Count == 0)
+        long now = chosen.Where(c => c.FreesSpaceNow).Sum(c => c.Bytes);
+        long later = chosen.Where(c => !c.FreesSpaceNow).Sum(c => c.Bytes);
+
+        CleanupTotal.Text = $"{(now + later) / 1024d / 1024d:N0} MB";
+
+        CleanupSplit.Text = T("app.cleanup.split", Args(
+            ("now", N((int)Math.Round(now / 1024d / 1024d))),
+            ("later", N((int)Math.Round(later / 1024d / 1024d)))));
+
+        // The honest sentence, on the page rather than buried in a confirmation.
+        CleanupNote.Text = T("app.cleanup.note", Args(
+            ("days", N((int)_host.Quarantine.Retention.TotalDays)),
+            ("reported", N((int)Math.Round(_cleanup.ReportedBytes / 1024d / 1024d)))));
+
+        CleanupApply.IsEnabled = chosen.Count > 0;
+        CleanupPurge.IsEnabled = chosen.Count > 0;
+    }
+
+    private IReadOnlyList<CleanupCandidate> ChosenCandidates() =>
+        [.. _cleanup.Candidates.Where(c => c.CanReclaim && !_cleanupSkipped.Contains(c.Id))];
+
+    private void OnCleanupChoice(object sender, RoutedEventArgs e)
+    {
+        if (sender is not CheckBox { Tag: string id } box)
         {
             return;
         }
 
-        // Spec 21.7: the cost is stated before the button does anything, and the cost here includes
-        // the part people do not expect — that the space comes back in thirty days, not now.
-        MessageBoxResult answer = MessageBox.Show(
-            this,
-            T("app.cleanup.confirm", Args(
-                ("mb", N((int)Math.Round(_cleanup.ReclaimableBytes / 1024d / 1024d))),
-                ("days", N((int)_host.Quarantine.Retention.TotalDays)))),
-            T("app.title"),
-            MessageBoxButton.OKCancel,
-            MessageBoxImage.Question);
+        if (box.IsChecked == true)
+        {
+            _cleanupSkipped.Remove(id);
+        }
+        else
+        {
+            _cleanupSkipped.Add(id);
+        }
 
-        if (answer != MessageBoxResult.OK)
+        RenderCleanupTotals();
+    }
+
+    private async void OnCleanupApply(object sender, RoutedEventArgs e) => await CleanAsync(alsoPurge: false);
+
+    private async void OnCleanupPurge(object sender, RoutedEventArgs e) => await CleanAsync(alsoPurge: true);
+
+    /// <summary>
+    /// Runs both routes, and optionally empties the quarantine afterwards.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The app used to call <c>QuarantineAsync</c> for everything, which is why its only button
+    /// said "move to quarantine" and why the disk did not get smaller when it was pressed. The
+    /// split has existed in the engine since the trust levels were added; this is the page finally
+    /// using it. A cache that rebuilds itself goes now, and the space is back immediately;
+    /// everything else waits out its window where it can be recovered.
+    /// </para>
+    /// <para>
+    /// <paramref name="alsoPurge"/> is the delete button. It does the same work and then releases
+    /// the quarantine, so every byte is free at once and none of it can be restored. The
+    /// confirmation says exactly that before anything happens.
+    /// </para>
+    /// </remarks>
+    private async Task CleanAsync(bool alsoPurge)
+    {
+        if (_host is null)
         {
             return;
         }
+
+        IReadOnlyList<CleanupCandidate> chosen = ChosenCandidates();
+
+        if (chosen.Count == 0)
+        {
+            return;
+        }
+
+        List<CleanupCandidate> deleteNow = [.. chosen.Where(c => c.FreesSpaceNow)];
+        List<CleanupCandidate> quarantine = [.. chosen.Where(c => !c.FreesSpaceNow)];
+
+        long total = chosen.Sum(c => c.Bytes);
+
+        // Spec 21.7: the cost is stated before the button does anything, and for the second button
+        // the cost is that there is no way back.
+        if (MessageBox.Show(
+                this,
+                T(alsoPurge ? "app.cleanup.confirmPurge" : "app.cleanup.confirm", Args(
+                    ("mb", N((int)Math.Round(total / 1024d / 1024d))),
+                    ("now", N((int)Math.Round(deleteNow.Sum(c => c.Bytes) / 1024d / 1024d))),
+                    ("days", N((int)_host.Quarantine.Retention.TotalDays)))),
+                T("app.title"),
+                MessageBoxButton.OKCancel,
+                alsoPurge ? MessageBoxImage.Warning : MessageBoxImage.Question) != MessageBoxResult.OK)
+        {
+            return;
+        }
+
+        long freed = 0;
+        int locked = 0;
+        int moved = 0;
 
         await BusyAsync("app.cleanup.working", async () =>
         {
-            QuarantineBatch batch = await _host.Quarantine.QuarantineAsync(actionable);
+            if (deleteNow.Count > 0)
+            {
+                CleanupDeletion deletion = await _host.Quarantine.DeleteRegenerableAsync(deleteNow);
 
-            MessageBox.Show(
-                this,
-                T("cli.clean.done", Args(
-                    ("files", N(batch.Files.Count)),
-                    ("mb", N((int)Math.Round(batch.Bytes / 1024d / 1024d))),
-                    ("id", batch.Id),
-                    ("expires", batch.ExpiresAt.LocalDateTime.ToString("dd/MM/yyyy", CultureInfo.CurrentCulture)))),
-                T("app.title"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+                freed += deletion.Freed;
+                locked = deletion.Locked;
+            }
+
+            if (quarantine.Count > 0)
+            {
+                QuarantineBatch batch = await _host.Quarantine.QuarantineAsync(quarantine);
+
+                moved = batch.Files.Count;
+
+                if (alsoPurge)
+                {
+                    freed += await _host.Quarantine.PurgeAllAsync();
+                }
+                else
+                {
+                    freed += 0;
+                }
+            }
+            else if (alsoPurge)
+            {
+                freed += await _host.Quarantine.PurgeAllAsync();
+            }
         });
+
+        var summary = new List<string>
+        {
+            T(alsoPurge ? "app.cleanup.doneGone" : "app.cleanup.doneSplit", Args(
+                ("mb", N((int)Math.Round(freed / 1024d / 1024d))),
+                ("moved", N(moved)),
+                ("days", N((int)_host.Quarantine.Retention.TotalDays)))),
+        };
+
+        // A running browser holds its own cache open. Expected, and said out loud rather than
+        // quietly subtracted from the total the user was shown a moment ago.
+        if (locked > 0)
+        {
+            summary.Add(T("cli.clean.locked", Args(("count", N(locked)))));
+        }
+
+        MessageBox.Show(
+            this,
+            string.Join("\n\n", summary),
+            T("app.title"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
 
         await RenderCleanupAsync();
 
         // The quarantine list on Recovery is now out of date.
-        _loaded.Remove(nameof(ViewRecovery));
+        _loading.Remove(nameof(ViewRecovery));
     }
 
     // ---------------------------------------------------------------- startup

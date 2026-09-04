@@ -940,11 +940,23 @@
                 <StackPanel Grid.Column="0">
                   <TextBlock x:Name="CleanupTotalLabel" Style="{StaticResource Sect}" Margin="0,0,0,3" />
                   <TextBlock x:Name="CleanupTotal" Style="{StaticResource BigValue}" />
+                  <TextBlock x:Name="CleanupSplit" Style="{StaticResource Tiny}" Margin="0,4,0,0" />
                 </StackPanel>
                 <TextBlock Grid.Column="1" x:Name="CleanupNote" Style="{StaticResource Sub}"
-                           VerticalAlignment="Center" Margin="26,0,26,0" />
-                <Button Grid.Column="2" x:Name="CleanupApply" Style="{StaticResource PrimaryButton}"
-                        VerticalAlignment="Center" Click="OnCleanupApply" />
+                           VerticalAlignment="Center" Margin="26,0,26,0" TextWrapping="Wrap" />
+                <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                  <Button x:Name="CleanupApply" Style="{StaticResource PrimaryButton}"
+                          HorizontalAlignment="Stretch" Click="OnCleanupApply" />
+                  <!--
+                    The second button is the one that was missing, and it is deliberately the
+                    quieter of the two. It does what the first does and then empties the
+                    quarantine, so every byte is back at once and nothing can be undone. Offering
+                    it is right — it is the user's disk — but making it the obvious choice would
+                    not be.
+                  -->
+                  <Button x:Name="CleanupPurge" Style="{StaticResource DangerButton}" Margin="0,8,0,0"
+                          HorizontalAlignment="Stretch" Click="OnCleanupPurge" />
+                </StackPanel>
               </Grid>
             </Border>
 
@@ -957,19 +969,42 @@
                 <ItemsControl x:Name="CleanupList">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                      <Border Style="{StaticResource SettingsRow}" Padding="14,12">
-                        <StackPanel>
-                          <DockPanel Margin="0,0,0,7">
-                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
-                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
-                            <TextBlock Text="{Binding Value}" FontSize="12.5" FontWeight="Bold"
-                                       Foreground="{Binding Accent}" HorizontalAlignment="Right"
-                                       Typography.NumeralAlignment="Tabular" />
-                          </DockPanel>
-                          <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent}"
-                                       Foreground="{Binding Accent}" />
-                          <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" Margin="0,6,0,0" />
-                        </StackPanel>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,12" Background="{Binding RowBg}">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                          </Grid.ColumnDefinitions>
+
+                          <!--
+                            One tick box per row. Without it the page offers a single all-or-nothing
+                            button over sixteen very different things, and someone who wants their
+                            browser cache back but keeps their crash dumps has no way to say so.
+                          -->
+                          <CheckBox Grid.Column="0" VerticalAlignment="Top" Margin="0,1,12,0"
+                                    IsChecked="{Binding Chosen, Mode=TwoWay}"
+                                    IsEnabled="{Binding CanChoose}" Tag="{Binding Id}"
+                                    Click="OnCleanupChoice" ToolTip="{Binding Note}" />
+
+                          <StackPanel Grid.Column="1">
+                            <DockPanel Margin="0,0,0,7">
+                              <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}"
+                                         Style="{StaticResource Glyph}" FontSize="14"
+                                         Foreground="{Binding Accent}" VerticalAlignment="Center"
+                                         Margin="0,0,9,0" />
+                              <TextBlock Text="{Binding Value}" FontSize="12.5" FontWeight="Bold"
+                                         Foreground="{Binding Accent}" HorizontalAlignment="Right"
+                                         Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" />
+                              <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                         Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"
+                                         VerticalAlignment="Center" />
+                            </DockPanel>
+                            <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent}"
+                                         Foreground="{Binding Accent}" />
+                            <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" Margin="0,6,0,0"
+                                       TextWrapping="Wrap" />
+                          </StackPanel>
+                        </Grid>
                       </Border>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
@@ -1281,15 +1316,16 @@
                                 </Grid.ColumnDefinitions>
 
                                 <!--
-                                  The product's initial in its own tile. A real icon would mean
-                                  shipping two dozen logos we have no licence for, and a generic
-                                  box for every row would tell the eye nothing.
+                                  An icon for what the thing is, not a letter from its name. Brand
+                                  logos are out — two dozen trademarks we have no licence to ship —
+                                  and the initial that stood here read as a placeholder, because it
+                                  was one. A category glyph on a tinted tile is what Windows itself
+                                  does on a list like this, and it tells the eye something.
                                 -->
                                 <Border Grid.Column="0" Width="34" Height="34" CornerRadius="9"
-                                        Background="{Binding Accent}" VerticalAlignment="Center">
-                                  <TextBlock Text="{Binding Initial}" FontSize="15" FontWeight="SemiBold"
-                                             Foreground="White" HorizontalAlignment="Center"
-                                             VerticalAlignment="Center" />
+                                        Background="{Binding Tile}" VerticalAlignment="Center">
+                                  <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}"
+                                             FontSize="16" Foreground="{Binding Accent}" />
                                 </Border>
 
                                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,14,0">

@@ -277,6 +277,10 @@ public partial class MainWindow : Window
         await RefreshHistoryAsync();
 
         _liveTimer.Start();
+
+        // Now that the window is interactive and the first scan is in, fill the rest of the pages
+        // quietly, so that changing tab is not the moment the work starts.
+        _ = WarmPagesAsync();
     }
 
     private void OnClosed(object? sender, EventArgs e)
@@ -560,10 +564,10 @@ public partial class MainWindow : Window
         Reveal(page.View);
         ApplyPageChrome();
 
-        // Loaded on arrival rather than at startup: each of these runs a PowerShell batch, and
-        // paying for all of them before the first frame would make the app slow to open in order
-        // to populate pages nobody has asked for yet.
-        _ = EnsurePageLoadedAsync(page);
+        // Usually already filled by the background warm-up, in which case this returns at once and
+        // the page is simply there. When it is not, this joins the load in progress and shows the
+        // bar until it finishes.
+        _ = ShowAndLoadAsync(page);
     }
 
     /// <summary>
@@ -740,7 +744,7 @@ public partial class MainWindow : Window
     {
         if (_page is not null)
         {
-            await EnsurePageLoadedAsync(_page);
+            await ShowAndLoadAsync(_page);
         }
     }
 

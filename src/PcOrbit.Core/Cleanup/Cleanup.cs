@@ -40,6 +40,25 @@ public enum CleanupCategory
 
     /// <summary>The Recycle Bin. Reported, never emptied by this product.</summary>
     RecycleBin,
+
+    /// <summary>A Store application's own temporary and web caches. Not its saved state.</summary>
+    StoreAppCache,
+
+    /// <summary>Remote Desktop's bitmap cache.</summary>
+    RemoteDesktopCache,
+
+    /// <summary>Windows' record of how each program starts, used to launch it faster.</summary>
+    Prefetch,
+
+    /// <summary>
+    /// <c>Windows.old</c> — the Windows that was here before the last upgrade.
+    /// </summary>
+    /// <remarks>
+    /// Usually the largest single thing on the disk after an upgrade, and the one this product will
+    /// not remove at any level: it is the only route back. Windows deletes it itself after ten
+    /// days. Measured so the number is not a mystery.
+    /// </remarks>
+    PreviousWindows,
 }
 
 /// <summary>
