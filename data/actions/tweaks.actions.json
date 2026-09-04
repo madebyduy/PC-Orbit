@@ -1,0 +1,176 @@
+[
+  {
+    "id": "privacy.advertising-id.enable",
+    "version": "1.0.0",
+    "titleKey": "action.privacy.advertising-id.enable.title",
+    "executor": "windows.registry-setting",
+    "parameters": {
+      "setting": "privacy.advertising-id"
+    },
+    "provides": [
+      {
+        "capability": "privacy.advertising-id",
+        "state": "enabled"
+      }
+    ],
+    "writeMode": "auto",
+    "privilege": "user",
+    "risk": "low",
+    "restart": "none",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_registry_value"
+    },
+    "estimatedSeconds": 2,
+    "preflight": [],
+    "compatibility": {
+      "osMinBuild": 19041
+    },
+    "verify": [
+      {
+        "capability": "privacy.advertising-id",
+        "expected": "enabled"
+      }
+    ]
+  },
+  {
+    "id": "privacy.tailored-experiences.enable",
+    "version": "1.0.0",
+    "titleKey": "action.privacy.tailored-experiences.enable.title",
+    "executor": "windows.registry-setting",
+    "parameters": {
+      "setting": "privacy.tailored-experiences"
+    },
+    "provides": [
+      {
+        "capability": "privacy.tailored-experiences",
+        "state": "enabled"
+      }
+    ],
+    "writeMode": "auto",
+    "privilege": "user",
+    "risk": "low",
+    "restart": "none",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_registry_value"
+    },
+    "estimatedSeconds": 2,
+    "preflight": [],
+    "compatibility": {
+      "osMinBuild": 19041
+    },
+    "verify": [
+      {
+        "capability": "privacy.tailored-experiences",
+        "expected": "enabled"
+      }
+    ]
+  },
+  {
+    "id": "privacy.activity-history.enable",
+    "version": "1.0.0",
+    "titleKey": "action.privacy.activity-history.enable.title",
+    "executor": "windows.registry-setting",
+    "parameters": {
+      "setting": "privacy.activity-history"
+    },
+    "provides": [
+      {
+        "capability": "privacy.activity-history",
+        "state": "enabled"
+      }
+    ],
+    "writeMode": "auto",
+    "privilege": "administrator",
+    "risk": "low",
+    "restart": "none",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_registry_value"
+    },
+    "estimatedSeconds": 2,
+    "preflight": [
+      "elevation"
+    ],
+    "compatibility": {
+      "osMinBuild": 19041
+    },
+    "verify": [
+      {
+        "capability": "privacy.activity-history",
+        "expected": "enabled"
+      }
+    ]
+  },
+  {
+    "id": "privacy.telemetry.enable",
+    "version": "1.0.0",
+    "titleKey": "action.privacy.telemetry.enable.title",
+    "executor": "windows.registry-setting",
+    "parameters": {
+      "setting": "privacy.telemetry"
+    },
+    "provides": [
+      {
+        "capability": "privacy.telemetry",
+        "state": "enabled"
+      }
+    ],
+    "writeMode": "auto",
+    "privilege": "administrator",
+    "risk": "low",
+    "restart": "none",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_registry_value"
+    },
+    "estimatedSeconds": 2,
+    "preflight": [
+      "elevation"
+    ],
+    "compatibility": {
+      "osMinBuild": 19041
+    },
+    "verify": [
+      {
+        "capability": "privacy.telemetry",
+        "expected": "enabled"
+      }
+    ]
+  },
+  {
+    "id": "explorer.file-extensions.enable",
+    "version": "1.0.0",
+    "titleKey": "action.explorer.file-extensions.enable.title",
+    "executor": "windows.registry-setting",
+    "parameters": {
+      "setting": "explorer.file-extensions"
+    },
+    "provides": [
+      {
+        "capability": "explorer.file-extensions",
+        "state": "enabled"
+      }
+    ],
+    "writeMode": "auto",
+    "privilege": "user",
+    "risk": "low",
+    "restart": "none",
+    "reversible": {
+      "mode": "automatic",
+      "strategy": "restore_previous_registry_value"
+    },
+    "estimatedSeconds": 2,
+    "preflight": [],
+    "compatibility": {
+      "osMinBuild": 19041
+    },
+    "verify": [
+      {
+        "capability": "explorer.file-extensions",
+        "expected": "enabled"
+      }
+    ]
+  }
+]
