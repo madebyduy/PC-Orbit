@@ -12,6 +12,7 @@ namespace PcOrbit.App;
 public sealed class FirmwareRow(
     string name,
     string detail,
+    string current,
     IReadOnlyList<string> options,
     string wanted,
     bool writable,
@@ -24,6 +25,8 @@ public sealed class FirmwareRow(
     public string Name { get; } = name;
 
     public string Detail { get; } = detail;
+
+    public string Current { get; } = current;
 
     public IReadOnlyList<string> Options { get; } = options;
 
@@ -42,6 +45,8 @@ public sealed class FirmwareRow(
     public Brush RowBg { get; } = rowBg;
 }
 
+public sealed record FirmwareGroup(string Key, string Name, string Count, IReadOnlyList<FirmwareRow> Rows);
+
 /// <summary>
 /// Changing a firmware setting from Windows.
 /// </summary>
@@ -54,18 +59,95 @@ public sealed class FirmwareRow(
 /// All three are testable without hardware, which matters because the write itself is not.
 /// </para>
 /// <para>
-/// This file only renders and dispatches. A decision made inside a click handler is a decision
-/// nothing can test, and on this page the cost of an untested decision is a PC that does not start.
+/// This file renders and dispatches. Ninety settings arrived from the first machine that answered,
+/// so rendering means grouping, searching and filtering — a person who wants virtualization for
+/// Docker should see one row, not scroll for it. The grouping is by keyword in the vendor's own
+/// name, which is the only handle there is, and a name no keyword claims goes to Other rather than
+/// being hidden.
 /// </para>
 /// </remarks>
 public partial class MainWindow
 {
     private FirmwareInterface _firmware = FirmwareInterface.None();
 
+    /// <summary>The rows as built, before any search or filter. Filtering never re-reads the machine.</summary>
+    private IReadOnlyList<(FirmwareSetting Setting, FirmwareRow Row)> _firmwareRows = [];
+
+    /// <summary>
+    /// Which group a setting belongs to, from what its name contains.
+    /// </summary>
+    /// <remarks>
+    /// First match wins, and the order is the priority: "WakeOnLAN" is network before it is power,
+    /// "BIOSPasswordAtBoot" is security before it is boot. Anything unclaimed is Other.
+    /// </remarks>
+    private static readonly (string Key, string[] Tokens)[] FirmwareGroupTable =
+    [
+        ("alarm", ["alarm", "wakeuponalarm"]),
+        ("security", ["password", "secure", "security", "tpm", "chip", "dma", "txt", "absolute", "wipe", "certificate", "biometric", "fingerprint", "lock", "executionprevention", "sid", "rollback", "uefica", "unlock"]),
+        ("network", ["lan", "wifi", "wireless", "ethernet", "network", "pxe", "ipv", "tftp", "proxy", "url", "cloud", "macaddress", "http", "bluetooth"]),
+        ("boot", ["boot", "startup", "f12", "displaydevice", "deployment"]),
+        ("keyboard", ["fn", "keyboard", "touchpad", "trackpoint", "beep", "key"]),
+        ("power", ["power", "battery", "charge", "thermal", "turbo", "speedstep", "energy", "onbyac", "alwayson", "flip", "coolquiet", "smp", "management"]),
+        ("devices", ["camera", "microphone", "audio", "thunderbolt", "tunneling", "usb", "port", "access", "panel", "display", "reader"]),
+    ];
+
+    private static readonly string[] FirmwareGroupOrder =
+        ["security", "boot", "power", "devices", "keyboard", "network", "alarm", "other"];
+
+    /// <summary>What the quick chips type into the search box.</summary>
+    private static readonly (string Key, string Search)[] FirmwareQuickSearches =
+    [
+        ("virtualization", "virtual"),
+        ("privacy", "camera micro"),
+        ("fn", "fn"),
+        ("boot", "boot"),
+        ("power", "charge power battery"),
+        ("network", "lan wake"),
+    ];
+
+    private static string FirmwareGroupOf(string name)
+    {
+        string n = string.Concat(name.Where(char.IsLetterOrDigit)).ToLowerInvariant();
+
+        foreach ((string key, string[] tokens) in FirmwareGroupTable)
+        {
+            if (tokens.Any(t => n.Contains(t, StringComparison.Ordinal)))
+            {
+                return key;
+            }
+        }
+
+        return "other";
+    }
+
     private void ApplyFirmwareStrings()
     {
         FirmwareTitle.Text = T("app.firmware.title");
         FirmwareHint.Text = T("app.firmware.hint");
+        FirmwareSearch.Tag = T("app.firmware.search");
+        FirmwareQuickLabel.Text = T("app.firmware.quick");
+        FirmwareNoMatch.Text = T("app.firmware.noMatch");
+
+        FwAll.Content = T("app.firmware.filter.all");
+        FwRoutine.Content = T("app.firmware.filter.routine");
+        FwCareful.Content = T("app.firmware.filter.careful");
+        FwSerious.Content = T("app.firmware.filter.serious");
+        FwRefused.Content = T("app.firmware.filter.refused");
+
+        FirmwareQuick.Children.Clear();
+
+        foreach ((string key, string search) in FirmwareQuickSearches)
+        {
+            var chip = new Button
+            {
+                Style = (Style)FindResource("QuickChip"),
+                Content = T($"app.firmware.quick.{key}"),
+                Tag = search,
+            };
+
+            chip.Click += (_, _) => FirmwareSearch.Text = (string)chip.Tag;
+            FirmwareQuick.Children.Add(chip);
+        }
     }
 
     private async Task RenderFirmwareAsync()
@@ -81,7 +163,9 @@ public partial class MainWindow
 
         if (!_firmware.IsUsable)
         {
-            FirmwareList.ItemsSource = null;
+            _firmwareRows = [];
+            FirmwareGroups.ItemsSource = null;
+            FirmwareTools.Visibility = Visibility.Collapsed;
             FirmwareUnavailable.Visibility = Visibility.Visible;
             FirmwareUnavailableText.Text = UnavailableReason();
 
@@ -89,14 +173,16 @@ public partial class MainWindow
         }
 
         FirmwareUnavailable.Visibility = Visibility.Collapsed;
+        FirmwareTools.Visibility = Visibility.Visible;
 
-        FirmwareList.ItemsSource = _firmware.Settings.Select((setting, i) =>
+        _firmwareRows = [.. _firmware.Settings.Select((setting, i) =>
         {
             (Brush tint, Brush ink) = RiskTone(setting.Risk);
 
-            return new FirmwareRow(
+            return (setting, new FirmwareRow(
                 setting.Name,
                 Detail(setting),
+                setting.Current ?? T("status.unknown"),
                 setting.Options,
                 setting.Current ?? (setting.Options.Count > 0 ? setting.Options[0] : string.Empty),
                 setting.Writable,
@@ -104,8 +190,67 @@ public partial class MainWindow
                 T("app.firmware.apply"),
                 tint,
                 ink,
-                Stripe(i));
-        }).ToList();
+                Stripe(i)));
+        })];
+
+        ApplyFirmwareFilter();
+    }
+
+    private void OnFirmwareFilterChanged(object sender, RoutedEventArgs e)
+    {
+        if (Ready && FirmwareGroups is not null)
+        {
+            ApplyFirmwareFilter();
+        }
+    }
+
+    /// <summary>
+    /// Search and risk filter over the rows already built, grouped for display.
+    /// </summary>
+    /// <remarks>
+    /// Every search word has to appear somewhere in the name or the current value, in any order —
+    /// "camera micro" finds both privacy switches at once, which is what the quick chip relies on.
+    /// Grouping happens after filtering so an empty group simply is not shown.
+    /// </remarks>
+    private void ApplyFirmwareFilter()
+    {
+        string[] words = FirmwareSearch.Text
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        FirmwareRisk? risk =
+            FwRoutine.IsChecked == true ? FirmwareRisk.Routine
+            : FwCareful.IsChecked == true ? FirmwareRisk.Careful
+            : FwSerious.IsChecked == true ? FirmwareRisk.Serious
+            : FwRefused.IsChecked == true ? FirmwareRisk.Refused
+            : null;
+
+        List<(FirmwareSetting Setting, FirmwareRow Row)> matching = [.. _firmwareRows
+            .Where(r => risk is null || r.Setting.Risk == risk)
+            .Where(r => words.All(w =>
+                r.Setting.Name.Contains(w, StringComparison.OrdinalIgnoreCase)
+                || (r.Setting.Current?.Contains(w, StringComparison.OrdinalIgnoreCase) ?? false)))];
+
+        List<FirmwareGroup> groups = [];
+
+        foreach (string key in FirmwareGroupOrder)
+        {
+            List<FirmwareRow> rows = [.. matching
+                .Where(r => FirmwareGroupOf(r.Setting.Name) == key)
+                .Select(r => r.Row)];
+
+            if (rows.Count > 0)
+            {
+                groups.Add(new FirmwareGroup(
+                    key,
+                    T($"app.firmware.group.{key}"),
+                    T("app.firmware.groupHint", Args(("count", N(rows.Count)))),
+                    rows));
+            }
+        }
+
+        FirmwareGroups.ItemsSource = groups;
+        FirmwareCount.Text = T("app.firmware.count", Args(("count", N(matching.Count))));
+        FirmwareNoMatch.Visibility = matching.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>
@@ -121,16 +266,10 @@ public partial class MainWindow
     private string UnavailableReason() => _firmware switch
     {
         { Problem: { } problem } => T("app.firmware.problem", Args(("problem", problem))),
-
-        // First, and it is the one that was missing. Without it a standard user was told their
-        // hardware lacked a feature that nobody had been allowed to ask about.
         { Availability: FirmwareAvailability.NeedsElevation } => T("app.firmware.needsElevation"),
-
         { Availability: FirmwareAvailability.NeedsVendorTool } => T("app.firmware.dellNeedsTool"),
-
         { Availability: FirmwareAvailability.ModelDoesNotImplement, Vendor: { Length: > 0 } vendor } =>
             T("app.firmware.modelHasNone", Args(("vendor", vendor))),
-
         _ => T("app.firmware.noInterface"),
     };
 
@@ -153,23 +292,16 @@ public partial class MainWindow
             return;
         }
 
-        if (FirmwareList.ItemsSource is not IEnumerable<FirmwareRow> rows)
-        {
-            return;
-        }
+        (FirmwareSetting Setting, FirmwareRow Row) hit = _firmwareRows
+            .FirstOrDefault(r => string.Equals(r.Setting.Name, name, StringComparison.Ordinal));
 
-        FirmwareRow? row = rows.FirstOrDefault(r => string.Equals(r.Name, name, StringComparison.Ordinal));
-
-        FirmwareSetting? setting = _firmware.Settings
-            .FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.Ordinal));
-
-        if (row is null || setting is null || string.IsNullOrWhiteSpace(row.Wanted))
+        if (hit.Setting is null || string.IsNullOrWhiteSpace(hit.Row.Wanted))
         {
             return;
         }
 
         FirmwareChangePlan plan = FirmwareChangePlan.For(
-            setting, row.Wanted, _snapshot, _firmware.PasswordRequired);
+            hit.Setting, hit.Row.Wanted, _snapshot, _firmware.PasswordRequired);
 
         if (!plan.CanProceed)
         {
@@ -192,7 +324,7 @@ public partial class MainWindow
 
         FirmwareWriteResult result = await BusyResultAsync(
             T("app.firmware.working"),
-            () => _host.Firmware.SetAsync(setting, row.Wanted, answer.Password));
+            () => _host.Firmware.SetAsync(hit.Setting, hit.Row.Wanted, answer.Password));
 
         MessageBox.Show(
             this,
@@ -209,22 +341,18 @@ public partial class MainWindow
     /// </summary>
     /// <remarks>
     /// The interesting case is the third one: the vendor call returned Success and reading the
-    /// firmware back does not agree. That is a failure, and it is reported as one. Some firmware
-    /// holds a change as pending until the restart and will read back the old value until then —
-    /// which is exactly why this says "we could not confirm it" rather than either claiming success
-    /// or claiming failure.
+    /// firmware back does not agree. Some firmware holds a change as pending until the restart and
+    /// reads back the old value until then — which is exactly why this says "we could not confirm
+    /// it" rather than either claiming success or claiming failure.
     /// </remarks>
     private string Outcome(FirmwareWriteResult result) => result switch
     {
         { Problem: { } problem } when !result.Applied =>
             T("app.firmware.failed", Args(("name", result.Name), ("problem", problem))),
-
         { Applied: true, Verified: true } =>
             T("app.firmware.done", Args(("name", result.Name), ("value", result.Wanted))),
-
         { Applied: true } =>
             T("app.firmware.unverified", Args(("name", result.Name), ("value", result.Wanted))),
-
         _ => T("app.firmware.failed", Args(("name", result.Name), ("problem", T("status.unknown")))),
     };
 

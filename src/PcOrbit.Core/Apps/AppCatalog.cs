@@ -15,13 +15,15 @@ namespace PcOrbit.Core.Apps;
 /// <param name="InstalledAs">
 /// Names this product goes by in Add or Remove Programs, when they differ from <paramref name="Name"/>.
 /// </param>
+/// <param name="Homepage">The publisher's page for the product, for the link and for its icon.</param>
 public sealed record CatalogApp(
     string Id,
     string Name,
     string Publisher,
     string DescriptionKey,
     string CategoryKey,
-    IReadOnlyList<string>? InstalledAs = null)
+    IReadOnlyList<string>? InstalledAs = null,
+    string? Homepage = null)
 {
     /// <summary>
     /// Every display name this product might appear under, <see cref="Name"/> included.
@@ -113,11 +115,20 @@ public sealed record AppChangeResult(
 /// <see cref="FoundAs"/> carries the name that proved it, so the row can say which.
 /// </para>
 /// </remarks>
+/// <param name="IconPaths">
+/// For an installed id, the file Windows itself draws its icon from — the uninstall entry's
+/// <c>DisplayIcon</c>, or the install folder's executable. Absent when neither is recorded.
+/// </param>
 public sealed record InstalledApps(
     IReadOnlySet<string> Ids,
     string? Problem = null,
-    IReadOnlyDictionary<string, string>? FoundAs = null)
+    IReadOnlyDictionary<string, string>? FoundAs = null,
+    IReadOnlyDictionary<string, string>? IconPaths = null)
 {
+    /// <summary>Where the machine keeps this product's icon, when it is installed and says.</summary>
+    public string? IconPathOf(string id) =>
+        IconPaths is not null && IconPaths.TryGetValue(id, out string? path) ? path : null;
+
     public static InstalledApps Unknown(string problem) =>
         new(new HashSet<string>(StringComparer.OrdinalIgnoreCase), problem);
 

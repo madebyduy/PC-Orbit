@@ -7,7 +7,8 @@
       "name": "Google Chrome",
       "publisher": "Google",
       "categoryKey": "apps.category.browsers",
-      "descriptionKey": "apps.description.Google.Chrome"
+      "descriptionKey": "apps.description.Google.Chrome",
+      "homepage": "https://www.google.com/chrome/"
     },
     {
       "id": "Mozilla.Firefox",
@@ -17,7 +18,8 @@
       "descriptionKey": "apps.description.Mozilla.Firefox",
       "installedAs": [
         "Mozilla Firefox"
-      ]
+      ],
+      "homepage": "https://www.firefox.com/"
     },
     {
       "id": "Brave.Brave",
@@ -27,7 +29,8 @@
       "descriptionKey": "apps.description.Brave.Brave",
       "installedAs": [
         "Brave"
-      ]
+      ],
+      "homepage": "https://brave.com/"
     },
     {
       "id": "VideoLAN.VLC",
@@ -37,21 +40,24 @@
       "descriptionKey": "apps.description.VideoLAN.VLC",
       "installedAs": [
         "VLC media player"
-      ]
+      ],
+      "homepage": "https://www.videolan.org/"
     },
     {
       "id": "IrfanSkiljan.IrfanView",
       "name": "IrfanView",
       "publisher": "Irfan Skiljan",
       "categoryKey": "apps.category.media",
-      "descriptionKey": "apps.description.IrfanSkiljan.IrfanView"
+      "descriptionKey": "apps.description.IrfanSkiljan.IrfanView",
+      "homepage": "https://www.irfanview.com/"
     },
     {
       "id": "Audacity.Audacity",
       "name": "Audacity",
       "publisher": "Audacity Team",
       "categoryKey": "apps.category.media",
-      "descriptionKey": "apps.description.Audacity.Audacity"
+      "descriptionKey": "apps.description.Audacity.Audacity",
+      "homepage": "https://www.audacityteam.org/"
     },
     {
       "id": "7zip.7zip",
@@ -61,7 +67,8 @@
       "descriptionKey": "apps.description.7zip.7zip",
       "installedAs": [
         "7-Zip"
-      ]
+      ],
+      "homepage": "https://www.7-zip.org/"
     },
     {
       "id": "Notepad++.Notepad++",
@@ -71,7 +78,8 @@
       "descriptionKey": "apps.description.Notepad++.Notepad++",
       "installedAs": [
         "Notepad++"
-      ]
+      ],
+      "homepage": "https://notepad-plus-plus.org/"
     },
     {
       "id": "voidtools.Everything",
@@ -81,7 +89,8 @@
       "descriptionKey": "apps.description.voidtools.Everything",
       "installedAs": [
         "Everything"
-      ]
+      ],
+      "homepage": "https://www.voidtools.com/"
     },
     {
       "id": "Adobe.Acrobat.Reader.64-bit",
@@ -91,7 +100,8 @@
       "descriptionKey": "apps.description.Adobe.Acrobat.Reader.64-bit",
       "installedAs": [
         "Adobe Acrobat"
-      ]
+      ],
+      "homepage": "https://acrobat.adobe.com/"
     },
     {
       "id": "Zoom.Zoom",
@@ -101,28 +111,32 @@
       "descriptionKey": "apps.description.Zoom.Zoom",
       "installedAs": [
         "Zoom"
-      ]
+      ],
+      "homepage": "https://zoom.us/"
     },
     {
       "id": "Microsoft.Teams",
       "name": "Microsoft Teams",
       "publisher": "Microsoft",
       "categoryKey": "apps.category.communication",
-      "descriptionKey": "apps.description.Microsoft.Teams"
+      "descriptionKey": "apps.description.Microsoft.Teams",
+      "homepage": "https://teams.microsoft.com/"
     },
     {
       "id": "Telegram.TelegramDesktop",
       "name": "Telegram Desktop",
       "publisher": "Telegram",
       "categoryKey": "apps.category.communication",
-      "descriptionKey": "apps.description.Telegram.TelegramDesktop"
+      "descriptionKey": "apps.description.Telegram.TelegramDesktop",
+      "homepage": "https://desktop.telegram.org/"
     },
     {
       "id": "Discord.Discord",
       "name": "Discord",
       "publisher": "Discord Inc.",
       "categoryKey": "apps.category.communication",
-      "descriptionKey": "apps.description.Discord.Discord"
+      "descriptionKey": "apps.description.Discord.Discord",
+      "homepage": "https://discord.com/"
     },
     {
       "id": "Microsoft.VisualStudioCode",
@@ -132,14 +146,16 @@
       "descriptionKey": "apps.description.Microsoft.VisualStudioCode",
       "installedAs": [
         "Microsoft Visual Studio Code"
-      ]
+      ],
+      "homepage": "https://code.visualstudio.com/"
     },
     {
       "id": "Git.Git",
       "name": "Git",
       "publisher": "Git",
       "categoryKey": "apps.category.development",
-      "descriptionKey": "apps.description.Git.Git"
+      "descriptionKey": "apps.description.Git.Git",
+      "homepage": "https://git-scm.com/"
     },
     {
       "id": "Python.Python.3.12",
@@ -149,14 +165,16 @@
       "descriptionKey": "apps.description.Python.Python.3.12",
       "installedAs": [
         "Python 3.12"
-      ]
+      ],
+      "homepage": "https://www.python.org/"
     },
     {
       "id": "Microsoft.PowerToys",
       "name": "PowerToys",
       "publisher": "Microsoft",
       "categoryKey": "apps.category.development",
-      "descriptionKey": "apps.description.Microsoft.PowerToys"
+      "descriptionKey": "apps.description.Microsoft.PowerToys",
+      "homepage": "https://learn.microsoft.com/windows/powertoys/"
     },
     {
       "id": "Microsoft.VCRedist.2015+.x64",
@@ -166,7 +184,8 @@
       "descriptionKey": "apps.description.Microsoft.VCRedist.2015+.x64",
       "installedAs": [
         "Microsoft Visual C++"
-      ]
+      ],
+      "homepage": "https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist"
     },
     {
       "id": "Microsoft.DotNet.DesktopRuntime.8",
@@ -176,7 +195,8 @@
       "descriptionKey": "apps.description.Microsoft.DotNet.DesktopRuntime.8",
       "installedAs": [
         "Microsoft Windows Desktop Runtime - 8"
-      ]
+      ],
+      "homepage": "https://dotnet.microsoft.com/"
     },
     {
       "id": "Oracle.JavaRuntimeEnvironment",
@@ -187,28 +207,32 @@
       "installedAs": [
         "Java 8",
         "Java(TM)"
-      ]
+      ],
+      "homepage": "https://www.java.com/"
     },
     {
       "id": "Bitwarden.Bitwarden",
       "name": "Bitwarden",
       "publisher": "Bitwarden Inc.",
       "categoryKey": "apps.category.security",
-      "descriptionKey": "apps.description.Bitwarden.Bitwarden"
+      "descriptionKey": "apps.description.Bitwarden.Bitwarden",
+      "homepage": "https://bitwarden.com/"
     },
     {
       "id": "Malwarebytes.Malwarebytes",
       "name": "Malwarebytes",
       "publisher": "Malwarebytes",
       "categoryKey": "apps.category.security",
-      "descriptionKey": "apps.description.Malwarebytes.Malwarebytes"
+      "descriptionKey": "apps.description.Malwarebytes.Malwarebytes",
+      "homepage": "https://www.malwarebytes.com/"
     },
     {
       "id": "CrystalDewWorld.CrystalDiskInfo",
       "name": "CrystalDiskInfo",
       "publisher": "Crystal Dew World",
       "categoryKey": "apps.category.security",
-      "descriptionKey": "apps.description.CrystalDewWorld.CrystalDiskInfo"
+      "descriptionKey": "apps.description.CrystalDewWorld.CrystalDiskInfo",
+      "homepage": "https://crystalmark.info/"
     }
   ]
 }

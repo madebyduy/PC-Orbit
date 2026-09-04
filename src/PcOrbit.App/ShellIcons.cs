@@ -68,33 +68,41 @@ internal static partial class ShellIcons
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool DestroyIcon(nint icon);
 
-    /// <summary>The small shell icon for a file, or null when there is none to be had.</summary>
-    public static ImageSource? For(string? path)
+    /// <summary>
+    /// The shell icon for a file, or null when there is none to be had.
+    /// </summary>
+    /// <param name="large">
+    /// 32 px rather than 16. The process rows are 20 px tall and want the small one; a catalogue
+    /// card has a 40 px tile and a 16 px icon blown up to fill it is a blur.
+    /// </param>
+    public static ImageSource? For(string? path, bool large = false)
     {
         if (string.IsNullOrWhiteSpace(path))
         {
             return null;
         }
 
+        string key = (large ? "L|" : "S|") + path;
+
         lock (Gate)
         {
-            if (Cache.TryGetValue(path, out ImageSource? cached))
+            if (Cache.TryGetValue(key, out ImageSource? cached))
             {
                 return cached;
             }
         }
 
-        ImageSource? icon = Extract(path);
+        ImageSource? icon = Extract(path, large);
 
         lock (Gate)
         {
-            Cache[path] = icon;
+            Cache[key] = icon;
         }
 
         return icon;
     }
 
-    private static ImageSource? Extract(string path)
+    private static ImageSource? Extract(string path, bool large)
     {
         var info = default(ShFileInfo);
 
@@ -106,7 +114,7 @@ internal static partial class ShellIcons
             FileAttributeNormal,
             ref info,
             (uint)Marshal.SizeOf<ShFileInfo>(),
-            FileInfoIcon | FileInfoSmallIcon | FileInfoUseFileAttributes);
+            FileInfoIcon | (large ? 0u : FileInfoSmallIcon) | FileInfoUseFileAttributes);
 
         if (result == 0 || info.Icon == 0)
         {

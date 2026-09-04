@@ -60,6 +60,12 @@
               "minLength": 2
             },
             "minItems": 1
+          },
+          "homepage": {
+            "type": "string",
+            "format": "uri",
+            "pattern": "^https://",
+            "description": "The publisher's own page for the product. Used for two things and nothing else: the Open-site link, and the site's icon, which is the product's real logo when the product is not installed and there is no executable on disk to take it from. HTTPS only."
           }
         }
       }

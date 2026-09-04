@@ -86,10 +86,25 @@ public sealed class WindowsAppService(AppCatalog catalog, PowerShellRunner? powe
                 'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
                 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*')
 
+            # Name plus the file Windows draws the entry's icon from. DisplayIcon is usually
+            # "path,index" and sometimes quoted; the index is dropped because the shell call that
+            # reads it later takes a file, not a resource index, and the first icon is the logo.
             $programs = @(Get-ItemProperty $roots -ErrorAction SilentlyContinue |
                 Where-Object { $_.DisplayName -and -not $_.SystemComponent } |
-                ForEach-Object { [string] $_.DisplayName } |
-                Sort-Object -Unique)
+                ForEach-Object {
+                    $icon = [string] $_.DisplayIcon
+                    if ($icon) {
+                        $icon = $icon.Trim('"')
+                        if ($icon -match '^(.*\.(exe|ico|dll))(,-?\d+)?$') { $icon = $matches[1] }
+                        $icon = $icon.Trim('"')
+                    }
+                    if (-not $icon -and $_.InstallLocation) {
+                        $exe = Get-ChildItem -LiteralPath ([string] $_.InstallLocation) -Filter *.exe -ErrorAction SilentlyContinue |
+                               Select-Object -First 1
+                        if ($exe) { $icon = $exe.FullName }
+                    }
+                    [pscustomobject]@{ Name = [string] $_.DisplayName; Icon = $icon }
+                })
         }
         catch {
             # Left empty rather than failing the whole read: winget's answer is still worth having.
@@ -171,6 +186,7 @@ public sealed class WindowsAppService(AppCatalog catalog, PowerShellRunner? powe
 
         HashSet<string> ids = new(StringComparer.OrdinalIgnoreCase);
         Dictionary<string, string> foundAs = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, string> icons = new(StringComparer.OrdinalIgnoreCase);
 
         if (document is null)
         {
@@ -198,20 +214,37 @@ public sealed class WindowsAppService(AppCatalog catalog, PowerShellRunner? powe
 
             // The second source. A catalogue entry counts as installed when Windows' own list of
             // programs calls something by one of its names, whatever winget managed to correlate.
-            foreach (string displayName in Strings(root, "Programs"))
+            if (root.TryGetProperty("Programs", out JsonElement programs))
             {
-                foreach (CatalogApp app in _catalog.All)
+                foreach (JsonElement program in Rows(programs))
                 {
-                    if (app.IsCalled(displayName))
+                    string? displayName = WindowsChangeSources.Text(program, "Name");
+
+                    if (string.IsNullOrWhiteSpace(displayName))
                     {
+                        continue;
+                    }
+
+                    foreach (CatalogApp app in _catalog.All)
+                    {
+                        if (!app.IsCalled(displayName))
+                        {
+                            continue;
+                        }
+
                         ids.Add(app.Id);
                         foundAs[app.Id] = displayName;
+
+                        if (WindowsChangeSources.Text(program, "Icon") is { Length: > 0 } icon)
+                        {
+                            icons[app.Id] = icon;
+                        }
                     }
                 }
             }
         }
 
-        return new InstalledApps(ids, null, foundAs);
+        return new InstalledApps(ids, null, foundAs, icons);
     }
 
     /// <summary>
@@ -224,12 +257,7 @@ public sealed class WindowsAppService(AppCatalog catalog, PowerShellRunner? powe
             yield break;
         }
 
-        // PowerShell renders a one-element array as the element, so both shapes arrive.
-        IEnumerable<JsonElement> entries = list.ValueKind == JsonValueKind.Array
-            ? list.EnumerateArray()
-            : [list];
-
-        foreach (JsonElement entry in entries)
+        foreach (JsonElement entry in Rows(list))
         {
             if (entry.ValueKind == JsonValueKind.String && entry.GetString() is { Length: > 0 } value)
             {
@@ -237,6 +265,10 @@ public sealed class WindowsAppService(AppCatalog catalog, PowerShellRunner? powe
             }
         }
     }
+
+    /// <summary>PowerShell renders a one-element array as the element, so both shapes arrive.</summary>
+    private static IEnumerable<JsonElement> Rows(JsonElement list) =>
+        list.ValueKind == JsonValueKind.Array ? list.EnumerateArray() : [list];
 
     public Task<AppChangeResult> InstallAsync(string id, CancellationToken cancellationToken = default) =>
         ChangeAsync(id, install: true, cancellationToken);

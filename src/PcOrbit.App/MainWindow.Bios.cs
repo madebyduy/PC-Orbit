@@ -79,8 +79,6 @@ public partial class MainWindow
     private void ApplyBiosStrings()
     {
         BiosTitle.Text = T("app.bios.title");
-        BiosActionsTitle.Text = T("app.bios.actions");
-        BiosActionsHint.Text = T("app.bios.actionsHint");
         BiosEnterName.Text = T("app.bios.enter");
         BiosEnterNote.Text = T("app.bios.enterNote");
         BiosEnter.Content = T("app.bios.enterGo");

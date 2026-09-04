@@ -178,6 +178,76 @@ public sealed partial class XamlResourceTests
     [GeneratedRegex(@"(?:FindResource\(|Resources\[|\bB\(|\bG\(|\bGlyphOf\()""([^""]+)""")]
     private static partial Regex CodeResourceUse();
 
+    /// <summary>
+    /// A range control's Value binding names its mode.
+    /// </summary>
+    /// <remarks>
+    /// <c>ProgressBar.Value</c> and <c>Slider.Value</c> bind TwoWay by default, and a TwoWay binding
+    /// to a get-only property throws when the template is applied — which is when the page opens,
+    /// not when the app starts. That is how clicking Tune-up came to close the app: the cleanup rows
+    /// had grown a class with read-only properties and the bar under each one tried to write back.
+    /// Row models here are read-only by design, so every such binding says OneWay.
+    /// </remarks>
+    [Fact]
+    public void EveryRangeValueBindingNamesItsMode()
+    {
+        List<string> offending = [];
+
+        foreach (string file in XamlFiles())
+        {
+            foreach (Match match in RangeValueBinding().Matches(File.ReadAllText(file)))
+            {
+                if (!match.Value.Contains("Mode=", StringComparison.Ordinal))
+                {
+                    offending.Add($"{Path.GetFileName(file)}: {match.Value}");
+                }
+            }
+        }
+
+        Assert.True(
+            offending.Count == 0,
+            "These Value bindings default to TwoWay and will throw on a read-only row property the "
+            + "moment the page opens: " + string.Join("; ", offending));
+    }
+
+    [GeneratedRegex(@"<(?:ProgressBar|Slider)[^>]*?Value=""\{Binding[^}]*\}")]
+    private static partial Regex RangeValueBinding();
+
+    /// <summary>
+    /// A style's parent is defined above it.
+    /// </summary>
+    /// <remarks>
+    /// <c>BasedOn="{StaticResource X}"</c> is resolved while the dictionary is still being read, so
+    /// X has to exist already; a parent defined further down is "Cannot find resource named X" at
+    /// startup, before a single window opens. That is how a new block of styles inserted above the
+    /// button it inherited from took the whole app down on launch.
+    /// </remarks>
+    [Fact]
+    public void EveryStyleParentIsDefinedBeforeItsChild()
+    {
+        string app = File.ReadAllText(Path.Combine(AppDirectory, "App.xaml"));
+        List<string> forward = [];
+
+        foreach (Match match in BasedOnUse().Matches(app))
+        {
+            string parent = match.Groups[1].Value;
+            int definedAt = app.IndexOf($"x:Key=\"{parent}\"", StringComparison.Ordinal);
+
+            if (definedAt < 0 || definedAt > match.Index)
+            {
+                forward.Add(parent);
+            }
+        }
+
+        Assert.True(
+            forward.Count == 0,
+            "These styles inherit from a parent defined later in the file (or not at all), which fails "
+            + "at startup: " + string.Join(", ", forward.Distinct()));
+    }
+
+    [GeneratedRegex(@"BasedOn=""\{StaticResource\s+([^}]+)\}""")]
+    private static partial Regex BasedOnUse();
+
     [GeneratedRegex(@"x:Key=""([^""]+)""")]
     private static partial Regex KeyDefinition();
 
