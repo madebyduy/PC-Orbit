@@ -400,6 +400,228 @@ public sealed class StateCompilerGoldenTests
     /// A compact, readable rendering of the plan: stages, restarts, capability transitions and the
     /// chosen action. Everything a reviewer needs, nothing that changes between runs.
     /// </summary>
+    // ---------------------------------------------------------------- Windows 11 readiness
+
+    private static Outcome Windows11Outcome =>
+        ShippedData.Outcomes().Single(o => o.Id == "outcome.windows11-ready");
+
+    /// <summary>
+    /// Both firmware switches are off but the hardware is capable. One restart, two guided steps,
+    /// and nothing the user cannot actually do.
+    /// </summary>
+    [Fact]
+    public void AMachineWithSecureBootAndTheChipOffGetsOneFirmwareTrip()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.Windows10Desktop)
+            .With("firmware.boot-mode", CapabilityValue.Scalar("uefi"))
+            .With("firmware.tpm.version", CapabilityValue.Scalar("2.0"))
+            .With("firmware.tpm.ready", CapabilityValue.Disabled)
+            .With("firmware.secure-boot", CapabilityValue.Disabled)
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, Windows11Outcome);
+
+        Assert.Equal(
+            """
+            stage 1 -> restart Firmware
+              firmware.tpm.ready: disabled -> enabled  [firmware.tpm.enable.guided-generic / GuidedGeneric]
+              firmware.secure-boot: disabled -> enabled  [firmware.secure-boot.enable.guided-generic / GuidedGeneric]
+            """,
+            Describe(plan),
+            ignoreLineEndingDifferences: true);
+
+        // Spec 21.8: two firmware settings, one trip into the setup screen.
+        Assert.Equal(1, plan.Cost.Restarts);
+        Assert.Equal(2, plan.Cost.ManualSteps);
+        Assert.Equal(PlanOutlook.ReachableWithManualSteps, plan.Outlook);
+    }
+
+    /// <summary>
+    /// A machine booting in legacy mode cannot get there. Nothing in the catalog converts a disk to
+    /// GPT and this codebase is not going to add one, so the compiler says so instead of producing
+    /// a plan that would fail at the last step (spec 27.13).
+    /// </summary>
+    [Fact]
+    public void AMachineBootingInLegacyModeIsToldItCannotGetThere()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.Windows10Desktop)
+            .With("firmware.boot-mode", CapabilityValue.Scalar("legacy"))
+            .With("firmware.tpm.version", CapabilityValue.Scalar("2.0"))
+            .With("firmware.tpm.ready", CapabilityValue.Enabled)
+            .With("firmware.secure-boot", CapabilityValue.Disabled)
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, Windows11Outcome);
+
+        Assert.Equal(PlanOutlook.NotReachable, plan.Outlook);
+
+        // Two blockers, and both are worth saying. The first is that nothing can change the boot
+        // mode; the second is that Secure Boot depends on it, which is why the more obvious step
+        // is not offered either. Reporting only the first would leave the user wondering why they
+        // cannot simply turn Secure Boot on.
+        Assert.Equal(
+            ["action.unmet-precondition", "capability.no-action-exists"],
+            plan.Issues.Where(i => i.Severity == PlanIssueSeverity.Blocker).Select(i => i.Code).Order());
+
+        Assert.All(
+            plan.Issues.Where(i => i.Severity == PlanIssueSeverity.Blocker),
+            i => Assert.Equal("firmware.boot-mode", i.Capability?.Value));
+    }
+
+    /// <summary>
+    /// A TPM 1.2 chip is a hardware fact, not a setting. The plan must not imply otherwise.
+    /// </summary>
+    [Fact]
+    public void AMachineWithAnOldSecurityChipIsToldItCannotGetThere()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.Windows10Desktop)
+            .With("firmware.boot-mode", CapabilityValue.Scalar("uefi"))
+            .With("firmware.tpm.version", CapabilityValue.Scalar("1.2"))
+            .With("firmware.tpm.ready", CapabilityValue.Enabled)
+            .With("firmware.secure-boot", CapabilityValue.Enabled)
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, Windows11Outcome);
+
+        Assert.Equal(PlanOutlook.NotReachable, plan.Outlook);
+        Assert.Contains(plan.Issues, i => i.Capability?.Value == "firmware.tpm.version");
+    }
+
+    [Fact]
+    public void AMachineThatAlreadyMeetsTheRequirementsGetsNoPlan()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.Windows10Desktop)
+            .With("firmware.boot-mode", CapabilityValue.Scalar("uefi"))
+            .With("firmware.tpm.version", CapabilityValue.Scalar("2.0"))
+            .With("firmware.tpm.ready", CapabilityValue.Enabled)
+            .With("firmware.secure-boot", CapabilityValue.Enabled)
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, Windows11Outcome);
+
+        Assert.Equal(PlanOutlook.AlreadySatisfied, plan.Outlook);
+        Assert.Empty(plan.Steps);
+    }
+
+    /// <summary>
+    /// "We could not read your TPM version" and "your TPM is too old" are different sentences that
+    /// send a person to different places — one of them to a shop. The compiler must not collapse
+    /// the first into the second just because neither produces a step (spec 6.6, 27.13).
+    /// </summary>
+    [Fact]
+    public void AnUnreadableRequirementWithNoActionIsNotReportedAsIneligibleHardware()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.Windows10Desktop)
+            .With("firmware.boot-mode", CapabilityValue.Scalar("uefi"))
+            .WithUnknown("firmware.tpm.version", "Win32_Tpm needs administrator rights")
+            .With("firmware.tpm.ready", CapabilityValue.Enabled)
+            .With("firmware.secure-boot", CapabilityValue.Enabled)
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, Windows11Outcome);
+
+        PlanIssue blocker = Assert.Single(plan.Issues, i => i.Severity == PlanIssueSeverity.Blocker);
+
+        Assert.Equal("capability.unreadable-and-unwritable", blocker.Code);
+        Assert.DoesNotContain("Nothing in the action catalog", blocker.Detail, StringComparison.Ordinal);
+    }
+
+    /// <summary>The same shape, read successfully, keeps the plain "no action exists" wording.</summary>
+    [Fact]
+    public void ARequirementReadAsFailingKeepsThePlainNoActionWording()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.Windows10Desktop)
+            .With("firmware.boot-mode", CapabilityValue.Scalar("uefi"))
+            .With("firmware.tpm.version", CapabilityValue.Scalar("1.2"))
+            .With("firmware.tpm.ready", CapabilityValue.Enabled)
+            .With("firmware.secure-boot", CapabilityValue.Enabled)
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, Windows11Outcome);
+
+        Assert.Equal(
+            "capability.no-action-exists",
+            Assert.Single(plan.Issues, i => i.Severity == PlanIssueSeverity.Blocker).Code);
+    }
+
+    // ---------------------------------------------------------------- snapshot freshness
+
+    /// <summary>
+    /// A plan compiled from an old scan describes a machine that may have moved on, and the plan
+    /// hash would lock that stale picture in for approval. It says so (ADR 0004).
+    /// </summary>
+    [Fact]
+    public void APlanCompiledFromAStaleScanSaysSo()
+    {
+        var clock = new FakeClock();
+
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.AsusAmdDesktop)
+            .With("cpu.virtualization", CapabilityValue.Supported)
+            .With("firmware.cpu.virtualization", CapabilityValue.Enabled)
+            .With("windows.feature.virtual-machine-platform", CapabilityValue.Enabled)
+            .With("windows.feature.wsl", CapabilityValue.Enabled)
+            .With("wsl.default-version", CapabilityValue.Scalar("1"))
+            .Build();
+
+        clock.Advance(TimeSpan.FromHours(3));
+
+        var compiler = new StateCompiler(Graph, Catalog, CompilerOptions.Default, clock, new SequentialIds());
+        Plan plan = compiler.Compile(snapshot, DockerOutcome);
+
+        PlanIssue stale = Assert.Single(plan.Issues, i => i.Code == "snapshot.stale");
+        Assert.Equal(PlanIssueSeverity.Warning, stale.Severity);
+
+        // A warning, not a blocker: the engine still verifies against the live machine, so a stale
+        // scan makes the preview misleading rather than the apply unsafe.
+        Assert.False(plan.HasBlockers);
+        Assert.Single(plan.Steps);
+    }
+
+    [Fact]
+    public void APlanCompiledFromAFreshScanSaysNothingAboutStaleness()
+    {
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.AsusAmdDesktop)
+            .With("cpu.virtualization", CapabilityValue.Supported)
+            .With("firmware.cpu.virtualization", CapabilityValue.Enabled)
+            .With("windows.feature.virtual-machine-platform", CapabilityValue.Enabled)
+            .With("windows.feature.wsl", CapabilityValue.Enabled)
+            .With("wsl.default-version", CapabilityValue.Scalar("1"))
+            .Build();
+
+        Plan plan = NewCompiler().Compile(snapshot, DockerOutcome);
+
+        Assert.DoesNotContain(plan.Issues, i => i.Code == "snapshot.stale");
+    }
+
+    /// <summary>
+    /// Replaying a stored snapshot on purpose — a support engineer reading an old plan — must be
+    /// able to switch the check off rather than being told it is stale on every line.
+    /// </summary>
+    [Fact]
+    public void TheFreshnessCheckCanBeSwitchedOffForADeliberateReplay()
+    {
+        var clock = new FakeClock();
+
+        StateSnapshot snapshot = SnapshotBuilder.For(Machines.AsusAmdDesktop)
+            .With("cpu.virtualization", CapabilityValue.Supported)
+            .With("firmware.cpu.virtualization", CapabilityValue.Enabled)
+            .With("windows.feature.virtual-machine-platform", CapabilityValue.Enabled)
+            .With("windows.feature.wsl", CapabilityValue.Enabled)
+            .With("wsl.default-version", CapabilityValue.Scalar("1"))
+            .Build();
+
+        clock.Advance(TimeSpan.FromDays(30));
+
+        var compiler = new StateCompiler(
+            Graph,
+            Catalog,
+            CompilerOptions.Default with { MaxSnapshotAge = null },
+            clock,
+            new SequentialIds());
+
+        Assert.DoesNotContain(compiler.Compile(snapshot, DockerOutcome).Issues, i => i.Code == "snapshot.stale");
+    }
+
     private static string Describe(Plan plan)
     {
         var text = new StringBuilder();

@@ -249,6 +249,22 @@ public static class Machines
         IsLaptop: true,
         IsVirtualMachine: false);
 
+    /// <summary>
+    /// A Windows 10 machine, for the rules that only have anything to say before the upgrade.
+    /// </summary>
+    public static MachineIdentity Windows10Desktop { get; } = new(
+        SystemVendor: "Micro-Star International Co., Ltd.",
+        SystemModel: "MS-7C56",
+        BaseBoardVendor: "Micro-Star International Co., Ltd.",
+        BaseBoardProduct: "B550-A PRO",
+        BiosVersion: "1.90",
+        CpuName: "AMD Ryzen 5 3600 6-Core Processor",
+        CpuVendor: CpuVendor.Amd,
+        OsBuild: 19045,
+        OsEdition: "Core",
+        IsLaptop: false,
+        IsVirtualMachine: false);
+
     public static MachineIdentity VirtualMachine { get; } = new(
         SystemVendor: "VMware, Inc.",
         SystemModel: "VMware Virtual Platform",

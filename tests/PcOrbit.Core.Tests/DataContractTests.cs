@@ -349,10 +349,24 @@ public sealed class GuideSelectionTests
     private static GuideData FirmwareGuide =>
         ShippedData.Guides()["guide.firmware.virtualization"];
 
+    /// <summary>A date inside every shipped pack's life, so these tests are about selection.</summary>
+    private static DateOnly Today => new(2026, 9, 4);
+
+    /// <summary>
+    /// The entry for this machine, asserting there is one. Selection returns null only for an
+    /// expired pack, which these tests are not about — <see cref="GuidePackExpiryTests"/> is.
+    /// </summary>
+    private static GuideEntry Select(MachineIdentity machine)
+    {
+        GuideEntry? entry = FirmwareGuide.SelectFor(machine, Today);
+        Assert.NotNull(entry);
+        return entry;
+    }
+
     [Fact]
     public void PicksTheAmdWordingForAnAmdBoard()
     {
-        GuideEntry entry = FirmwareGuide.SelectFor(Machines.AsusAmdDesktop);
+        GuideEntry entry = Select(Machines.AsusAmdDesktop);
 
         Assert.Equal("SVM Mode", entry.SettingName);
         Assert.Contains("CPU Configuration", entry.MenuPath);
@@ -371,7 +385,7 @@ public sealed class GuideSelectionTests
             CpuName = "Intel(R) Core(TM) i7-13700K",
         };
 
-        GuideEntry entry = FirmwareGuide.SelectFor(asusIntel);
+        GuideEntry entry = Select(asusIntel);
 
         Assert.Contains("Virtualization Technology", entry.SettingName, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("SVM", entry.SettingName, StringComparison.OrdinalIgnoreCase);
@@ -386,7 +400,7 @@ public sealed class GuideSelectionTests
             BaseBoardVendor = "Some Vendor Nobody Has Heard Of",
         };
 
-        GuideEntry entry = FirmwareGuide.SelectFor(obscure);
+        GuideEntry entry = Select(obscure);
 
         Assert.Equal(GuideTier.GuidedGeneric, entry.Tier);
         Assert.Equal("guide.note.unknown-model", entry.NoteKey);
@@ -400,17 +414,17 @@ public sealed class GuideSelectionTests
 
         Assert.Equal(
             SupportTier.GuidedGeneric,
-            SupportTierResolver.Resolve(Machines.AsusAmdDesktop, catalog, FirmwareGuide));
+            SupportTierResolver.Resolve(Machines.AsusAmdDesktop, catalog, FirmwareGuide, Today));
 
         // Dell too: the vendor adapter is not verified, so no machine gets Tier 1 today.
         Assert.Equal(
             SupportTier.GuidedGeneric,
-            SupportTierResolver.Resolve(Machines.DellIntelLaptop, catalog, FirmwareGuide));
+            SupportTierResolver.Resolve(Machines.DellIntelLaptop, catalog, FirmwareGuide, Today));
 
         // A virtual machine has no firmware setup a user can reach.
         Assert.Equal(
             SupportTier.ReadOnly,
-            SupportTierResolver.Resolve(Machines.VirtualMachine, catalog, FirmwareGuide));
+            SupportTierResolver.Resolve(Machines.VirtualMachine, catalog, FirmwareGuide, Today));
     }
 
     [Fact]
@@ -420,7 +434,7 @@ public sealed class GuideSelectionTests
 
         Assert.Equal(
             SupportTier.ReadOnly,
-            SupportTierResolver.Resolve(unknown, ShippedData.Catalog(), FirmwareGuide));
+            SupportTierResolver.Resolve(unknown, ShippedData.Catalog(), FirmwareGuide, Today));
     }
 }
 
