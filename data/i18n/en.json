@@ -731,6 +731,26 @@
     "cleanup.why.bin.recycle": "This is your own undo for deleted files. Empty it from the Recycle Bin itself, where you can see what is in it first.",
     "cleanup.why.cache.installers": "Programs use these to repair themselves. Removing them is what makes Repair stop working months later.",
     "cleanup.why.cache.delivery": "Windows shares update files from here. It clears it on its own schedule.",
-    "cleanup.why.windows.old": "The Windows you had before the last upgrade, and the only way back to it. Windows removes it itself after ten days."
+    "cleanup.why.windows.old": "The Windows you had before the last upgrade, and the only way back to it. Windows removes it itself after ten days.",
+    "app.tab.bios": "BIOS",
+    "app.bios.sub": "The firmware underneath Windows: what it is set to, and how to get into it.",
+    "app.bios.title": "This PC’s firmware",
+    "app.bios.ageUnknown": "The release date of this firmware could not be read, so its age is not known.",
+    "app.bios.ageFine": "Released {days} days ago. Recent enough that there is nothing to chase.",
+    "app.bios.ageOld": "Released about {years} years ago. Not a fault on its own — but firmware this age predates fixes that were published since, so it is worth a look at the manufacturer’s page.",
+    "app.bios.actions": "What you can do from here",
+    "app.bios.actionsHint": "Two things, and only two. Everything else on this page is a reading.",
+    "app.bios.enter": "Restart into the BIOS settings screen",
+    "app.bios.enterNote": "Saves you catching the right key in the second it is offered. Windows asks the firmware to open its own settings on the next boot.",
+    "app.bios.enterGo": "Restart",
+    "app.bios.enterConfirm": "Restart into the BIOS settings screen?\n\nThe PC restarts in ten seconds and comes up in the firmware’s own screen instead of Windows. Save your work first. Windows will not come back until you leave that screen.\n\nChanged your mind during the countdown? Run: shutdown /a",
+    "app.bios.enterStarted": "Restarting in ten seconds. To stop it, run: shutdown /a",
+    "app.bios.enterFailed": "The restart could not be started: {problem}",
+    "app.bios.needsAdmin": "Restarting into the firmware needs administrator rights. Use “Run as administrator” at the bottom of the sidebar, then come back to this page.",
+    "app.bios.vendorNote": "Firmware updates come from the manufacturer, or through Windows Update when the manufacturer publishes them there. This opens their support site — never a guessed link.",
+    "app.bios.vendorGo": "Open",
+    "app.bios.vendorUnknown": "Manufacturer not readable",
+    "app.bios.writeNote": "This app does not change BIOS settings, and will not pretend to. Doing that needs an interface the manufacturer provides, only some machines have one, and a wrong write there is the kind that stops a PC from starting. Everything above is read, not set.",
+    "app.bios.state": "How the firmware is set"
   }
 }

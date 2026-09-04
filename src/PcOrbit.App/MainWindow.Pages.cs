@@ -198,6 +198,7 @@ public partial class MainWindow
         TimelineGapTitle.Text = T("app.timeline.gap");
 
         ApplyAppsPageStrings();
+        ApplyBiosStrings();
 
         CompareRun.Content = T("app.compare.run");
         CompareChangedTitle.Text = T("app.compare.changed");
@@ -338,6 +339,10 @@ public partial class MainWindow
         else if (ReferenceEquals(page.View, ViewCompare))
         {
             await RenderCompareAsync();
+        }
+        else if (ReferenceEquals(page.View, ViewBios))
+        {
+            RenderBios();
         }
         else if (ReferenceEquals(page.View, ViewApps))
         {

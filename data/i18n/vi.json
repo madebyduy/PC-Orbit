@@ -731,6 +731,26 @@
     "cleanup.why.bin.recycle": "Đây là chỗ hoàn tác của chính bạn cho tệp đã xoá. Hãy dọn từ Thùng rác, nơi bạn nhìn thấy bên trong có gì trước khi xoá.",
     "cleanup.why.cache.installers": "Các phần mềm dùng chỗ này để tự sửa chữa. Xoá đi là vài tháng sau chức năng Repair không chạy nữa.",
     "cleanup.why.cache.delivery": "Windows dùng chỗ này để chia sẻ tệp cập nhật. Nó tự dọn theo lịch riêng.",
-    "cleanup.why.windows.old": "Bản Windows trước lần nâng cấp gần nhất, và là đường duy nhất quay lại. Windows tự xoá sau mười ngày."
+    "cleanup.why.windows.old": "Bản Windows trước lần nâng cấp gần nhất, và là đường duy nhất quay lại. Windows tự xoá sau mười ngày.",
+    "app.tab.bios": "BIOS",
+    "app.bios.sub": "Phần firmware nằm dưới Windows: đang đặt thế nào, và vào đó bằng cách nào.",
+    "app.bios.title": "Firmware của máy này",
+    "app.bios.ageUnknown": "Không đọc được ngày phát hành của firmware này, nên chưa biết nó cũ tới đâu.",
+    "app.bios.ageFine": "Phát hành cách đây {days} ngày. Đủ mới, không có gì phải theo đuổi.",
+    "app.bios.ageOld": "Phát hành cách đây khoảng {years} năm. Bản thân điều đó chưa phải lỗi — nhưng firmware cũ tới mức này thì ra trước các bản vá đã công bố sau đó, nên đáng ghé trang của hãng xem.",
+    "app.bios.actions": "Ở đây bạn làm được gì",
+    "app.bios.actionsHint": "Hai việc, và chỉ hai. Mọi thứ còn lại trên trang này là số đọc được.",
+    "app.bios.enter": "Khởi động lại vào thẳng màn hình BIOS",
+    "app.bios.enterNote": "Khỏi phải canh đúng phím trong một giây ít ỏi. Windows yêu cầu firmware tự mở màn hình cài đặt của nó ở lần khởi động kế tiếp.",
+    "app.bios.enterGo": "Khởi động lại",
+    "app.bios.enterConfirm": "Khởi động lại vào màn hình BIOS?\n\nMáy sẽ khởi động lại sau mười giây và vào thẳng màn hình của firmware thay vì Windows. Hãy lưu việc đang làm trước. Windows chỉ quay lại khi bạn thoát khỏi màn hình đó.\n\nĐổi ý trong lúc đếm ngược? Chạy: shutdown /a",
+    "app.bios.enterStarted": "Sẽ khởi động lại sau mười giây. Muốn dừng, chạy: shutdown /a",
+    "app.bios.enterFailed": "Không khởi động lại được: {problem}",
+    "app.bios.needsAdmin": "Vào firmware cần quyền quản trị. Bấm “Chạy với quyền quản trị” ở cuối thanh bên, rồi quay lại trang này.",
+    "app.bios.vendorNote": "Bản cập nhật firmware đến từ hãng, hoặc qua Windows Update khi hãng công bố ở đó. Nút này mở trang hỗ trợ của họ — không bao giờ là một đường dẫn đoán ra.",
+    "app.bios.vendorGo": "Mở",
+    "app.bios.vendorUnknown": "Không đọc được tên hãng",
+    "app.bios.writeNote": "Ứng dụng này không đổi thiết lập BIOS, và cũng không giả vờ đổi được. Muốn làm vậy cần một giao diện do hãng cung cấp, chỉ một số máy có, và ghi sai chỗ đó là loại sai khiến máy không khởi động lại được. Mọi thứ ở trên là đọc, không phải đặt.",
+    "app.bios.state": "Firmware đang được đặt thế nào"
   }
 }

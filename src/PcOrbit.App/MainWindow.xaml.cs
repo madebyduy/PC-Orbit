@@ -435,6 +435,7 @@ public partial class MainWindow : Window
             new(ViewStatus, "app.tab.status", "app.status.sub"),
             new(ViewHardware, "app.tab.hardware", "app.hardware.sub"),
             new(ViewPerf, "app.tab.perf", "app.perf.sub"),
+            new(ViewBios, "app.tab.bios", "app.bios.sub"),
         ]),
 
         new(NavProtect, "app.section.protect",
@@ -1177,6 +1178,10 @@ public partial class MainWindow : Window
         ReadingsTitle.Text = T("app.status.readingsPlain");
 
         ReadingsList.ItemsSource = _snapshot.Readings
+            // The firmware readings live on the BIOS page. Filtered here rather than duplicated
+            // there, from the same predicate that page selects with, so a capability cannot land on
+            // both pages or on neither.
+            .Where(r => !IsFirmware(r.Capability))
             .Select(r =>
             {
                 bool known = r.Value.IsKnown;

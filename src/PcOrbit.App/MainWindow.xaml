@@ -1273,6 +1273,100 @@
           </StackPanel>
         </ScrollViewer>
 
+        <!-- ================================= BIOS -->
+        <!--
+          Everything about the firmware in one place, including the readings that used to sit on
+          the Readings page among the operating system's. They are not there any more: two pages
+          showing the same row is how a tool starts feeling like it is padding itself out.
+        -->
+        <ScrollViewer x:Name="ViewBios" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
+          <StackPanel>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <DockPanel>
+                <Border DockPanel.Dock="Left" Width="44" Height="44" CornerRadius="12" Background="#E0E7FF"
+                        VerticalAlignment="Top">
+                  <TextBlock Text="{StaticResource GlyphHardware}" Style="{StaticResource Glyph}"
+                             FontSize="20" Foreground="#4338CA" />
+                </Border>
+                <StackPanel Margin="15,0,0,0">
+                  <TextBlock x:Name="BiosTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="BiosVersion" Style="{StaticResource BigValue}" FontSize="21" Margin="0,5,0,0" />
+                  <TextBlock x:Name="BiosAge" Style="{StaticResource Sub}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                </StackPanel>
+              </DockPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="BiosActionsTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,4" />
+                <TextBlock x:Name="BiosActionsHint" Style="{StaticResource Sub}" TextWrapping="Wrap"
+                           Margin="0,0,0,13" />
+
+                <Border Style="{StaticResource SettingsRow}" Padding="14,12" Background="{StaticResource RowBg}">
+                  <DockPanel>
+                    <Button DockPanel.Dock="Right" x:Name="BiosEnter" Style="{StaticResource RowButton}"
+                            VerticalAlignment="Center" Click="OnEnterFirmware" />
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,14,0">
+                      <TextBlock x:Name="BiosEnterName" FontSize="13" FontWeight="SemiBold"
+                                 Foreground="{StaticResource Ink}" />
+                      <TextBlock x:Name="BiosEnterNote" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                 TextWrapping="Wrap" />
+                    </StackPanel>
+                  </DockPanel>
+                </Border>
+
+                <Border Style="{StaticResource SettingsRow}" Padding="14,12" Margin="0,8,0,0">
+                  <DockPanel>
+                    <Button DockPanel.Dock="Right" x:Name="BiosVendor" Style="{StaticResource RowButton}"
+                            VerticalAlignment="Center" Click="OnOpenVendorSupport" />
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,14,0">
+                      <TextBlock x:Name="BiosVendorName" FontSize="13" FontWeight="SemiBold"
+                                 Foreground="{StaticResource Ink}" />
+                      <TextBlock x:Name="BiosVendorNote" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                 TextWrapping="Wrap" />
+                    </StackPanel>
+                  </DockPanel>
+                </Border>
+
+                <Border Background="#FEF3C7" CornerRadius="9" Padding="13,11" Margin="0,12,0,0">
+                  <TextBlock x:Name="BiosWriteNote" Style="{StaticResource Sub}" TextWrapping="Wrap" />
+                </Border>
+              </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,10">
+                  <TextBlock x:Name="BiosStateTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="BiosStateHint" Style="{StaticResource Tiny}" HorizontalAlignment="Right" />
+                </DockPanel>
+                <ItemsControl x:Name="BiosList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,12" Background="{Binding RowBg}">
+                        <DockPanel>
+                          <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Glyph}"
+                                     FontSize="16" Foreground="{Binding Tone}" VerticalAlignment="Center" />
+                          <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontSize="13"
+                                     FontWeight="SemiBold" Foreground="{Binding Tone}"
+                                     VerticalAlignment="Center" Margin="14,0,0,0" />
+                          <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                       TextWrapping="Wrap" />
+                          </StackPanel>
+                        </DockPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+
         <!-- ================================= APP CATALOGUE -->
         <!--
           A curated list, not a search box. The catalogue is the allowlist: an id that is not in
