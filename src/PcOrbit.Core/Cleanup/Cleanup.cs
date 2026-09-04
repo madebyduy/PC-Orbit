@@ -11,11 +11,32 @@ public enum CleanupCategory
     /// <summary>Explorer's thumbnail and icon caches. Rebuilt on demand.</summary>
     ThumbnailCache,
 
+    /// <summary>A web browser's on-disk cache. Never its cookies, history or saved passwords.</summary>
+    BrowserCache,
+
+    /// <summary>Compiled shader caches kept by DirectX and GPU drivers.</summary>
+    ShaderCache,
+
+    /// <summary>Installers Windows Update already applied.</summary>
+    UpdateCache,
+
+    /// <summary>Servicing and setup logs Windows keeps indefinitely.</summary>
+    WindowsLogs,
+
+    /// <summary>Package caches kept by developer tools.</summary>
+    DeveloperCache,
+
+    /// <summary>Crash dumps, which may still be worth reading before they go.</summary>
+    CrashDumps,
+
     /// <summary>Queued Windows Error Reporting payloads that were never sent.</summary>
     ErrorReports,
 
     /// <summary>Delivery Optimization's peer-to-peer update cache.</summary>
     UpdateDeliveryCache,
+
+    /// <summary>Installer payloads kept so applications can repair themselves.</summary>
+    InstallerCache,
 
     /// <summary>The Recycle Bin. Reported, never emptied by this product.</summary>
     RecycleBin,
@@ -25,21 +46,34 @@ public enum CleanupCategory
 /// How far this product is willing to go with a category.
 /// </summary>
 /// <remarks>
-/// The three-way split the research asks for (§8.1), and the middle one is the important one: a
-/// category is only ever automated when every file in it is regenerable <em>and</em> restorable
-/// from quarantine. Anything else is shown and explained, never actioned.
+/// <para>
+/// Three levels rather than two, because collapsing them costs the user something real. A browser
+/// cache is rebuilt the next time a page loads: holding it in quarantine for thirty days means the
+/// disk does not actually get smaller, which is the one thing the person pressing the button came
+/// for. A temp file might be the only copy of something, and there the wait is the point.
+/// </para>
+/// <para>
+/// So <see cref="Regenerable"/> is deleted and the space is free immediately, and
+/// <see cref="Reclaimable"/> goes to quarantine and comes back if it was needed.
+/// </para>
 /// </remarks>
 public enum CleanupTrust
 {
-    /// <summary>Regenerable by Windows, and putting the file back restores the previous state exactly.</summary>
-    Reclaimable = 0,
+    /// <summary>
+    /// Windows or the application rebuilds this from scratch on demand. Deleted outright: there is
+    /// nothing an undo could restore that will not simply reappear.
+    /// </summary>
+    Regenerable = 0,
 
-    /// <summary>Real space, but removing it costs the user something they may want. Reported only.</summary>
+    /// <summary>Safe to remove, but moved to quarantine first so it can come back.</summary>
+    Reclaimable,
+
+    /// <summary>Real space, but removing it costs the user something. Reported only.</summary>
     ReportOnly,
 
     /// <summary>
-    /// Never touched by this product at any trust level: WinSxS, DriverStore, the recovery
-    /// partition, restore points, <c>Windows.old</c>.
+    /// Never touched by this product at any level: WinSxS, DriverStore, the recovery partition,
+    /// restore points, <c>Windows.old</c>.
     /// </summary>
     Protected,
 }
@@ -61,8 +95,14 @@ public sealed record CleanupCandidate(
 {
     public double MegaBytes => Bytes / 1024d / 1024d;
 
-    /// <summary>Only a measured, restorable candidate with something in it can be acted on.</summary>
-    public bool CanReclaim => Trust == CleanupTrust.Reclaimable && Bytes > 0 && FileCount > 0;
+    /// <summary>Only a measured candidate with something in it can be acted on.</summary>
+    public bool CanReclaim =>
+        Trust is CleanupTrust.Regenerable or CleanupTrust.Reclaimable && Bytes > 0 && FileCount > 0;
+
+    /// <summary>
+    /// True when removing this frees the disk at once, rather than when the retention window closes.
+    /// </summary>
+    public bool FreesSpaceNow => Trust == CleanupTrust.Regenerable;
 }
 
 /// <param name="Problems">
@@ -77,6 +117,9 @@ public sealed record CleanupSurvey(
 
     public long ReclaimableBytes => Candidates.Where(c => c.CanReclaim).Sum(c => c.Bytes);
 
+    /// <summary>Of that, the part the disk gets back the moment the button is pressed.</summary>
+    public long ImmediateBytes => Candidates.Where(c => c.CanReclaim && c.FreesSpaceNow).Sum(c => c.Bytes);
+
     public long ReportedBytes => Candidates.Where(c => !c.CanReclaim).Sum(c => c.Bytes);
 
     public bool IsComplete => Problems.Count == 0;
@@ -87,6 +130,13 @@ public interface ICleanupScanner
 {
     Task<CleanupSurvey> SurveyAsync(CancellationToken cancellationToken = default);
 }
+
+/// <param name="Freed">Bytes the disk actually got back.</param>
+/// <param name="Locked">
+/// Files something else had open. Expected — a browser holds its own cache — and reported rather
+/// than retried, because the honest total is the one that excludes them.
+/// </param>
+public sealed record CleanupDeletion(long Freed, int Removed, int Locked, IReadOnlyList<string> Failures);
 
 /// <param name="OriginalPath">Where the file came from, so restore puts it back exactly.</param>
 public sealed record QuarantinedFile(string OriginalPath, string StoredName, long Bytes);
@@ -139,9 +189,33 @@ public interface IQuarantineStore
     TimeSpan Retention { get; }
 
     /// <summary>Moves the files of these candidates into the store. Never throws for one bad file.</summary>
+    /// <remarks>Refuses anything that is not <see cref="CleanupTrust.Reclaimable"/>.</remarks>
     Task<QuarantineBatch> QuarantineAsync(
         IReadOnlyList<CleanupCandidate> candidates,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes regenerable caches outright and returns the bytes the disk got back.
+    /// </summary>
+    /// <remarks>
+    /// The second route, and the reason the disk actually shrinks when the button is pressed. There
+    /// is nothing here an undo could usefully restore: a browser cache is rebuilt by the next page
+    /// load, and holding it for thirty days would mean the space stayed spoken for while the user
+    /// looked at a number claiming otherwise. Refuses anything not marked
+    /// <see cref="CleanupTrust.Regenerable"/>.
+    /// </remarks>
+    Task<CleanupDeletion> DeleteRegenerableAsync(
+        IReadOnlyList<CleanupCandidate> candidates,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Empties the whole quarantine now, whatever its retention says.
+    /// </summary>
+    /// <remarks>
+    /// The user asking for their disk back before the window closes. It is theirs to ask, so long
+    /// as what they are giving up is stated first.
+    /// </remarks>
+    Task<long> PurgeAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Puts a batch back where it came from.</summary>
     Task<QuarantineRestore> RestoreAsync(string batchId, CancellationToken cancellationToken = default);

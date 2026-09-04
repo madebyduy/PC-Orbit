@@ -739,11 +739,13 @@ public static class Commands
 
             // Three states, not two. "We will not remove this" and "there is nothing here to
             // remove" are different facts, and collapsing them libels an empty folder.
-            string note = candidate.Trust != CleanupTrust.Reclaimable
+            string note = candidate.Trust is CleanupTrust.ReportOnly or CleanupTrust.Protected
                 ? output.Text("cli.clean.reportOnly")
-                : candidate.CanReclaim
-                    ? output.Text("cli.clean.reclaimable")
-                    : output.Text("cli.clean.alreadyClear");
+                : !candidate.CanReclaim
+                    ? output.Text("cli.clean.alreadyClear")
+                    : candidate.FreesSpaceNow
+                        ? output.Text("cli.clean.regenerable")
+                        : output.Text("cli.clean.reclaimable");
 
             Output.Line($"  {mark} {Truncate(label, 34),-34} {size,8} MB  {note}");
 
@@ -757,6 +759,7 @@ public static class Commands
         Output.Line();
         Output.Line("  " + output.Text("cli.clean.total", Output.Args(
             ("reclaimable", Output.Number((int)Math.Round(survey.ReclaimableBytes / 1024d / 1024d))),
+            ("now", Output.Number((int)Math.Round(survey.ImmediateBytes / 1024d / 1024d))),
             ("reported", Output.Number((int)Math.Round(survey.ReportedBytes / 1024d / 1024d))))));
 
         // A survey that could not read part of the disk is a floor, not a total, and says so.
@@ -786,18 +789,45 @@ public static class Commands
             return ExitCodes.NotReached;
         }
 
-        QuarantineBatch batch = await host.Quarantine.QuarantineAsync(actionable, ct).ConfigureAwait(false);
+        // Two routes, because the categories differ in what an undo could usefully restore.
+        List<CleanupCandidate> regenerable = [.. actionable.Where(c => c.FreesSpaceNow)];
+        List<CleanupCandidate> reclaimable = [.. actionable.Where(c => !c.FreesSpaceNow)];
 
         Output.Line();
-        Output.Line("  " + output.Text("cli.clean.done", Output.Args(
-            ("files", Output.Number(batch.Files.Count)),
-            ("mb", Output.Number((int)Math.Round(batch.Bytes / 1024d / 1024d))),
-            ("id", batch.Id),
-            ("expires", batch.ExpiresAt.LocalDateTime.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture)))));
 
-        foreach (string failure in batch.Failures.Take(5))
+        if (regenerable.Count > 0)
         {
-            Output.Line($"    - {failure}");
+            CleanupDeletion deletion = await host.Quarantine
+                .DeleteRegenerableAsync(regenerable, ct)
+                .ConfigureAwait(false);
+
+            Output.Line("  " + output.Text("cli.clean.freed", Output.Args(
+                ("mb", Output.Number((int)Math.Round(deletion.Freed / 1024d / 1024d))),
+                ("files", Output.Number(deletion.Removed)))));
+
+            // A running browser holds its own cache open. Saying so is the difference between an
+            // honest total and a number that quietly did not happen.
+            if (deletion.Locked > 0)
+            {
+                Output.Line("    " + output.Text("cli.clean.locked", Output.Args(
+                    ("count", Output.Number(deletion.Locked)))));
+            }
+        }
+
+        if (reclaimable.Count > 0)
+        {
+            QuarantineBatch batch = await host.Quarantine.QuarantineAsync(reclaimable, ct).ConfigureAwait(false);
+
+            Output.Line("  " + output.Text("cli.clean.done", Output.Args(
+                ("files", Output.Number(batch.Files.Count)),
+                ("mb", Output.Number((int)Math.Round(batch.Bytes / 1024d / 1024d))),
+                ("id", batch.Id),
+                ("expires", batch.ExpiresAt.LocalDateTime.ToString("yyyy-MM-dd", CultureInfo.CurrentCulture)))));
+
+            foreach (string failure in batch.Failures.Take(5))
+            {
+                Output.Line($"    - {failure}");
+            }
         }
 
         return ExitCodes.Ok;
@@ -823,6 +853,18 @@ public static class Commands
         ArgumentNullException.ThrowIfNull(host);
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(output);
+
+        // 'restore purge' — the user asking for their disk back before the window closes. Theirs
+        // to ask, so long as what they give up is said first.
+        if (options.FirstArgument == "purge")
+        {
+            long released = await host.Quarantine.PurgeAllAsync(ct).ConfigureAwait(false);
+
+            Output.Line(output.Text("cli.restore.purged", Output.Args(
+                ("mb", Output.Number((int)Math.Round(released / 1024d / 1024d))))));
+
+            return ExitCodes.Ok;
+        }
 
         if (options.FirstArgument is not { } batchId)
         {

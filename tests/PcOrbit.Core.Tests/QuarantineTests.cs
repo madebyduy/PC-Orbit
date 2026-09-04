@@ -46,8 +46,22 @@ public sealed class QuarantineTests : IDisposable
         }
     }
 
-    private WindowsQuarantineStore NewStore(FakeClock? clock = null, TimeSpan? retention = null) =>
-        new(_store, clock ?? new FakeClock(), new SequentialIds(), retention);
+    /// <summary>
+    /// A location table pointing at this test's scratch folder.
+    /// </summary>
+    /// <remarks>
+    /// The store now only touches folders named in the table it was given, which is why a test has
+    /// to supply one: a candidate carrying a path the table does not know is refused, and that
+    /// refusal is the point — it is what stops a caller pointing the deleter anywhere it likes.
+    /// </remarks>
+    private IReadOnlyList<CleanupLocation> Table(CleanupTrust trust) =>
+        [new CleanupLocation("temp.test", CleanupCategory.TemporaryFiles, trust, [_source])];
+
+    private WindowsQuarantineStore NewStore(
+        FakeClock? clock = null,
+        TimeSpan? retention = null,
+        CleanupTrust trust = CleanupTrust.Reclaimable) =>
+        new(_store, clock ?? new FakeClock(), new SequentialIds(), retention, Table(trust));
 
     private string WriteFile(string name, string content = "scratch")
     {
@@ -139,15 +153,85 @@ public sealed class QuarantineTests : IDisposable
     [Theory]
     [InlineData(CleanupTrust.ReportOnly)]
     [InlineData(CleanupTrust.Protected)]
-    public async Task ACandidateThisProductDoesNotRemoveIsRefused(CleanupTrust trust)
+    [InlineData(CleanupTrust.Regenerable)]
+    public async Task QuarantineRefusesEverythingThatIsNotReclaimable(CleanupTrust trust)
     {
         string file = WriteFile("keep.dat");
 
-        QuarantineBatch batch = await NewStore().QuarantineAsync([Candidate(trust)]);
+        QuarantineBatch batch = await NewStore(trust: trust).QuarantineAsync([Candidate(trust)]);
 
         Assert.Empty(batch.Files);
         Assert.True(File.Exists(file), "a refused candidate must be left exactly where it was");
         Assert.NotEmpty(batch.Failures);
+    }
+
+    // ---------------------------------------------------------------- the delete route
+
+    /// <summary>
+    /// The reason the disk actually shrinks. A browser cache is rebuilt by the next page load, so
+    /// holding it for thirty days would leave the space spoken for while the user reads a number
+    /// saying otherwise.
+    /// </summary>
+    [Fact]
+    public async Task ARegenerableCacheIsDeletedAndTheSpaceIsFreedAtOnce()
+    {
+        string file = WriteFile("chunk.bin", new string('x', 4096));
+
+        CleanupDeletion deletion = await NewStore(trust: CleanupTrust.Regenerable)
+            .DeleteRegenerableAsync([Candidate(CleanupTrust.Regenerable)]);
+
+        Assert.Equal(4096, deletion.Freed);
+        Assert.Equal(1, deletion.Removed);
+        Assert.False(File.Exists(file));
+    }
+
+    [Theory]
+    [InlineData(CleanupTrust.Reclaimable)]
+    [InlineData(CleanupTrust.ReportOnly)]
+    [InlineData(CleanupTrust.Protected)]
+    public async Task DeletingRefusesAnythingThatIsNotRegenerable(CleanupTrust trust)
+    {
+        string file = WriteFile("keep.dat");
+
+        CleanupDeletion deletion = await NewStore(trust: trust).DeleteRegenerableAsync([Candidate(trust)]);
+
+        Assert.Equal(0, deletion.Freed);
+        Assert.True(File.Exists(file), "only a regenerable cache may be deleted outright");
+        Assert.NotEmpty(deletion.Failures);
+    }
+
+    /// <summary>
+    /// A candidate naming a location the table does not know is refused. Without this the deleter
+    /// would go wherever its caller pointed it.
+    /// </summary>
+    [Fact]
+    public async Task ALocationTheTableDoesNotKnowIsRefused()
+    {
+        string file = WriteFile("keep.dat");
+
+        CleanupCandidate stranger = Candidate(CleanupTrust.Regenerable) with { Id = "somewhere.else" };
+
+        CleanupDeletion deletion = await NewStore(trust: CleanupTrust.Regenerable)
+            .DeleteRegenerableAsync([stranger]);
+
+        Assert.Equal(0, deletion.Freed);
+        Assert.True(File.Exists(file));
+        Assert.NotEmpty(deletion.Failures);
+    }
+
+    /// <summary>The user asking for their disk back before the window closes.</summary>
+    [Fact]
+    public async Task PurgingEmptiesTheWholeStoreWhateverItsRetentionSays()
+    {
+        WriteFile("old.tmp", new string('x', 2048));
+
+        WindowsQuarantineStore store = NewStore(retention: TimeSpan.FromDays(30));
+        await store.QuarantineAsync([Candidate()]);
+
+        long released = await store.PurgeAllAsync();
+
+        Assert.Equal(2048, released);
+        Assert.Empty(await store.ListAsync());
     }
 
     // ---------------------------------------------------------------- retention

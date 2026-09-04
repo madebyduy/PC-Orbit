@@ -31,12 +31,21 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
     private readonly IClock _clock;
     private readonly IIdGenerator _ids;
 
+    /// <summary>
+    /// The same table the scanner measures from, so the two cannot disagree about which folder a
+    /// candidate means. Injectable for the same reason it is on the scanner.
+    /// </summary>
+    private readonly IReadOnlyList<CleanupLocation> _locations;
+
     public WindowsQuarantineStore(
         string? root = null,
         IClock? clock = null,
         IIdGenerator? ids = null,
-        TimeSpan? retention = null)
+        TimeSpan? retention = null,
+        IReadOnlyList<CleanupLocation>? locations = null)
     {
+        _locations = locations ?? WindowsCleanupScanner.Locations(WindowsCleanupScanner.DefaultMinimumAge);
+
         _root = root ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "PC Orbit",
@@ -73,15 +82,16 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
 
         foreach (CleanupCandidate candidate in candidates)
         {
-            if (!candidate.CanReclaim)
+            // Refused here as well as in the UI. Quarantine is for what can usefully come back;
+            // a regenerable cache goes through DeleteRegenerableAsync, and anything else is a bug
+            // in the caller that the store is the last place to catch.
+            if (candidate.Trust != CleanupTrust.Reclaimable || !candidate.CanReclaim)
             {
-                // Refused here as well as in the UI. A caller that hands us a Protected or
-                // ReportOnly candidate has a bug, and the store is the last place to catch it.
-                failures.Add($"'{candidate.Id}' is {candidate.Trust} and was not touched.");
+                failures.Add($"'{candidate.Id}' is {candidate.Trust} and was not moved to quarantine.");
                 continue;
             }
 
-            foreach (string file in FilesOf(candidate, failures))
+            foreach (FileInfo file in FilesOf(candidate, failures))
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -89,19 +99,19 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
 
                 try
                 {
-                    bytes = new FileInfo(file).Length;
+                    bytes = file.Length;
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
                     continue;
                 }
 
-                string storedName = string.Create(CultureInfo.InvariantCulture, $"{index:D6}{Path.GetExtension(file)}");
+                string storedName = string.Create(CultureInfo.InvariantCulture, $"{index:D6}{file.Extension}");
                 string destination = Path.Combine(batchPath, storedName);
 
-                if (TryMove(file, destination, failures))
+                if (TryMove(file.FullName, destination, failures))
                 {
-                    stored.Add(new QuarantinedFile(file, storedName, bytes));
+                    stored.Add(new QuarantinedFile(file.FullName, storedName, bytes));
                     index++;
                 }
             }
@@ -220,57 +230,105 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
     // ---------------------------------------------------------------- internals
 
     /// <summary>
-    /// The files a candidate stands for. Recomputed here rather than carried on the candidate: the
-    /// survey may be minutes old, and moving a file that appeared since it ran is not something the
-    /// user previewed.
+    /// The files a candidate stands for, recomputed at the moment of the change.
     /// </summary>
-    private static IEnumerable<string> FilesOf(CleanupCandidate candidate, List<string> failures)
+    /// <remarks>
+    /// Recomputed rather than carried on the candidate: the survey may be minutes old, and moving a
+    /// file that appeared since it ran is not something the user previewed. The location table is
+    /// the single place a path is written down, so the scanner and this cannot disagree.
+    /// </remarks>
+    private IEnumerable<FileInfo> FilesOf(CleanupCandidate candidate, List<string> failures)
     {
-        if (candidate.Category == CleanupCategory.ThumbnailCache)
+        CleanupLocation? location = _locations.FirstOrDefault(l => l.Id == candidate.Id);
+
+        if (location is null)
         {
-            foreach (string pattern in new[] { "thumbcache_*.db", "iconcache_*.db" })
+            failures.Add($"'{candidate.Id}' is not a location this build knows how to clean.");
+            yield break;
+        }
+
+        DateTime cutoff = location.MinimumAge is { } age ? DateTime.Now - age : DateTime.MaxValue;
+
+        foreach (string path in location.Paths.Where(Directory.Exists))
+        {
+            foreach (FileInfo info in WindowsCleanupScanner.Files(location, path, failures))
             {
-                string[] matches;
+                if (location.MinimumAge is not null)
+                {
+                    DateTime touched = info.LastWriteTime > info.CreationTime ? info.LastWriteTime : info.CreationTime;
+
+                    if (touched > cutoff)
+                    {
+                        continue;
+                    }
+                }
+
+                yield return info;
+            }
+        }
+    }
+
+    public Task<CleanupDeletion> DeleteRegenerableAsync(
+        IReadOnlyList<CleanupCandidate> candidates,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(candidates);
+
+        long freed = 0;
+        int removed = 0;
+        int locked = 0;
+        List<string> failures = [];
+
+        foreach (CleanupCandidate candidate in candidates)
+        {
+            // The refusal is here as well as in the caller. This method deletes without a way back,
+            // so it takes only the category that has nothing to come back to.
+            if (candidate.Trust != CleanupTrust.Regenerable)
+            {
+                failures.Add($"'{candidate.Id}' is {candidate.Trust} and was not deleted.");
+                continue;
+            }
+
+            foreach (FileInfo file in FilesOf(candidate, failures))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                long size;
 
                 try
                 {
-                    matches = Directory.GetFiles(candidate.Path, pattern, SearchOption.TopDirectoryOnly);
+                    size = file.Length;
+                    file.Delete();
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
-                    failures.Add($"'{candidate.Path}' could not be listed: {ex.Message}");
+                    // A running browser holds its own cache open. Normal, and counted rather than
+                    // fought with: the honest total is the one that leaves these out.
+                    locked++;
                     continue;
                 }
 
-                foreach (string file in matches)
-                {
-                    yield return file;
-                }
+                freed += size;
+                removed++;
             }
-
-            yield break;
         }
 
-        IEnumerable<string> all;
+        return Task.FromResult(new CleanupDeletion(freed, removed, locked, failures));
+    }
 
-        try
+    public async Task<long> PurgeAllAsync(CancellationToken cancellationToken = default)
+    {
+        long released = 0;
+
+        foreach (QuarantineBatch batch in await ListAsync(cancellationToken).ConfigureAwait(false))
         {
-            all = Directory.EnumerateFiles(candidate.Path, "*", new EnumerationOptions
+            if (TryDeleteDirectory(Path.Combine(_root, batch.Id)))
             {
-                RecurseSubdirectories = true,
-                IgnoreInaccessible = true,
-            });
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            failures.Add($"'{candidate.Path}' could not be listed: {ex.Message}");
-            yield break;
+                released += batch.Bytes;
+            }
         }
 
-        foreach (string file in all)
-        {
-            yield return file;
-        }
+        return released;
     }
 
     private static bool TryMove(string source, string destination, List<string> failures)
