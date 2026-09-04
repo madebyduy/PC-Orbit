@@ -85,6 +85,7 @@ public static class Program
                 "restore" => await Commands.RestoreAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "drivers" => await Commands.DriversAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "apps" => await Commands.AppsAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
+                "bios" => await Commands.BiosAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "outcomes" => Commands.Outcomes(host, options, output),
                 "doctor" => Commands.Doctor(host, options, output),
                 _ => Unknown(options.Command),

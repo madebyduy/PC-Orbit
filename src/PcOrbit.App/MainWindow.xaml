@@ -1334,6 +1334,68 @@
               </StackPanel>
             </Border>
 
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <DockPanel Margin="0,0,0,4">
+                  <TextBlock x:Name="FirmwareTitle" Style="{StaticResource CardTitle}" />
+                  <TextBlock x:Name="FirmwareVendor" Style="{StaticResource Tiny}"
+                             HorizontalAlignment="Right" VerticalAlignment="Center" />
+                </DockPanel>
+                <TextBlock x:Name="FirmwareHint" Style="{StaticResource Sub}" TextWrapping="Wrap"
+                           Margin="0,0,0,12" />
+
+                <!--
+                  Shown when the machine has no vendor interface, which is most consumer hardware.
+                  A plain sentence rather than an empty list: "your firmware does not expose this"
+                  is an answer, and an empty card is not.
+                -->
+                <Border x:Name="FirmwareUnavailable" Background="{StaticResource RowBg}" CornerRadius="9"
+                        Padding="14,12" Visibility="Collapsed">
+                  <TextBlock x:Name="FirmwareUnavailableText" Style="{StaticResource Sub}"
+                             TextWrapping="Wrap" />
+                </Border>
+
+                <ItemsControl x:Name="FirmwareList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="14,12" Background="{Binding RowBg}">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+
+                          <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,14,0">
+                            <DockPanel>
+                              <Border DockPanel.Dock="Right" Background="{Binding RiskTint}" CornerRadius="6"
+                                      Padding="7,2" HorizontalAlignment="Left" Margin="10,0,0,0">
+                                <TextBlock Text="{Binding RiskLabel}" FontSize="10.5" FontWeight="SemiBold"
+                                           Foreground="{Binding RiskInk}" />
+                              </Border>
+                              <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
+                                         Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"
+                                         VerticalAlignment="Center" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,3,0,0"
+                                       TextWrapping="Wrap" />
+                          </StackPanel>
+
+                          <ComboBox Grid.Column="1" Width="150" Height="32" VerticalAlignment="Center"
+                                    ItemsSource="{Binding Options}" SelectedItem="{Binding Wanted, Mode=TwoWay}"
+                                    IsEnabled="{Binding Writable}" />
+
+                          <Button Grid.Column="2" Content="{Binding ApplyLabel}" Tag="{Binding Name}"
+                                  Margin="9,0,0,0" VerticalAlignment="Center" IsEnabled="{Binding Writable}"
+                                  Style="{StaticResource RowButton}" Click="OnFirmwareApply" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource Card}" Margin="0">
               <StackPanel>
                 <DockPanel Margin="0,0,0,10">

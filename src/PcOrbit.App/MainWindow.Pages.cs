@@ -199,6 +199,7 @@ public partial class MainWindow
 
         ApplyAppsPageStrings();
         ApplyBiosStrings();
+        ApplyFirmwareStrings();
 
         CompareRun.Content = T("app.compare.run");
         CompareChangedTitle.Text = T("app.compare.changed");
@@ -343,6 +344,10 @@ public partial class MainWindow
         else if (ReferenceEquals(page.View, ViewBios))
         {
             RenderBios();
+
+            // The vendor interface is a separate read and a slow one, so it comes after the
+            // readings are already on screen rather than holding them up.
+            await RenderFirmwareAsync();
         }
         else if (ReferenceEquals(page.View, ViewApps))
         {

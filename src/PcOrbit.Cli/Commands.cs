@@ -3,6 +3,7 @@ using PcOrbit.Adapters.Windows;
 using PcOrbit.Core.Abstractions;
 using PcOrbit.Core.Actions;
 using PcOrbit.Core.Apps;
+using PcOrbit.Core.Firmware;
 using PcOrbit.Core.Checkup;
 using PcOrbit.Core.Cleanup;
 using PcOrbit.Core.Compare;
@@ -581,6 +582,64 @@ public static class Commands
     /// make the allowlist meaningless and hand the job of judging thirty thousand packages to
     /// someone who came here to avoid exactly that (ADR 0006).
     /// </remarks>
+    /// <summary>
+    /// What the manufacturer's firmware interface reports on this machine.
+    /// </summary>
+    /// <remarks>
+    /// Read-only, and there is no <c>--apply</c>. Writing a firmware setting needs the consequences
+    /// on screen and a confirmation sized to the risk, and a terminal flag is the wrong shape for
+    /// that (ADR 0007). This exists so the interface can be checked on a model without opening the
+    /// app — which is exactly the evidence <c>docs/capability-matrix.md</c> asks for.
+    /// </remarks>
+    public static async Task<int> BiosAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(output);
+
+        _ = output;
+
+        FirmwareInterface firmware = await host.Firmware.ReadAsync(ct).ConfigureAwait(false);
+
+        Output.Heading(host.Strings.Format("app.firmware.title"));
+
+        // Developer output, so the vendor's own names and the query behind them stay as they are
+        // (spec 21.11). This is the page a support engineer reads six months later.
+        Output.Line($"  vendor              {firmware.Vendor ?? "(none)"}");
+        Output.Line($"  interface answers   {firmware.InterfacePresent}");
+        Output.Line($"  supervisor password {firmware.PasswordRequired}");
+        Output.Line($"  settings            {firmware.Settings.Count}");
+
+        if (firmware.Problem is { } problem)
+        {
+            Output.Line($"  problem             {problem}");
+        }
+
+        Output.Line();
+
+        if (firmware.Settings.Count == 0)
+        {
+            Output.Line("  " + host.Strings.Format(
+                firmware.Vendor is { Length: > 0 } vendor ? "app.firmware.modelHasNone" : "app.firmware.noInterface",
+                new Dictionary<string, string>(StringComparer.Ordinal) { ["vendor"] = firmware.Vendor ?? "" }));
+
+            return ExitCodes.Ok;
+        }
+
+        foreach (FirmwareSetting setting in firmware.Settings)
+        {
+            Output.Line($"  {setting.Name,-40} {setting.Current,-18} {setting.Risk}");
+
+            if (options.Verbose)
+            {
+                Output.Line($"      accepts: {(setting.Options.Count == 0 ? "(not stated)" : string.Join(" | ", setting.Options))}");
+                Output.Line($"      via:     {setting.Evidence.Query}");
+            }
+        }
+
+        return ExitCodes.Ok;
+    }
+
     public static async Task<int> AppsAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(host);

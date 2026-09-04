@@ -62,12 +62,29 @@ public static class WindowsChangeSources
     /// <summary>
     /// Runs a script that prints a JSON array, and turns a failure into a stated reason.
     /// </summary>
+    internal static Task<(JsonDocument? Document, string? Problem)> ReadJsonAsync(
+        PowerShellRunner runner,
+        string script,
+        CancellationToken cancellationToken) =>
+        ReadJsonAsync(runner, script, null, cancellationToken);
+
+    /// <summary>
+    /// The same, for a script that takes values.
+    /// </summary>
+    /// <remarks>
+    /// Values reach the child process through its environment rather than the command line:
+    /// PowerShell refuses positional arguments after <c>-EncodedCommand</c>, and the refusal
+    /// reaches the user as an error dialog rather than as anything useful.
+    /// </remarks>
     internal static async Task<(JsonDocument? Document, string? Problem)> ReadJsonAsync(
         PowerShellRunner runner,
         string script,
+        IReadOnlyList<string>? arguments,
         CancellationToken cancellationToken)
     {
-        PowerShellResult result = await runner.RunAsync(script, cancellationToken).ConfigureAwait(false);
+        PowerShellResult result = arguments is { Count: > 0 }
+            ? await runner.RunWithArgumentsAsync(script, arguments, cancellationToken).ConfigureAwait(false)
+            : await runner.RunAsync(script, cancellationToken).ConfigureAwait(false);
 
         if (!result.Succeeded)
         {
@@ -112,6 +129,20 @@ public static class WindowsChangeSources
     /// returning false when the element is a JSON null, and PowerShell writes null for every
     /// property it had no value for.
     /// </remarks>
+    /// <remarks>
+    /// PowerShell writes a <c>[bool]</c> as a JSON <c>true</c>/<c>false</c>, and writes null for a
+    /// property it had no value for — which is a third answer, not a false.
+    /// </remarks>
+    internal static bool? Flag(JsonElement row, string name) =>
+        row.TryGetProperty(name, out JsonElement value)
+            ? value.ValueKind switch
+            {
+                JsonValueKind.True => true,
+                JsonValueKind.False => false,
+                _ => null,
+            }
+            : null;
+
     internal static int? Number(JsonElement row, string name) =>
         row.TryGetProperty(name, out JsonElement value)
         && value.ValueKind == JsonValueKind.Number

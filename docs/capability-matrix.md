@@ -101,6 +101,37 @@ That is `Unknown` inferred into a value, the one thing spec 6.6 forbids, and it 
 real on this machine. Where no such fallback exists — TPM, drive encryption — the row honestly
 reads `no`, and the reason travels with the value rather than being lost.
 
+## The vendor firmware interface
+
+A separate axis from the tiers above. Those describe how a *capability* is reached; this describes
+whether the machine will let Windows change a BIOS setting at all (ADR 0007).
+
+The interface has three states, and they are three different answers to the user:
+
+| State | What it means | What the app says |
+|---|---|---|
+| No classes | The maker publishes no interface, or this machine has no driver for it. | Use the BIOS screen; here is the button that restarts you into it. |
+| Classes present, zero instances | The driver registers the classes, the provider does not populate. This is what a consumer model does with a commercial-line interface. | Your model does not answer it — same button. |
+| Classes present, settings returned | Usable. | The settings, with their risk and their accepted values. |
+
+| Machine | Vendor | Interface | Settings | Verified |
+|---|---|---|---|---|
+| LENOVO 21SR002JVA, Windows Pro 26200 | Lenovo | `Lenovo_BiosSetting` and the three companion classes **registered** | **0** | 2026-09-04, `pco bios --verbose`. Detection, the "model does not answer" message and every refusal path exercised. **No write performed — this machine cannot.** |
+
+### Rows needed before a firmware write has been seen to work
+
+| Machine class | Why it matters |
+|---|---|
+| ThinkPad or ThinkCentre, elevated, no supervisor password | The only Lenovo hardware where `Lenovo_BiosSetting` populates. First real exercise of `SetBiosSetting` + `SaveBiosSettings`, and of the verify-by-re-reading path. |
+| ThinkPad or ThinkCentre **with** a supervisor password | The `,password,ascii,us` suffix is written from Lenovo's documentation and has never been sent. |
+| HP EliteBook or ProDesk | `HP_BIOSSettingInterface.SetBIOSSetting`, including the `<utf-16/>` password prefix HP requires. Written from documentation. |
+| Dell with Command \| Monitor installed | Confirms the Dell branch detects rather than misreports. The Dell write remains unimplemented on purpose. |
+| Any of the above with BitLocker genuinely on | The recovery-key consequence has only ever been produced from a synthesised snapshot in a test, never from a real encrypted machine changing Secure Boot. |
+
+Until a row appears here with a write in it, the honest description of the write path is
+*implemented against published vendor documentation, unexercised on hardware* — which is why the UI
+refuses to report a success it has not read back.
+
 ## Rows still needed
 
 | Machine class | Why it matters |

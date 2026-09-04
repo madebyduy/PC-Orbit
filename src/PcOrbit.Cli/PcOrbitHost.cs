@@ -3,6 +3,7 @@ using PcOrbit.Adapters.Windows.Executors;
 using PcOrbit.Core.Abstractions;
 using PcOrbit.Core.Actions;
 using PcOrbit.Core.Apps;
+using PcOrbit.Core.Firmware;
 using PcOrbit.Core.Checkup;
 using PcOrbit.Core.Cleanup;
 using PcOrbit.Core.Compiler;
@@ -133,6 +134,17 @@ public sealed class PcOrbitHost : IDisposable
     /// own product key — this product ships none (ADR 0006).
     /// </summary>
     public IEditionService Editions { get; } = new WindowsEditionService();
+
+    /// <summary>
+    /// Firmware settings through the manufacturer's own interface, where the machine has one.
+    /// </summary>
+    /// <remarks>
+    /// Not an action, and never selected by the State Compiler. The gate in
+    /// <c>data/actions/pending-verification/</c> is about a firmware write the compiler picks on
+    /// its own inside a plan; this is a person choosing one setting and confirming it. Different
+    /// risks, different rules (ADR 0007).
+    /// </remarks>
+    public IFirmwareSettings Firmware { get; } = new WindowsFirmwareSettings();
 
     /// <summary>
     /// What is currently defending the machine, and whether Windows would even let it be changed.
