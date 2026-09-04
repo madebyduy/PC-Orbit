@@ -2,6 +2,7 @@ using PcOrbit.Adapters.Windows;
 using PcOrbit.Adapters.Windows.Executors;
 using PcOrbit.Core.Abstractions;
 using PcOrbit.Core.Actions;
+using PcOrbit.Core.Apps;
 using PcOrbit.Core.Checkup;
 using PcOrbit.Core.Cleanup;
 using PcOrbit.Core.Compiler;
@@ -34,6 +35,7 @@ public sealed class PcOrbitHost : IDisposable
         ActionCatalog catalog,
         IReadOnlyList<Outcome> outcomes,
         IReadOnlyDictionary<string, GuideData> guides,
+        AppCatalog apps,
         IStringCatalog strings,
         WindowsStateScanner scanner,
         WindowsCapabilityReader reader,
@@ -46,7 +48,9 @@ public sealed class PcOrbitHost : IDisposable
         Catalog = catalog;
         Outcomes = outcomes;
         Guides = guides;
+        Apps = apps;
         Strings = strings;
+        AppService = new WindowsAppService(apps);
         Scanner = scanner;
         Reader = reader;
         Executors = executors;
@@ -66,6 +70,15 @@ public sealed class PcOrbitHost : IDisposable
     public IReadOnlyList<Outcome> Outcomes { get; }
 
     public IReadOnlyDictionary<string, GuideData> Guides { get; }
+
+    /// <summary>
+    /// The applications this product will install. Shipped data, and the allowlist: an id outside
+    /// it never reaches winget (ADR 0006).
+    /// </summary>
+    public AppCatalog Apps { get; }
+
+    /// <summary>Installing and removing them, verified by asking winget again afterwards.</summary>
+    public IAppService AppService { get; }
 
     public IStringCatalog Strings { get; }
 
@@ -149,6 +162,7 @@ public sealed class PcOrbitHost : IDisposable
         ActionCatalog catalog = ActionCatalogLoader.LoadDirectory(Path.Combine(dataDirectory, "actions"));
         IReadOnlyList<Outcome> outcomes = OutcomeLoader.LoadDirectory(Path.Combine(dataDirectory, "outcomes"));
         IReadOnlyDictionary<string, GuideData> guides = GuideDataLoader.LoadDirectory(Path.Combine(dataDirectory, "guides"));
+        AppCatalog apps = AppCatalogLoader.LoadDirectory(Path.Combine(dataDirectory, "apps"));
         IStringCatalog strings = JsonStringCatalog.LoadForLocale(Path.Combine(dataDirectory, "i18n"), options.Locale);
 
         var scanner = new WindowsStateScanner(graph);
@@ -186,6 +200,7 @@ public sealed class PcOrbitHost : IDisposable
             catalog,
             outcomes,
             guides,
+            apps,
             strings,
             scanner,
             reader,

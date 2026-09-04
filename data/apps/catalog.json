@@ -1,0 +1,174 @@
+{
+  "$schema": "../../schemas/app-catalog.schema.json",
+  "version": "1.0.0",
+  "apps": [
+    {
+      "id": "Google.Chrome",
+      "name": "Google Chrome",
+      "publisher": "Google",
+      "categoryKey": "apps.category.browsers",
+      "descriptionKey": "apps.description.Google.Chrome"
+    },
+    {
+      "id": "Mozilla.Firefox",
+      "name": "Mozilla Firefox",
+      "publisher": "Mozilla",
+      "categoryKey": "apps.category.browsers",
+      "descriptionKey": "apps.description.Mozilla.Firefox"
+    },
+    {
+      "id": "Brave.Brave",
+      "name": "Brave",
+      "publisher": "Brave Software",
+      "categoryKey": "apps.category.browsers",
+      "descriptionKey": "apps.description.Brave.Brave"
+    },
+    {
+      "id": "VideoLAN.VLC",
+      "name": "VLC media player",
+      "publisher": "VideoLAN",
+      "categoryKey": "apps.category.media",
+      "descriptionKey": "apps.description.VideoLAN.VLC"
+    },
+    {
+      "id": "IrfanSkiljan.IrfanView",
+      "name": "IrfanView",
+      "publisher": "Irfan Skiljan",
+      "categoryKey": "apps.category.media",
+      "descriptionKey": "apps.description.IrfanSkiljan.IrfanView"
+    },
+    {
+      "id": "Audacity.Audacity",
+      "name": "Audacity",
+      "publisher": "Audacity Team",
+      "categoryKey": "apps.category.media",
+      "descriptionKey": "apps.description.Audacity.Audacity"
+    },
+    {
+      "id": "7zip.7zip",
+      "name": "7-Zip",
+      "publisher": "Igor Pavlov",
+      "categoryKey": "apps.category.utilities",
+      "descriptionKey": "apps.description.7zip.7zip"
+    },
+    {
+      "id": "Notepad++.Notepad++",
+      "name": "Notepad++",
+      "publisher": "Notepad++ Team",
+      "categoryKey": "apps.category.utilities",
+      "descriptionKey": "apps.description.Notepad++.Notepad++"
+    },
+    {
+      "id": "voidtools.Everything",
+      "name": "Everything",
+      "publisher": "voidtools",
+      "categoryKey": "apps.category.utilities",
+      "descriptionKey": "apps.description.voidtools.Everything"
+    },
+    {
+      "id": "Adobe.Acrobat.Reader.64-bit",
+      "name": "Adobe Acrobat Reader",
+      "publisher": "Adobe",
+      "categoryKey": "apps.category.utilities",
+      "descriptionKey": "apps.description.Adobe.Acrobat.Reader.64-bit"
+    },
+    {
+      "id": "Zoom.Zoom",
+      "name": "Zoom Workplace",
+      "publisher": "Zoom",
+      "categoryKey": "apps.category.communication",
+      "descriptionKey": "apps.description.Zoom.Zoom"
+    },
+    {
+      "id": "Microsoft.Teams",
+      "name": "Microsoft Teams",
+      "publisher": "Microsoft",
+      "categoryKey": "apps.category.communication",
+      "descriptionKey": "apps.description.Microsoft.Teams"
+    },
+    {
+      "id": "Telegram.TelegramDesktop",
+      "name": "Telegram Desktop",
+      "publisher": "Telegram",
+      "categoryKey": "apps.category.communication",
+      "descriptionKey": "apps.description.Telegram.TelegramDesktop"
+    },
+    {
+      "id": "Discord.Discord",
+      "name": "Discord",
+      "publisher": "Discord Inc.",
+      "categoryKey": "apps.category.communication",
+      "descriptionKey": "apps.description.Discord.Discord"
+    },
+    {
+      "id": "Microsoft.VisualStudioCode",
+      "name": "Visual Studio Code",
+      "publisher": "Microsoft",
+      "categoryKey": "apps.category.development",
+      "descriptionKey": "apps.description.Microsoft.VisualStudioCode"
+    },
+    {
+      "id": "Git.Git",
+      "name": "Git",
+      "publisher": "Git",
+      "categoryKey": "apps.category.development",
+      "descriptionKey": "apps.description.Git.Git"
+    },
+    {
+      "id": "Python.Python.3.12",
+      "name": "Python 3.12",
+      "publisher": "Python Software Foundation",
+      "categoryKey": "apps.category.development",
+      "descriptionKey": "apps.description.Python.Python.3.12"
+    },
+    {
+      "id": "Microsoft.PowerToys",
+      "name": "PowerToys",
+      "publisher": "Microsoft",
+      "categoryKey": "apps.category.development",
+      "descriptionKey": "apps.description.Microsoft.PowerToys"
+    },
+    {
+      "id": "Microsoft.VCRedist.2015+.x64",
+      "name": "Visual C++ Runtime (x64)",
+      "publisher": "Microsoft",
+      "categoryKey": "apps.category.runtimes",
+      "descriptionKey": "apps.description.Microsoft.VCRedist.2015+.x64"
+    },
+    {
+      "id": "Microsoft.DotNet.DesktopRuntime.8",
+      "name": ".NET Desktop Runtime 8",
+      "publisher": "Microsoft",
+      "categoryKey": "apps.category.runtimes",
+      "descriptionKey": "apps.description.Microsoft.DotNet.DesktopRuntime.8"
+    },
+    {
+      "id": "Oracle.JavaRuntimeEnvironment",
+      "name": "Java Runtime",
+      "publisher": "Oracle",
+      "categoryKey": "apps.category.runtimes",
+      "descriptionKey": "apps.description.Oracle.JavaRuntimeEnvironment"
+    },
+    {
+      "id": "Bitwarden.Bitwarden",
+      "name": "Bitwarden",
+      "publisher": "Bitwarden Inc.",
+      "categoryKey": "apps.category.security",
+      "descriptionKey": "apps.description.Bitwarden.Bitwarden"
+    },
+    {
+      "id": "Malwarebytes.Malwarebytes",
+      "name": "Malwarebytes",
+      "publisher": "Malwarebytes",
+      "categoryKey": "apps.category.security",
+      "descriptionKey": "apps.description.Malwarebytes.Malwarebytes"
+    },
+    {
+      "id": "CrystalDewWorld.CrystalDiskInfo",
+      "name": "CrystalDiskInfo",
+      "publisher": "Crystal Dew World",
+      "categoryKey": "apps.category.security",
+      "descriptionKey": "apps.description.CrystalDewWorld.CrystalDiskInfo"
+    }
+  ]
+}

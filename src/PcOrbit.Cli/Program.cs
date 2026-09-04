@@ -84,6 +84,7 @@ public static class Program
                 "clean" => await Commands.CleanAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "restore" => await Commands.RestoreAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "drivers" => await Commands.DriversAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
+                "apps" => await Commands.AppsAsync(host, options, output, cancellation.Token).ConfigureAwait(false),
                 "outcomes" => Commands.Outcomes(host, options, output),
                 "doctor" => Commands.Doctor(host, options, output),
                 _ => Unknown(options.Command),
@@ -191,6 +192,9 @@ public static class Program
               startup on|off <name>
                             Switch one entry on or off. The name must be one this machine is
                             reporting right now; security entries are refused outright.
+              apps          The applications this app can install, and what is already there.
+              apps install|remove <id>
+                            Install or remove one of them. Verified by asking winget afterwards.
               drivers       The driver behind every device, faulty ones first. Never sorted by age.
               clean         Measure reclaimable space. Add --apply to move it to quarantine, where
                             it stays restorable for 30 days. Nothing is deleted.

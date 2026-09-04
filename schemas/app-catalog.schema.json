@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcorbit.dev/schemas/app-catalog.schema.json",
+  "title": "PC Orbit Application Catalogue",
+  "description": "The applications this product will install, and only these. Every id is a package in Microsoft's winget repository, which hashes what it downloads. The catalogue is the allowlist: an id that is not here never reaches a command (ADR 0006, spec 17.1).",
+  "type": "object",
+  "required": ["version", "apps"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "apps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "publisher", "categoryKey", "descriptionKey"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The winget package identifier, exactly as the repository spells it.",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9.+_-]*$",
+            "maxLength": 200
+          },
+          "name": {
+            "type": "string",
+            "description": "The product's own name. Never localised: it is what the user looks for on screen and sees again in Add or Remove Programs (spec 21.11)."
+          },
+          "publisher": {
+            "type": "string",
+            "description": "Who makes it. Shown because 'who am I trusting' is the question before installing anything."
+          },
+          "categoryKey": { "type": "string", "description": "i18n key for the group heading." },
+          "descriptionKey": { "type": "string", "description": "i18n key for the one line of prose." }
+        }
+      }
+    }
+  }
+}

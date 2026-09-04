@@ -71,8 +71,11 @@ public static class WindowsChangeSources
 
         if (!result.Succeeded)
         {
+            // The exit code goes in when there is nothing else to say. "The query did not complete"
+            // on its own tells a support engineer nothing, and this is the message that reaches the
+            // user as the reason a reading is missing (spec 6.1).
             return (null, string.IsNullOrWhiteSpace(result.ErrorSummary)
-                ? "the query did not complete"
+                ? $"the query exited with {result.ExitCode} and produced no output"
                 : result.ErrorSummary);
         }
 

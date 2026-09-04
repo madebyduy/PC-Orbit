@@ -2,6 +2,7 @@ using System.Globalization;
 using PcOrbit.Adapters.Windows;
 using PcOrbit.Core.Abstractions;
 using PcOrbit.Core.Actions;
+using PcOrbit.Core.Apps;
 using PcOrbit.Core.Checkup;
 using PcOrbit.Core.Cleanup;
 using PcOrbit.Core.Compare;
@@ -568,6 +569,130 @@ public static class Commands
         }
 
         return ExitCodes.Ok;
+    }
+
+    // ---------------------------------------------------------------- apps
+
+    /// <summary>
+    /// The application catalogue, and what is already installed.
+    /// </summary>
+    /// <remarks>
+    /// A curated list rather than a search over the whole repository, because a search box would
+    /// make the allowlist meaningless and hand the job of judging thirty thousand packages to
+    /// someone who came here to avoid exactly that (ADR 0006).
+    /// </remarks>
+    public static async Task<int> AppsAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(output);
+
+        // 'apps install <id>' / 'apps remove <id>'
+        if (options.Arguments.Count >= 2 && options.Arguments[0] is "install" or "remove")
+        {
+            return await ChangeAppAsync(host, options, output, ct).ConfigureAwait(false);
+        }
+
+        InstalledApps installed = await host.AppService.InstalledAsync(ct).ConfigureAwait(false);
+
+        if (options.Json)
+        {
+            Output.Line(DataLocator.ToJson(new { host.Apps.All, Installed = installed.Ids, installed.Problem }));
+            return ExitCodes.Ok;
+        }
+
+        Output.Heading(output.Text("cli.apps.heading", Output.Args(
+            ("count", Output.Number(host.Apps.All.Count)))));
+
+        if (installed.Problem is { } problem)
+        {
+            Output.Line("  " + problem);
+            Output.Line();
+        }
+
+        foreach (string category in host.Apps.Categories)
+        {
+            Output.Line();
+            Output.Line("  " + output.Text(category));
+
+            foreach (CatalogApp app in host.Apps.InCategory(category))
+            {
+                bool here = installed.Ids.Contains(app.Id);
+
+                string mark = !installed.IsKnown ? "?" : here ? "*" : " ";
+                string state = !installed.IsKnown
+                    ? string.Empty
+                    : here ? output.Text("cli.apps.installed") : string.Empty;
+
+                Output.Line($"    {mark} {Truncate(app.Name, 30),-30} {state,-14} {output.Text(app.DescriptionKey)}");
+
+                if (output.Verbose)
+                {
+                    Output.Line($"      {"",-30} {app.Id}  ·  {app.Publisher}");
+                }
+            }
+        }
+
+        Output.Line();
+        Output.Line("  " + output.Text("cli.apps.how"));
+
+        return ExitCodes.Ok;
+    }
+
+    private static async Task<int> ChangeAppAsync(PcOrbitHost host, CliOptions options, Output output, CancellationToken ct)
+    {
+        bool install = options.Arguments[0] == "install";
+        string id = options.Arguments[1];
+
+        CatalogApp? app = host.Apps.Find(id);
+
+        if (app is null)
+        {
+            Output.Error(output.Text("cli.apps.notInCatalogue", Output.Args(("id", id))));
+            return ExitCodes.NotReached;
+        }
+
+        // Installing software downloads and runs an installer. That is worth a sentence and a
+        // confirmation, not a silent side effect of a command that looked like a query.
+        if (!options.AssumeYes)
+        {
+            Output.Line(output.Text(
+                install ? "cli.apps.confirmInstall" : "cli.apps.confirmRemove",
+                Output.Args(("name", app.Name), ("publisher", app.Publisher))));
+
+            Console.Write("  > ");
+            string? answer = Console.ReadLine()?.Trim();
+
+            if (answer is not ("y" or "Y" or "yes" or "Yes"))
+            {
+                return ExitCodes.NotReached;
+            }
+        }
+
+        Output.Line(output.Text(install ? "cli.apps.installing" : "cli.apps.removing",
+            Output.Args(("name", app.Name))));
+
+        AppChangeResult result = install
+            ? await host.AppService.InstallAsync(app.Id, ct).ConfigureAwait(false)
+            : await host.AppService.UninstallAsync(app.Id, ct).ConfigureAwait(false);
+
+        if (options.Json)
+        {
+            Output.Line(DataLocator.ToJson(result));
+            return result.Verified ? ExitCodes.Ok : ExitCodes.NotReached;
+        }
+
+        if (result.Verified)
+        {
+            Output.Line("  " + output.Text(
+                install ? "cli.apps.installed.done" : "cli.apps.removed.done",
+                Output.Args(("name", app.Name))));
+
+            return ExitCodes.Ok;
+        }
+
+        Output.Error(result.Problem ?? output.Text("cli.apps.notVerified", Output.Args(("name", app.Name))));
+        return ExitCodes.NotReached;
     }
 
     // ---------------------------------------------------------------- clean
@@ -1247,6 +1372,7 @@ public static class Commands
         Output.Line($"  actions             {host.Catalog.All.Count}");
         Output.Line($"  outcomes            {host.Outcomes.Count}");
         Output.Line($"  guides              {host.Guides.Count}");
+        Output.Line($"  applications        {host.Apps.All.Count}");
         Output.Line($"  strings locale      {host.Strings.Locale}");
         Output.Line($"  executors allowed   {host.Executors.AllowedIds.Count}");
         Output.Line($"  elevated            {host.Elevation.IsElevated}");
@@ -1315,6 +1441,19 @@ public static class Commands
         }
 
         problems.AddRange(CheckGuidePacks(host));
+
+        // Spec 21.11: an app whose description key does not ship is a card with a broken marker on
+        // it. The name and publisher stay untranslated on purpose; everything around them does not.
+        foreach (CatalogApp app in host.Apps.All)
+        {
+            foreach (string key in new[] { app.DescriptionKey, app.CategoryKey })
+            {
+                if (!host.Strings.Contains(key))
+                {
+                    problems.Add($"Application '{app.Id}' uses string '{key}', which the '{host.Strings.Locale}' catalog does not have.");
+                }
+            }
+        }
 
         Output.Line();
 
