@@ -236,6 +236,17 @@ public partial class MainWindow : Window
 
     // ---------------------------------------------------------------- startup
 
+    /// <summary>
+    /// The first moment the window has a handle, which is the earliest DWM can be told anything
+    /// about it. Done here rather than in <c>OnLoaded</c> so the corners are already round in the
+    /// frame the window first appears in, instead of squaring off for one frame and then snapping.
+    /// </summary>
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        RoundedWindow.Apply(this);
+    }
+
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         var options = CliOptions.Parse([]);

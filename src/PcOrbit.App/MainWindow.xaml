@@ -8,9 +8,15 @@
         Background="{StaticResource PageBg}" UseLayoutRounding="True"
         Loaded="OnLoaded" Closed="OnClosed">
 
+  <!--
+    CornerRadius agrees with what RoundedWindow asks DWM for, rather than being left at zero.
+    With glass off, WPF's chrome clips the window to a region of its own built from this value, and
+    a square region is the one thing that can defeat the compositor's rounding. Setting both means
+    the corner is round whichever of the two ends up drawing it.
+  -->
   <shell:WindowChrome.WindowChrome>
     <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0"
-                        CornerRadius="0" UseAeroCaptionButtons="False" />
+                        CornerRadius="8" UseAeroCaptionButtons="False" />
   </shell:WindowChrome.WindowChrome>
 
   <Grid>

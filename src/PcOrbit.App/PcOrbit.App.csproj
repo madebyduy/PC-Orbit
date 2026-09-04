@@ -8,6 +8,14 @@
     <UseWPF>true</UseWPF>
     <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
     <InvariantGlobalization>false</InvariantGlobalization>
+
+    <!--
+      Required by [LibraryImport], whose generated marshalling stubs are unsafe internally. This
+      project has exactly one P/Invoke — asking DWM to round the window's corners — and the
+      alternative was suppressing the analyzer that asks for LibraryImport in the first place.
+      Nothing in this project is written unsafe; the switch only permits the generated code.
+    -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
