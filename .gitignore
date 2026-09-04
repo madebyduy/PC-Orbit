@@ -24,3 +24,10 @@ coverage/
 # Tooling
 .dotnet/
 nuget.config.user
+
+# Scratch space from local tooling. Never part of the project.
+.codex-tmp/
+tmp/
+output/
+artifact.md
+__pycache__/

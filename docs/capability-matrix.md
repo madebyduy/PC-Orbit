@@ -47,13 +47,35 @@ exactly where that promise stops.
 | `windows.feature.hyper-v` | yes | same | high | disabled | auto | re-read after boot | automatic |
 | `windows.feature.sandbox` | yes | same | high | disabled | auto | re-read after boot | automatic |
 | `windows.system-restore` | **partial** | no `DisableSR` value and no restore points | none | unknown | auto (needs admin) | re-read | automatic |
+| `recovery.winre` | yes | `System32\Recovery\ReAgent.xml` — registered to a boot entry, image present | medium | enabled | read-only | re-read | — |
+| `recovery.partition` | yes | `Get-Partition`, type `Recovery` | high | present | read-only | re-read | — |
+| `recovery.restore-point.age-days` | **no** | `Get-ComputerRestorePoint`: access denied without administrator rights | none | unknown | read-only | — | — |
 | `wsl.installed` | yes | `Test-Path %SystemRoot%\System32\wsl.exe` | high | present | n/a | — | — |
 | `wsl.default-version` | **partial** | `HKCU\...\Lxss\DefaultVersion` not set | none | unknown | auto | re-read | automatic |
 | `security.bitlocker.system-drive` | **no** | `Win32_EncryptableVolume` needs administrator rights | none | unknown | auto (suspend, needs admin) | re-read | automatic |
 | `power.on-battery` | yes | `kernel32!GetSystemPowerStatus` | high | no | n/a | — | — |
 | `storage.system-drive.free-gb` | yes | `DriveInfo.AvailableFreeSpace` | high | 100.8 GB | n/a | — | — |
 
-**Guide data**: vendor-level entry for `LENOVO`, no per-model entry. → `guidedGeneric`.
+### Change sources (`pco timeline`)
+
+Read live rather than stored, so each one is listed with what it could actually see here.
+
+| Source | Readable | Evidence | Note |
+|---|---|---|---|
+| Windows Update history | yes | `Microsoft.Update.Session` → `IUpdateSearcher::QueryHistory` | works unelevated; carries the result code, so a failed update is distinguishable from an installed one |
+| System event log | yes | `Get-WinEvent -LogName System` | Kernel-Power, WHEA-Logger, Kernel-PnP and WER only; event ids we cannot name are left out rather than guessed at |
+| Restore points | **no** | `Get-ComputerRestorePoint`: access denied | reported as a named gap in the timeline, never as a quiet machine |
+
+### Startup inventory (`pco startup`)
+
+| Source | Readable | Evidence | Note |
+|---|---|---|---|
+| `Win32_StartupCommand` | yes | WMI | 5 entries here; works unelevated |
+| Logon-triggered scheduled tasks | yes | `Get-ScheduledTask` with an `MSFT_TaskLogonTrigger` | 26 entries here, mostly Windows' own |
+| `Explorer\StartupApproved` | partial | first byte of the value; low bit clear = enabled | undocumented, so medium confidence with the raw byte kept. Only 2 of 5 registry entries had a record; the other 3 report `Unknown` rather than an assumed On |
+
+**Guide data**: vendor-level entry for `LENOVO`, no per-model entry. → `guidedGeneric`. All three
+shipped packs expire `2027-09-04`; `doctor` warns 60 days ahead (ADR 0004).
 
 **Resolved tier**: **Tier 3 — Guided Generic.** No verified vendor write adapter matches, and the
 guide entry is vendor-level rather than model-verified.
@@ -67,6 +89,12 @@ Windows PowerShell as `/Date(...)/`, which no JSON date parser accepts. Deserial
 inventory into one object meant that one field turned every reading on this machine into `Unknown`.
 Sections are now parsed independently, so a failure is contained to the section that failed and
 carries its own reason. See `InventoryDocument`.
+
+**A partly-read WMI object is not a read.** `Win32_Tpm` came back here as an object whose
+properties were all null, and `tpm.IsEnabled_InitialValue == true` on a null `bool?` is `false` — so
+the scanner reported the security chip as **off** on a machine whose chip we simply could not see.
+That is `Unknown` inferred into a value, the one thing spec 6.6 forbids, and it was invisible until
+`pco diff` put the two readings side by side. Both flags must now be present for a verdict.
 
 **Confirm-SecureBootUEFI needs administrator rights.** Falling back to
 `Control\SecureBoot\State\UEFISecureBootEnabled`, which does not, is what keeps spec 21.10's promise
