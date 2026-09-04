@@ -122,13 +122,14 @@ is the one thing this product is built not to do (spec 6.6).
 
 | Machine | Vendor | Classes | Elevated? | Settings | Verified |
 |---|---|---|---|---|---|
-| LENOVO 21SR002JVA, Windows Pro 26200 | Lenovo | `Lenovo_BiosSetting` + 90 companion classes registered | **no** | 0 — *and therefore unknown* | 2026-09-04, `pco bios --verbose`. Detection, the needs-elevation path, the guide fallback and every refusal path exercised. **Whether this model implements the interface is still an open question**, and the earlier row here claiming it does not was wrong. |
+| LENOVO 21SR002JVA, Windows Pro 26200 | Lenovo | `Lenovo_BiosSetting` + companions registered | **no** | 0 | 2026-09-04, `pco bios --verbose`, standard user. Reports `NeedsElevation`. Says nothing about the firmware — kept as the row that shows why the next one exists. |
+| LENOVO 21SR002JVA, Windows Pro 26200 | Lenovo | same | **yes** | **90** | 2026-09-04, `pco bios --verbose` from an elevated shell. `availability Available`, no supervisor password. Every setting carries its accepted values from `[Optional:…]` or `Lenovo_GetBiosSelections`. **The read path works on this machine.** Two earlier claims that this model lacks the interface were wrong; this row is the correction. **No write has been performed yet** — that needs the owner's say-so on a specific setting. |
 
 ### Rows needed before a firmware write has been seen to work
 
 | Machine class | Why it matters |
 |---|---|
-| **The machine above, elevated** | The cheapest row on this list and the one that settles an open question: whether a consumer Lenovo implements `Lenovo_BiosSetting` at all. One `pco bios` from an elevated terminal answers it. |
+| **The machine above, one Routine write** | `FnKeyAsPrimary` Disable → Enable → Disable is harmless, instantly reversible, and exercises `SetBiosSetting` + `SaveBiosSettings` + the read-back. It has to be the owner's decision, not the developer's. |
 | ThinkPad or ThinkCentre, elevated, no supervisor password | Lenovo's documented hardware for this. First real exercise of `SetBiosSetting` + `SaveBiosSettings`, and of the verify-by-re-reading path. |
 | ThinkPad or ThinkCentre **with** a supervisor password | The `,password,ascii,us` suffix is written from Lenovo's documentation and has never been sent. |
 | HP EliteBook or ProDesk | `HP_BIOSSettingInterface.SetBIOSSetting`, including the `<utf-16/>` password prefix HP requires. Written from documentation. |

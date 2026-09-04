@@ -25,6 +25,18 @@ public sealed class WindowsProcessMonitor : IProcessMonitor
     private readonly object _gate = new();
     private readonly Dictionary<int, (TimeSpan Cpu, DateTimeOffset At)> _previous = [];
 
+    /// <summary>
+    /// Each process's executable, asked for once.
+    /// </summary>
+    /// <remarks>
+    /// <c>MainModule</c> opens the process and walks its module list, which is the expensive part
+    /// of reading a process and the part most likely to be refused. A PID's executable cannot change
+    /// while the PID lives, so it is asked for on first sight and remembered — including remembering
+    /// that the answer was "not allowed", so a refused process is not re-asked every three seconds.
+    /// Swept with <see cref="_previous"/>, so it cannot grow past the processes that exist.
+    /// </remarks>
+    private readonly Dictionary<int, string?> _paths = [];
+
     public IReadOnlyList<ProcessUsage> Top(int count)
     {
         if (count <= 0)
@@ -75,7 +87,14 @@ public sealed class WindowsProcessMonitor : IProcessMonitor
                         }
 
                         _previous[process.Id] = (cpu, now);
-                        usage.Add(new ProcessUsage(name, process.Id, percent, memoryMb));
+
+                        if (!_paths.TryGetValue(process.Id, out string? path))
+                        {
+                            path = PathOf(process);
+                            _paths[process.Id] = path;
+                        }
+
+                        usage.Add(new ProcessUsage(name, process.Id, percent, memoryMb, path));
                     }
                     catch (Exception ex) when (ex is InvalidOperationException or Win32Exception or NotSupportedException)
                     {
@@ -88,6 +107,7 @@ public sealed class WindowsProcessMonitor : IProcessMonitor
             foreach (int id in _previous.Keys.Where(id => !seen.Contains(id)).ToList())
             {
                 _previous.Remove(id);
+                _paths.Remove(id);
             }
 
             return
@@ -97,6 +117,21 @@ public sealed class WindowsProcessMonitor : IProcessMonitor
                     .ThenByDescending(u => u.MemoryMb)
                     .Take(count),
             ];
+        }
+    }
+
+    /// <summary>Where the process's executable is, or null when Windows will not say.</summary>
+    private static string? PathOf(Process process)
+    {
+        try
+        {
+            return process.MainModule?.FileName;
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or NotSupportedException)
+        {
+            // Another user's process, an elevated one, or one that exited mid-read. Not knowing is
+            // the answer, and the caller shows a letter rather than a guessed icon.
+            return null;
         }
     }
 }

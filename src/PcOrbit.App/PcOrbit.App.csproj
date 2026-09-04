@@ -26,6 +26,12 @@
     -->
     <RuntimeHostConfigurationOption Include="System.GC.ConserveMemory" Value="5" />
     <RuntimeHostConfigurationOption Include="System.GC.Concurrent" Value="false" />
+    <!--
+      Profile-guided tiering instruments hot methods and keeps the instrumentation alive. Worth it
+      for a server; for a desktop tool that is mostly waiting on the user it is memory spent
+      optimising code that runs a few times an hour.
+    -->
+    <RuntimeHostConfigurationOption Include="System.Runtime.TieredPGO" Value="false" />
   </ItemGroup>
 
   <ItemGroup>

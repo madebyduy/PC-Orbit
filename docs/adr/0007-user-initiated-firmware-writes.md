@@ -115,8 +115,20 @@ is precisely the inference spec 6.6 exists to forbid, made by the code that was 
 it.
 
 `FirmwareAvailability` now has five values instead of a boolean, and `NeedsElevation` is a separate
-answer with a separate remedy: a button, not a menu path. Whether that consumer Lenovo implements
-the interface remains **open**, and `docs/capability-matrix.md` records it as open.
+answer with a separate remedy: a button, not a menu path.
+
+**Settled the same day.** Run elevated, the same machine reports `Available` with **90 settings**,
+every one carrying the values it accepts. So the "consumer model" theory was wrong twice over: the
+model implements the interface fully, and the only thing standing between the app and it was the
+rights to ask. The read path is now verified on real hardware. The write path still is not — no
+setting has been written, because a firmware write on somebody's machine is theirs to authorise per
+setting, not a developer's to run as a test. `docs/capability-matrix.md` names the one Routine
+write that would close it.
+
+The first real enumeration also found a hazard the tests had not imagined: `BootOrder` reads as a
+colon-joined list of the very names it offers as options. A one-value picker would have written
+"the boot order is now one device" while looking like "make this the first device".
+`FirmwareSetting.IsCompound` now keeps list-valued settings out of the picker.
 
 That is stated in three places rather than hidden: here, in `docs/capability-matrix.md`, and in the
 suite that covers it. What follows from it:

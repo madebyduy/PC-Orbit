@@ -119,6 +119,37 @@ public sealed class FirmwareSettingsTests
         Assert.True(Setting("BootLogoDisplay", "Enable", "Enable", "Disable").Writable);
     }
 
+    /// <summary>
+    /// Found on the first machine that answered. BootOrder reads as a colon-joined list of the
+    /// same names it offers as options, and a one-value picker would have replaced the whole list
+    /// with one device while looking like it was choosing a first boot device.
+    /// </summary>
+    [Fact]
+    public void AListValuedSettingIsNotOfferedToAOneValuePicker()
+    {
+        FirmwareSetting bootOrder = Setting(
+            "BootOrder", "USBCD:USBFDD:NVMe0:NVMe1", "HDD0", "USBCD", "USBFDD", "NVMe0", "NVMe1", "PXEBOOT");
+
+        Assert.True(bootOrder.IsCompound);
+        Assert.False(bootOrder.Writable);
+    }
+
+    /// <summary>A colon is not enough on its own: a time is not a list of options.</summary>
+    [Fact]
+    public void AColonInsideAScalarDoesNotMakeItAList()
+    {
+        FirmwareSetting alarm = Setting("AlarmTime", "00:00:00", "HH/MM/SS");
+
+        Assert.False(alarm.IsCompound);
+
+        // Not writable either, but for the ordinary reason: one option is nowhere to go.
+        Assert.False(alarm.Writable);
+    }
+
+    [Fact]
+    public void ASingleDeviceValueFromTheSameOptionsIsStillWritable() =>
+        Assert.True(Setting("NetworkBoot", "PXEBOOT", "HDD0", "PXEBOOT", "NVMe0").Writable);
+
     [Fact]
     public void ARefusedSettingIsNotWritableEvenWithSomewhereToGo() =>
         Assert.False(Setting("ClearSecurityChip", "No", "Yes", "No").Writable);

@@ -72,10 +72,13 @@ public sealed record GaugeRow(
     Brush Tone,
     Brush Accent);
 
+/// <param name="Icon">The executable's own icon, or null — in which case the letter tile shows.</param>
 public sealed record ProcRow(
     string Name,
     string Pid,
     string Initial,
+    ImageSource? Icon,
+    Visibility LetterVisible,
     string Cpu,
     double CpuPercent,
     string Ram,
@@ -279,6 +282,17 @@ public partial class MainWindow : Window
         // Now that the window is interactive and the first scan is in, fill the rest of the pages
         // quietly, so that changing tab is not the moment the work starts.
         _ = WarmPagesAsync();
+    }
+
+    /// <summary>Nobody is looking and nothing needs to be fast: the cheapest moment to give memory back.</summary>
+    protected override void OnStateChanged(EventArgs e)
+    {
+        base.OnStateChanged(e);
+
+        if (WindowState == WindowState.Minimized)
+        {
+            WorkingSet.Trim();
+        }
     }
 
     private void OnClosed(object? sender, EventArgs e)
@@ -838,10 +852,19 @@ public partial class MainWindow : Window
 
         IReadOnlyList<ProcessUsage> top = _processes.Top(12);
 
-        List<ProcRow> rows = [.. top.Select((u, index) => new ProcRow(
+        List<ProcRow> rows = [.. top.Select((u, index) =>
+        {
+            // The executable's own icon, the way Task Manager shows it. Falls back to the initial
+            // when Windows will not say where the process lives, which it will not for an elevated
+            // process seen from a standard-user app.
+            ImageSource? icon = ShellIcons.For(u.Path);
+
+            return new ProcRow(
             Name: u.Name,
             Pid: string.Create(CultureInfo.InvariantCulture, $"#{u.Id}"),
             Initial: u.Name.Length > 0 ? u.Name[..1].ToUpperInvariant() : "?",
+            Icon: icon,
+            LetterVisible: icon is null ? Visibility.Visible : Visibility.Collapsed,
             // A process rarely reaches whole percentages, and rounding every one of them to "0%"
             // makes the whole column useless — so small shares keep a decimal.
             Cpu: u.CpuPercent is { } cpu
@@ -853,7 +876,8 @@ public partial class MainWindow : Window
                 : u.MemoryMb.ToString("0", CultureInfo.CurrentCulture) + " MB",
             Tone: index < 3 ? B("AccentSoft") : B("Hair"),
             Accent: index < 3 ? B("Accent") : B("Muted"),
-            RowBg: index % 2 == 0 ? B("RowBg") : Brushes.Transparent))];
+            RowBg: index % 2 == 0 ? B("RowBg") : Brushes.Transparent);
+        })];
 
         ProcList.ItemsSource = rows.Take(6).ToList();
         PerfProcList.ItemsSource = rows;

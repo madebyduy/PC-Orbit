@@ -4,7 +4,12 @@ namespace PcOrbit.Core.Abstractions;
 /// Share of one wall-clock second spent on the CPU, across all cores, since the previous sample.
 /// Null on the first sample, because a rate needs two readings (spec 6.6 — no invented zero).
 /// </param>
-public sealed record ProcessUsage(string Name, int Id, double? CpuPercent, double MemoryMb);
+/// <param name="Path">
+/// The executable, when this process could be asked for it. Null for a process that belongs to
+/// another user or runs elevated above this one — Windows will not say, and that is reported as
+/// not knowing rather than guessed from the name.
+/// </param>
+public sealed record ProcessUsage(string Name, int Id, double? CpuPercent, double MemoryMb, string? Path = null);
 
 /// <summary>
 /// Which programs are using this machine right now — the "what is making my PC slow" answer

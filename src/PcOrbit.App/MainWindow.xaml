@@ -354,10 +354,15 @@
                               <ColumnDefinition Width="90" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Grid.Column="0" Orientation="Horizontal">
-                              <Border Width="20" Height="20" CornerRadius="6" Background="{Binding Tone}">
-                                <TextBlock Text="{Binding Initial}" FontSize="10" FontWeight="Bold"
-                                           Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                              </Border>
+                              <!-- The program's own icon; the lettered tile only when Windows will not say which program. -->
+                              <Grid Width="20" Height="20">
+                                <Border CornerRadius="6" Background="{Binding Tone}" Visibility="{Binding LetterVisible}">
+                                  <TextBlock Text="{Binding Initial}" FontSize="10" FontWeight="Bold"
+                                             Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                </Border>
+                                <Image Source="{Binding Icon}" Width="16" Height="16" Stretch="Uniform"
+                                       RenderOptions.BitmapScalingMode="HighQuality" />
+                              </Grid>
                               <TextBlock Text="{Binding Name}" FontSize="12.5" Foreground="{StaticResource Ink}"
                                          Margin="9,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
@@ -548,10 +553,14 @@
                             <ColumnDefinition Width="100" />
                           </Grid.ColumnDefinitions>
                           <StackPanel Grid.Column="0" Orientation="Horizontal">
-                            <Border Width="22" Height="22" CornerRadius="7" Background="{Binding Tone}">
-                              <TextBlock Text="{Binding Initial}" FontSize="10.5" FontWeight="Bold"
-                                         Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                            </Border>
+                            <Grid Width="22" Height="22">
+                              <Border CornerRadius="7" Background="{Binding Tone}" Visibility="{Binding LetterVisible}">
+                                <TextBlock Text="{Binding Initial}" FontSize="10.5" FontWeight="Bold"
+                                           Foreground="{Binding Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                              </Border>
+                              <Image Source="{Binding Icon}" Width="16" Height="16" Stretch="Uniform"
+                                     RenderOptions.BitmapScalingMode="HighQuality" />
+                            </Grid>
                             <TextBlock Text="{Binding Name}" FontSize="13" Foreground="{StaticResource Ink}"
                                        Margin="10,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{Binding Pid}" FontSize="11" Foreground="{StaticResource Faint}"
@@ -1472,11 +1481,15 @@
                     <DataTemplate>
                       <Border Style="{StaticResource SettingsRow}" Padding="14,12" Background="{Binding RowBg}">
                         <DockPanel>
-                          <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}" Style="{StaticResource Glyph}"
-                                     FontSize="16" Foreground="{Binding Tone}" VerticalAlignment="Center" />
-                          <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontSize="13"
-                                     FontWeight="SemiBold" Foreground="{Binding Tone}"
-                                     VerticalAlignment="Center" Margin="14,0,0,0" />
+                          <!-- Same shape as the Readings page: pale tile (Tone) behind an inked glyph (Accent). -->
+                          <Border DockPanel.Dock="Left" Width="36" Height="36" CornerRadius="8"
+                                  Background="{Binding Tone}" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="17"
+                                       Foreground="{Binding Accent}" />
+                          </Border>
+                          <TextBlock DockPanel.Dock="Right" Text="{Binding Value}" FontSize="13.5"
+                                     FontWeight="SemiBold" Foreground="{Binding Accent}"
+                                     VerticalAlignment="Center" Margin="16,0,0,0" />
                           <StackPanel Margin="13,0,0,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
                                        Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />

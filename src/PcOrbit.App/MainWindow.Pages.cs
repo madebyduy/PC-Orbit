@@ -309,6 +309,10 @@ public partial class MainWindow
             // Back of the queue between pages, so warming never competes with a click.
             await Task.Delay(150);
         }
+
+        // The warm-up is the heaviest minute of the app's life and most of what it allocated is
+        // garbage by now. Hand the pages back rather than sit on them until Windows asks.
+        WorkingSet.Trim();
     }
 
     private async Task LoadPageAsync(Page page)

@@ -47,7 +47,34 @@ public sealed record FirmwareSetting(
     Evidence Evidence)
 {
     /// <summary>Whether this product will offer to change it, and it has somewhere to change to.</summary>
-    public bool Writable => Risk != FirmwareRisk.Refused && Options.Count > 1;
+    public bool Writable => Risk != FirmwareRisk.Refused && Options.Count > 1 && !IsCompound;
+
+    /// <summary>
+    /// True when the current value is a list of several options joined with colons.
+    /// </summary>
+    /// <remarks>
+    /// Lenovo's <c>BootOrder</c> reads <c>USBCD:USBFDD:NVMe0:NVMe1:…</c> and accepts each device
+    /// name as an option. A picker that offers one option at a time would write
+    /// <c>BootOrder,NVMe0</c> — which is not "make NVMe0 first", it is "the boot order is now one
+    /// device". The user would think they had chosen a first boot device and would have wiped the
+    /// list. So a value whose parts are all options is a list, and this build does not edit lists.
+    /// The test is on the parts being options, not on the colon alone: <c>AlarmTime</c> reads
+    /// <c>00:00:00</c> and its parts are not.
+    /// </remarks>
+    public bool IsCompound
+    {
+        get
+        {
+            if (Current is null || !Current.Contains(':', StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            string[] parts = Current.Split(':', StringSplitOptions.RemoveEmptyEntries);
+
+            return parts.Length > 1 && parts.All(Accepts);
+        }
+    }
 
     /// <summary>Whether a value is one the firmware said it would take.</summary>
     public bool Accepts(string value) =>
