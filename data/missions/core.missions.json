@@ -1,0 +1,162 @@
+{
+  "$schema": "../../schemas/mission.schema.json",
+  "version": "0.1.0",
+  "missions": [
+    {
+      "id": "mission.slow-after-update",
+      "titleKey": "mission.slow-after-update.title",
+      "descriptionKey": "mission.slow-after-update.description",
+      "aliases": ["máy chậm", "may cham", "chậm", "lag", "giật", "treo", "đơ", "sau update", "sau cập nhật", "lỗi sau update", "slow", "freeze", "hang", "after update", "crash", "màn hình xanh", "blue screen", "bsod", "tự khởi động lại", "sự cố", "incident", "what changed", "cái gì đã đổi"],
+      "route": { "kind": "page", "target": "timeline", "query": "incident" },
+      "inspects": ["workload.recovery-ready", "recovery.restore-point.age-days"],
+      "estimatedMinutes": 3,
+      "restart": "none",
+      "recoveryKey": "mission.slow-after-update.recovery",
+      "glyph": "GlyphTimeline"
+    },
+    {
+      "id": "mission.reinstall-keep-files",
+      "titleKey": "mission.reinstall-keep-files.title",
+      "descriptionKey": "mission.reinstall-keep-files.description",
+      "aliases": ["cài lại windows", "cai lai windows", "cài lại win", "reinstall", "reinstall windows", "reset", "sửa windows", "repair install", "windows hỏng", "giữ dữ liệu", "keep my files", "recovery", "khôi phục", "phục hồi", "iso", "winre", "startup repair"],
+      "route": { "kind": "page", "target": "recovery", "query": "ladder" },
+      "inspects": ["recovery.winre", "security.bitlocker.system-drive", "storage.system-drive.free-gb", "power.on-battery"],
+      "estimatedMinutes": 60,
+      "restart": "required",
+      "recoveryKey": "mission.reinstall-keep-files.recovery",
+      "glyph": "GlyphRecovery"
+    },
+    {
+      "id": "mission.new-pc",
+      "titleKey": "mission.new-pc.title",
+      "descriptionKey": "mission.new-pc.description",
+      "aliases": ["máy mới", "may moi", "new pc", "setup", "cài phần mềm", "install apps", "phần mềm cơ bản", "chrome", "office", "kho ứng dụng", "app store", "winget", "cài lại phần mềm", "danh sách ứng dụng"],
+      "route": { "kind": "page", "target": "apps" },
+      "inspects": [],
+      "estimatedMinutes": 20,
+      "restart": "none",
+      "recoveryKey": "mission.new-pc.recovery",
+      "glyph": "GlyphList"
+    },
+    {
+      "id": "mission.device-not-working",
+      "titleKey": "mission.device-not-working.title",
+      "descriptionKey": "mission.device-not-working.description",
+      "aliases": ["không có âm thanh", "khong co am thanh", "mất tiếng", "no sound", "loa", "mic", "không có mạng", "mất mạng", "wifi", "no internet", "no wifi", "màn hình", "display", "camera không lên", "bluetooth", "thiết bị lỗi", "driver", "trình điều khiển", "device", "usb không nhận", "dấu chấm than"],
+      "route": { "kind": "page", "target": "drivers" },
+      "inspects": [],
+      "estimatedMinutes": 5,
+      "restart": "possible",
+      "recoveryKey": "mission.device-not-working.recovery",
+      "glyph": "GlyphDrivers"
+    },
+    {
+      "id": "mission.free-space",
+      "titleKey": "mission.free-space.title",
+      "descriptionKey": "mission.free-space.description",
+      "aliases": ["đầy ổ", "day o", "hết dung lượng", "ổ c đầy", "o c day", "dọn rác", "don rac", "dung lượng", "disk full", "free space", "cleanup", "storage", "giải phóng", "xoá rác", "temp", "cache", "low disk"],
+      "route": { "kind": "page", "target": "cleanup" },
+      "inspects": ["storage.system-drive.free-gb"],
+      "estimatedMinutes": 5,
+      "restart": "none",
+      "recoveryKey": "mission.free-space.recovery",
+      "glyph": "GlyphCleanup"
+    },
+    {
+      "id": "mission.firmware-switches",
+      "titleKey": "mission.firmware-switches.title",
+      "descriptionKey": "mission.firmware-switches.description",
+      "aliases": ["bios", "uefi", "secure boot", "tpm", "ảo hoá", "ao hoa", "virtualization", "vt-x", "svm", "firmware", "chip bảo mật", "security chip", "boot order", "thứ tự khởi động", "fn", "camera bios", "vào bios"],
+      "route": { "kind": "page", "target": "bios" },
+      "inspects": ["firmware.secure-boot", "firmware.tpm.ready", "firmware.cpu.virtualization", "firmware.boot-mode"],
+      "estimatedMinutes": 5,
+      "restart": "required",
+      "recoveryKey": "mission.firmware-switches.recovery",
+      "glyph": "GlyphHardware"
+    },
+    {
+      "id": "mission.docker-wsl",
+      "titleKey": "mission.docker-wsl.title",
+      "descriptionKey": "mission.docker-wsl.description",
+      "aliases": ["docker", "wsl", "wsl 2", "linux", "hyper-v", "hyperv", "container", "ảo hoá cho docker", "máy ảo", "virtual machine", "vmware", "virtualbox"],
+      "route": { "kind": "outcome", "target": "outcome.docker-wsl2-ready" },
+      "inspects": ["cpu.virtualization", "firmware.cpu.virtualization"],
+      "estimatedMinutes": 10,
+      "restart": "required",
+      "recoveryKey": "mission.docker-wsl.recovery",
+      "glyph": "GlyphCpu"
+    },
+    {
+      "id": "mission.windows11-ready",
+      "titleKey": "mission.windows11-ready.title",
+      "descriptionKey": "mission.windows11-ready.description",
+      "aliases": ["windows 11", "win 11", "win11", "nâng cấp", "nang cap", "upgrade", "tpm 2.0", "không lên được win 11", "this pc can't run windows 11", "yêu cầu windows 11"],
+      "route": { "kind": "outcome", "target": "outcome.windows11-ready" },
+      "inspects": ["workload.windows11-ready", "firmware.tpm.version", "firmware.secure-boot"],
+      "estimatedMinutes": 10,
+      "restart": "required",
+      "recoveryKey": "mission.windows11-ready.recovery",
+      "glyph": "GlyphCheck"
+    },
+    {
+      "id": "mission.slow-startup",
+      "titleKey": "mission.slow-startup.title",
+      "descriptionKey": "mission.slow-startup.description",
+      "aliases": ["khởi động chậm", "khoi dong cham", "mở máy lâu", "boot chậm", "slow boot", "startup", "chạy cùng windows", "tự mở khi bật máy", "startup apps", "autostart"],
+      "route": { "kind": "page", "target": "startup" },
+      "inspects": [],
+      "estimatedMinutes": 3,
+      "restart": "none",
+      "recoveryKey": "mission.slow-startup.recovery",
+      "glyph": "GlyphStartup"
+    },
+    {
+      "id": "mission.am-i-protected",
+      "titleKey": "mission.am-i-protected.title",
+      "descriptionKey": "mission.am-i-protected.description",
+      "aliases": ["bảo vệ", "bao ve", "an toàn", "virus", "mã độc", "defender", "antivirus", "bitlocker", "mã hoá", "encryption", "security", "protected", "có an toàn không", "am i safe", "hack"],
+      "route": { "kind": "page", "target": "security" },
+      "inspects": ["firmware.secure-boot", "firmware.tpm.ready", "security.bitlocker.system-drive"],
+      "estimatedMinutes": 2,
+      "restart": "none",
+      "recoveryKey": "mission.am-i-protected.recovery",
+      "glyph": "GlyphSecurity"
+    },
+    {
+      "id": "mission.undo",
+      "titleKey": "mission.undo.title",
+      "descriptionKey": "mission.undo.description",
+      "aliases": ["hoàn tác", "hoan tac", "undo", "quay lại", "revert", "rollback", "lỡ tay", "đổi nhầm", "khôi phục thay đổi", "lịch sử thay đổi", "history", "transaction"],
+      "route": { "kind": "page", "target": "plan", "query": "history" },
+      "inspects": [],
+      "estimatedMinutes": 2,
+      "restart": "possible",
+      "recoveryKey": "mission.undo.recovery",
+      "glyph": "GlyphRefresh"
+    },
+    {
+      "id": "mission.smooth-display",
+      "titleKey": "mission.smooth-display.title",
+      "descriptionKey": "mission.smooth-display.description",
+      "aliases": ["màn hình mượt", "man hinh muot", "tần số quét", "tan so quet", "refresh rate", "hz", "144hz", "120hz", "165hz", "màn hình giật", "chuột không mượt", "smooth display"],
+      "route": { "kind": "outcome", "target": "outcome.display-max-refresh" },
+      "inspects": ["display.current-refresh-rate", "display.max-refresh-rate"],
+      "estimatedMinutes": 1,
+      "restart": "none",
+      "recoveryKey": "mission.smooth-display.recovery",
+      "glyph": "GlyphMonitor"
+    },
+    {
+      "id": "mission.restore-point",
+      "titleKey": "mission.restore-point.title",
+      "descriptionKey": "mission.restore-point.description",
+      "aliases": ["điểm khôi phục", "diem khoi phuc", "restore point", "system restore", "sao lưu trước khi đổi", "backup", "an toàn trước khi cài", "protect before change"],
+      "route": { "kind": "outcome", "target": "outcome.system-restore-on" },
+      "inspects": ["windows.system-restore", "recovery.restore-point.age-days"],
+      "estimatedMinutes": 3,
+      "restart": "none",
+      "recoveryKey": "mission.restore-point.recovery",
+      "glyph": "GlyphRecovery"
+    }
+  ]
+}

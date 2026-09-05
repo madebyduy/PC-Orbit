@@ -4,6 +4,8 @@ using PcOrbit.Core.Graph;
 using PcOrbit.Core.Model;
 using PcOrbit.Core.Preflight;
 
+using PcOrbit.Core.Navigation;
+
 namespace PcOrbit.Core.Checkup;
 
 public enum FindingSeverity
@@ -40,8 +42,19 @@ public sealed record Finding(
     string? SuggestedOutcomeId = null,
     RestartKind Restart = RestartKind.None,
     int EstimatedSeconds = 0,
-    IReadOnlyList<CapabilityId>? Related = null)
+    IReadOnlyList<CapabilityId>? Related = null,
+    Route? Route = null)
 {
+    /// <summary>
+    /// Where this finding leads. Never null for a shipped rule; a test refuses a dead end.
+    /// </summary>
+    /// <remarks>
+    /// The outcome wins when there is one, because it is the only route that ends in a change the
+    /// app can verify. Otherwise the rule's own route: the page, guide, Settings screen or support
+    /// site that is the honest next step when nothing can be automated safely.
+    /// </remarks>
+    public Route? NextRoute => SuggestedOutcomeId is { } outcome ? Route.ToOutcome(outcome) : Route;
+
     /// <summary>False when there is nothing to press: the finding is information only.</summary>
     public bool HasFix => SuggestedActionId is not null || SuggestedOutcomeId is not null;
 
@@ -245,6 +258,7 @@ public sealed class MemorySpeedRule : ICheckupRule
 
         yield return new Finding(
             Code: Code,
+            Route: Route.ToGuide("memory XMP"),
             Severity: FindingSeverity.Attention,
             TitleKey: "finding.memory.speed-mismatch.title",
             BenefitKey: "finding.memory.speed-mismatch.benefit",
@@ -324,6 +338,7 @@ public sealed class FeatureDependencyRule : ICheckupRule
 
                 yield return new Finding(
                     Code: $"{Code}:{node.Id}",
+                    Route: Route.ToPage(PageKeys.Readings),
                     Severity: FindingSeverity.Attention,
                     TitleKey: "finding.windows.feature-dependency-mismatch.title",
                     BenefitKey: "finding.windows.feature-dependency-mismatch.benefit",
@@ -377,6 +392,7 @@ public sealed class DiskSpaceRule : ICheckupRule
 
         yield return new Finding(
             Code: Code,
+            Route: Route.ToPage(PageKeys.Cleanup),
             Severity: freeGb < CriticalGb ? FindingSeverity.Warning : FindingSeverity.Attention,
             TitleKey: "finding.storage.system-drive-low.title",
             BenefitKey: "finding.storage.system-drive-low.benefit",
@@ -410,6 +426,7 @@ public sealed class BitLockerRecoveryKeyRule : ICheckupRule
 
         yield return new Finding(
             Code: Code,
+            Route: Route.ToWeb("https://aka.ms/myrecoverykey"),
             Severity: FindingSeverity.Warning,
             TitleKey: "finding.security.bitlocker-recovery-key-unconfirmed.title",
             BenefitKey: "finding.security.bitlocker-recovery-key-unconfirmed.benefit",

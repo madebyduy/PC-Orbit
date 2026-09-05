@@ -220,6 +220,9 @@ public partial class MainWindow
         TimelineGapTitle.Text = T("app.timeline.gap");
 
         ApplyAppsPageStrings();
+        ApplyMissionStrings();
+        ApplyIncidentStrings();
+        ApplyLadderStrings();
         ApplyBiosStrings();
         ApplyFirmwareStrings();
 
@@ -573,6 +576,8 @@ public partial class MainWindow
         {
             return;
         }
+
+        RenderLadder();
 
         CapabilityId[] state =
         [
@@ -1071,6 +1076,9 @@ public partial class MainWindow
         }
 
         Timeline timeline = TimelineBuilder.Build(own, external, since, limit: 120);
+
+        _timeline = timeline;
+        RenderIncident();
 
         // Stated above the list, not below it: a reader who has already scrolled a quiet timeline
         // has already concluded the machine was quiet.

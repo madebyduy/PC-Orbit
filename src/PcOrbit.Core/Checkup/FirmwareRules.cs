@@ -2,6 +2,8 @@ using System.Globalization;
 using PcOrbit.Core.Model;
 using PcOrbit.Core.Preflight;
 
+using PcOrbit.Core.Navigation;
+
 namespace PcOrbit.Core.Checkup;
 
 /// <summary>
@@ -106,6 +108,7 @@ public sealed class FirmwareAdvisoryRule : ICheckupRule
 
         yield return new Finding(
             Code: Code,
+            Route: Route.ToPage(PageKeys.Bios),
             Severity: FindingSeverity.Info,
             TitleKey: "finding.firmware.bios-old.title",
             BenefitKey: viaWindowsUpdate

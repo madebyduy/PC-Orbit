@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pcorbit.dev/schemas/mission.schema.json",
+  "title": "PC Orbit mission catalogue",
+  "description": "Things a person wants done, in their words, each pointing at the page or outcome where that starts. A mission carries no script and no action.",
+  "type": "object",
+  "required": ["version", "missions"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+    "missions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "titleKey", "descriptionKey", "aliases", "route", "estimatedMinutes", "restart", "recoveryKey"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^mission\\.[a-z0-9-]+$" },
+          "titleKey": { "type": "string" },
+          "descriptionKey": { "type": "string" },
+          "aliases": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 2 },
+            "description": "What people type, in Vietnamese and English. Matching folds accents, so both forms are not required, but listing them documents the intent."
+          },
+          "route": {
+            "type": "object",
+            "required": ["kind", "target"],
+            "additionalProperties": false,
+            "properties": {
+              "kind": { "type": "string", "enum": ["outcome", "page", "guide", "settings", "web"] },
+              "target": { "type": "string", "minLength": 1 },
+              "query": { "type": "string", "description": "For a page or guide: text placed in that page's search box on arrival." }
+            }
+          },
+          "inspects": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Capability ids the mission will read, shown so the card says what it looks at before it starts."
+          },
+          "estimatedMinutes": { "type": "integer", "minimum": 0 },
+          "restart": { "type": "string", "enum": ["none", "possible", "required"] },
+          "recoveryKey": { "type": "string", "description": "One sentence on how this is undone if it disappoints." },
+          "glyph": { "type": "string", "description": "A Glyph* resource key for the card's icon." }
+        }
+      }
+    }
+  }
+}

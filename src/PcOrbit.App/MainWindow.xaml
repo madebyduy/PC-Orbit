@@ -180,6 +180,55 @@
         <!-- ================================= DASHBOARD -->
         <ScrollViewer x:Name="ViewDashboard" VerticalScrollBarVisibility="Auto" Padding="26,0,26,18">
           <StackPanel>
+
+            <!--
+              Mission Center. The rail is organised by subsystem and problems are not; this is where
+              a problem in a person's own words becomes the right page. Cards are data
+              (data/missions), each saying how long, whether it restarts, and the way back.
+            -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="MissionTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,10" />
+                <TextBox x:Name="MissionSearch" Style="{StaticResource SearchBox}" Height="42" FontSize="14.5"
+                         TextChanged="OnMissionSearchChanged" />
+                <ItemsControl x:Name="MissionResults" Margin="0,12,0,0">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource AppCard}" Width="300">
+                        <Grid>
+                          <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                          </Grid.RowDefinitions>
+                          <DockPanel Grid.Row="0">
+                            <Border DockPanel.Dock="Left" Width="36" Height="36" CornerRadius="10" Background="{Binding Tint}">
+                              <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="16" Foreground="{Binding Ink}" />
+                            </Border>
+                            <TextBlock Text="{Binding Title}" FontSize="13.5" FontWeight="SemiBold" Foreground="{StaticResource Ink}"
+                                       Margin="11,0,0,0" VerticalAlignment="Center" TextWrapping="Wrap" />
+                          </DockPanel>
+                          <TextBlock Grid.Row="1" Text="{Binding Description}" FontSize="12" Foreground="{StaticResource Muted}"
+                                     Margin="0,9,0,0" TextWrapping="Wrap" />
+                          <TextBlock Grid.Row="2" Text="{Binding Recovery}" Style="{StaticResource Tiny}" Margin="0,8,0,0"
+                                     TextWrapping="Wrap" FontStyle="Italic" />
+                          <DockPanel Grid.Row="3" Margin="0,10,0,0">
+                            <Button DockPanel.Dock="Right" Content="{Binding OpenLabel}" Tag="{Binding Id}"
+                                    Style="{StaticResource RowButton}" Click="OnMissionOpen" />
+                            <TextBlock Text="{Binding Meta}" Style="{StaticResource Tiny}" VerticalAlignment="Center" />
+                          </DockPanel>
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock x:Name="MissionNoMatch" Style="{StaticResource Sub}" Margin="4,6,0,0" Visibility="Collapsed" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
             <DockPanel Margin="0,0,0,14">
               <StackPanel>
               </StackPanel>
@@ -284,6 +333,9 @@
                         <StackPanel Orientation="Horizontal" Margin="0,11,0,0">
                           <Button Content="{Binding FixLabel}" Tag="{Binding OutcomeId}" Visibility="{Binding FixVisible}"
                                   Style="{StaticResource PrimaryButton}" Click="OnFindingFix" />
+                          <Button Content="{Binding RouteLabel}" Tag="{Binding Code}" Visibility="{Binding RouteVisible}"
+
+                                  Style="{StaticResource RowButton}" Margin="8,0,0,0" Click="OnFindingRoute" />
                           <Border Style="{StaticResource Chip}" Background="{StaticResource Hair}" Margin="10,0,0,0" VerticalAlignment="Center">
                             <TextBlock Text="{Binding Evidence}" FontSize="11" Foreground="{StaticResource Muted}" />
                           </Border>
@@ -914,6 +966,42 @@
               </StackPanel>
             </Border>
 
+            <!-- Recovery, gentlest first. Each rung's readiness is read from the machine. -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="LadderTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,4" />
+                <TextBlock x:Name="LadderHint" Style="{StaticResource Sub}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                <ItemsControl x:Name="LadderList">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="13,11" Background="{Binding RowBg}">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <Border Grid.Column="0" Width="28" Height="28" CornerRadius="14" Background="{StaticResource AccentSoft}" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <TextBlock Text="{Binding Step}" FontSize="12.5" FontWeight="Bold" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                          </Border>
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <TextBlock Text="{Binding Title}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Ink}" />
+                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Tiny}" Margin="0,2,0,0" TextWrapping="Wrap" />
+                          </StackPanel>
+                          <Border Grid.Column="2" Background="{Binding ReadyTint}" CornerRadius="6" Padding="8,2" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="{Binding Readiness}" FontSize="10.5" FontWeight="SemiBold" Foreground="{Binding ReadyInk}" />
+                          </Border>
+                          <Button Grid.Column="3" Content="{Binding OpenLabel}" Tag="{Binding Tag}" IsEnabled="{Binding Enabled}"
+                                  Style="{StaticResource RowButton}" VerticalAlignment="Center" Click="OnLadderOpen" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
             <Border Style="{StaticResource Card}" Margin="0">
               <StackPanel>
                 <DockPanel Margin="0,0,0,10">
@@ -1296,6 +1384,53 @@
         <!-- ================================= TIMELINE -->
         <ScrollViewer x:Name="ViewTimeline" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
           <StackPanel>
+            <!--
+              Incident Mode. TimelineBuilder.Preceding had tests and no caller; this is the caller.
+              The moment is the user's, the window is 48 hours, and every row says whether it is the
+              symptom's own trace or merely something that happened first.
+            -->
+            <Border x:Name="IncidentCard" Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="IncidentTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,4" />
+                <TextBlock x:Name="IncidentHint" Style="{StaticResource Sub}" TextWrapping="Wrap" Margin="0,0,0,12" />
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock x:Name="IncidentWhen" Style="{StaticResource Tiny}" VerticalAlignment="Center" Margin="2,0,10,0" />
+                  <RadioButton x:Name="IncidentToday" Style="{StaticResource FilterChip}" GroupName="Incident" Checked="OnIncidentWindowChanged" />
+                  <RadioButton x:Name="IncidentYesterday" Style="{StaticResource FilterChip}" GroupName="Incident" Checked="OnIncidentWindowChanged" />
+                  <RadioButton x:Name="IncidentThreeDays" Style="{StaticResource FilterChip}" GroupName="Incident" IsChecked="True" Checked="OnIncidentWindowChanged" />
+                  <RadioButton x:Name="IncidentWeek" Style="{StaticResource FilterChip}" GroupName="Incident" Checked="OnIncidentWindowChanged" />
+                  <Button x:Name="IncidentRescan" Style="{StaticResource QuickChip}" Margin="12,0,0,0" Click="OnIncidentRescan" />
+                </StackPanel>
+                <TextBlock x:Name="IncidentEmpty" Style="{StaticResource Sub}" Margin="2,12,0,0" TextWrapping="Wrap" Visibility="Collapsed" />
+                <ItemsControl x:Name="IncidentList" Margin="0,10,0,0">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="13,10" Background="{Binding RowBg}">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <TextBlock Grid.Column="0" Text="{Binding When}" Style="{StaticResource Tiny}" Width="90" VerticalAlignment="Center" />
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,12,0">
+                            <TextBlock Text="{Binding Change}" FontSize="13" FontWeight="SemiBold" Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{Binding Category}" Style="{StaticResource Tiny}" Margin="0,2,0,0" />
+                          </StackPanel>
+                          <Border Grid.Column="2" Background="{Binding KindTint}" CornerRadius="6" Padding="8,2" VerticalAlignment="Center" Margin="0,0,10,0">
+                            <TextBlock Text="{Binding Kind}" FontSize="10.5" FontWeight="SemiBold" Foreground="{Binding KindInk}" />
+                          </Border>
+                          <Button Grid.Column="3" Content="{Binding TestLabel}" Tag="{Binding TestTag}" Visibility="{Binding TestVisible}"
+                                  Style="{StaticResource RowButton}" VerticalAlignment="Center" Click="OnIncidentTest" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
+            </Border>
+
             <Border x:Name="TimelineGapCard" Style="{StaticResource Card}" Margin="0,0,0,14"
                     Background="{StaticResource WarnSoft}" BorderBrush="#F0DCB4" Visibility="Collapsed">
               <StackPanel>

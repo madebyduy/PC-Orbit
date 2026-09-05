@@ -11,6 +11,7 @@ using PcOrbit.Core.Compiler;
 using PcOrbit.Core.Events;
 using PcOrbit.Core.Graph;
 using PcOrbit.Core.Guides;
+using PcOrbit.Core.Serialization;
 using PcOrbit.Core.Model;
 using PcOrbit.Core.Outcomes;
 using PcOrbit.Core.Preflight;
@@ -1552,6 +1553,11 @@ public static class Commands
         Output.Line($"  outcomes            {host.Outcomes.Count}");
         Output.Line($"  guides              {host.Guides.Count}");
         Output.Line($"  applications        {host.Apps.All.Count}");
+        Output.Line($"  missions            {host.Missions.All.Count}");
+
+        problems.AddRange(MissionCatalogLoader.Validate(
+            host.Missions,
+            host.Outcomes.Select(o => o.Id).ToHashSet(StringComparer.Ordinal)));
         Output.Line($"  strings locale      {host.Strings.Locale}");
         Output.Line($"  executors allowed   {host.Executors.AllowedIds.Count}");
         Output.Line($"  elevated            {host.Elevation.IsElevated}");

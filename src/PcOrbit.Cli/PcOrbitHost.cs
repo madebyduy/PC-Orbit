@@ -4,6 +4,7 @@ using PcOrbit.Core.Abstractions;
 using PcOrbit.Core.Actions;
 using PcOrbit.Core.Apps;
 using PcOrbit.Core.Firmware;
+using PcOrbit.Core.Missions;
 using PcOrbit.Core.Checkup;
 using PcOrbit.Core.Cleanup;
 using PcOrbit.Core.Compiler;
@@ -70,6 +71,14 @@ public sealed class PcOrbitHost : IDisposable
     public ActionCatalog Catalog { get; }
 
     public IReadOnlyList<Outcome> Outcomes { get; }
+
+    private MissionCatalog? _missions;
+
+    /// <summary>
+    /// What people want done, in their words, each pointing at a page or an outcome (ADR 0008).
+    /// </summary>
+    public MissionCatalog Missions => _missions ??=
+        MissionCatalogLoader.LoadDirectory(Path.Combine(DataDirectory, "missions"));
 
     public IReadOnlyDictionary<string, GuideData> Guides { get; }
 

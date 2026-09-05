@@ -18,6 +18,7 @@ using PcOrbit.Core.Graph;
 using PcOrbit.Core.Guides;
 using PcOrbit.Core.Localization;
 using PcOrbit.Core.Model;
+using PcOrbit.Core.Navigation;
 using PcOrbit.Core.Outcomes;
 using PcOrbit.Core.Preflight;
 using PcOrbit.Core.Transactions;
@@ -38,7 +39,10 @@ public sealed record FindingRow(
     Visibility FixVisible,
     string? OutcomeId,
     Brush Tone,
-    Brush Accent);
+    Brush Accent,
+    string Code = "",
+    string RouteLabel = "",
+    Visibility RouteVisible = Visibility.Collapsed);
 
 public sealed record OutcomeRow(Outcome Outcome, string Title, string Description, string Id, string OpenLabel)
 {
@@ -282,6 +286,7 @@ public partial class MainWindow : Window
         AlwaysElevateBox.IsChecked = _settings.AlwaysElevate;
 
         PopulateOutcomes();
+        RenderMissions();
 
         // Two more read-only batches. Started alongside the state scan rather than after it, so
         // the wait stays the length of the slowest one instead of their sum.
@@ -368,6 +373,14 @@ public partial class MainWindow : Window
     {
         base.OnPreviewKeyDown(e);
 
+        if (e.Key == System.Windows.Input.Key.K
+            && (System.Windows.Input.Keyboard.Modifiers & System.Windows.Input.ModifierKeys.Control) != 0)
+        {
+            FocusMissionSearch();
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == System.Windows.Input.Key.F5)
         {
             OnRescan(this, new RoutedEventArgs());
@@ -447,6 +460,7 @@ public partial class MainWindow : Window
 
         ApplyStrings();
         PopulateOutcomes();
+        RenderMissions();
         RenderMachineCard();
         RenderDashboard();
         RenderStatusView();
@@ -1222,6 +1236,10 @@ public partial class MainWindow : Window
                 FixLabel: T("app.fix"),
                 FixVisible: f.SuggestedOutcomeId is null ? Visibility.Collapsed : Visibility.Visible,
                 OutcomeId: f.SuggestedOutcomeId,
+                Code: f.Code,
+                RouteLabel: f.NextRoute is { } route ? RouteLabel(route) : string.Empty,
+                // Fix already leads to the outcome; the route button is for everything else.
+                RouteVisible: f.NextRoute is { Kind: not RouteKind.Outcome } ? Visibility.Visible : Visibility.Collapsed,
                 Tone: warn ? B("WarnSoft") : B("AccentSoft"),
                 Accent: warn ? B("Warn") : B("Accent"));
         }).ToList();

@@ -3,6 +3,8 @@ using PcOrbit.Core.Actions;
 using PcOrbit.Core.Model;
 using PcOrbit.Core.Preflight;
 
+using PcOrbit.Core.Navigation;
+
 namespace PcOrbit.Core.Checkup;
 
 /// <summary>
@@ -45,6 +47,7 @@ public sealed class RecoveryReadinessRule : ICheckupRule
 
         yield return new Finding(
             Code: staged ? "recovery.environment-staged" : Code,
+            Route: Route.ToPage(PageKeys.Recovery),
 
             // A Warning, at the same level as System Restore being off: this is about losing
             // access to the machine, not about it running below its potential.
@@ -103,6 +106,7 @@ public sealed class RestorePointFreshnessRule : ICheckupRule
 
         yield return new Finding(
             Code: Code,
+            Route: Route.ToOutcome("outcome.system-restore-on"),
             Severity: FindingSeverity.Attention,
             TitleKey: "finding.recovery.restore-point-stale.title",
             BenefitKey: "finding.recovery.restore-point-stale.benefit",
@@ -178,6 +182,7 @@ public sealed class Windows11ReadinessRule : ICheckupRule
 
         yield return new Finding(
             Code: Code,
+            Route: Route.ToPage(PageKeys.Security),
             Severity: FindingSeverity.Info,
             TitleKey: "finding.workload.windows11-not-ready.title",
             BenefitKey: fixableInFirmware
