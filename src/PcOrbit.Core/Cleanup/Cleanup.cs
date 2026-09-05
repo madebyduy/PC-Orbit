@@ -102,6 +102,12 @@ public enum CleanupTrust
 /// Null when the folder is empty. Used to keep the age threshold honest: a temp folder written to
 /// a minute ago belongs to something that is still running.
 /// </param>
+/// <summary>One of the biggest files a candidate covers — name, size and age, so a person can judge it.</summary>
+public sealed record CleanupSample(string Name, long Bytes, DateTimeOffset Modified);
+
+/// <summary>How far a removal has got, for a progress bar and for stopping it.</summary>
+public sealed record CleanupProgress(int FilesDone, int FilesTotal, long BytesDone, string CurrentId);
+
 public sealed record CleanupCandidate(
     string Id,
     CleanupCategory Category,
@@ -112,6 +118,19 @@ public sealed record CleanupCandidate(
     CleanupTrust Trust,
     Evidence Evidence)
 {
+    /// <summary>
+    /// The largest files found, newest-first among equals, at most a handful.
+    /// </summary>
+    /// <remarks>
+    /// "Temporary files, 1,456 MB" is a number. "chrome_installer.exe, 412 MB, 40 days old" is
+    /// something a person can look at and decide about. The survey keeps the top few per location
+    /// as it walks, at no extra pass over the disk.
+    /// </remarks>
+    public IReadOnlyList<CleanupSample> Largest { get; init; } = [];
+
+    /// <summary>Every folder this candidate covers, for the details panel.</summary>
+    public IReadOnlyList<string> Folders { get; init; } = [];
+
     public double MegaBytes => Bytes / 1024d / 1024d;
 
     /// <summary>Only a measured candidate with something in it can be acted on.</summary>
@@ -209,8 +228,14 @@ public interface IQuarantineStore
 
     /// <summary>Moves the files of these candidates into the store. Never throws for one bad file.</summary>
     /// <remarks>Refuses anything that is not <see cref="CleanupTrust.Reclaimable"/>.</remarks>
+    /// <param name="progress">Reported every few dozen files. Null when nobody is watching.</param>
+    /// <param name="cancellationToken">
+    /// Stops between files, never mid-file, and returns what was done so far rather than throwing.
+    /// A stopped quarantine is still a complete batch of what it moved, restorable like any other.
+    /// </param>
     Task<QuarantineBatch> QuarantineAsync(
         IReadOnlyList<CleanupCandidate> candidates,
+        IProgress<CleanupProgress>? progress = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -225,6 +250,7 @@ public interface IQuarantineStore
     /// </remarks>
     Task<CleanupDeletion> DeleteRegenerableAsync(
         IReadOnlyList<CleanupCandidate> candidates,
+        IProgress<CleanupProgress>? progress = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>

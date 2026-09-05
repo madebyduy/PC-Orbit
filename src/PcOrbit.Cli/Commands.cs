@@ -935,7 +935,7 @@ public static class Commands
         if (regenerable.Count > 0)
         {
             CleanupDeletion deletion = await host.Quarantine
-                .DeleteRegenerableAsync(regenerable, ct)
+                .DeleteRegenerableAsync(regenerable, null, ct)
                 .ConfigureAwait(false);
 
             Output.Line("  " + output.Text("cli.clean.freed", Output.Args(
@@ -953,7 +953,7 @@ public static class Commands
 
         if (reclaimable.Count > 0)
         {
-            QuarantineBatch batch = await host.Quarantine.QuarantineAsync(reclaimable, ct).ConfigureAwait(false);
+            QuarantineBatch batch = await host.Quarantine.QuarantineAsync(reclaimable, null, ct).ConfigureAwait(false);
 
             Output.Line("  " + output.Text("cli.clean.done", Output.Args(
                 ("files", Output.Number(batch.Files.Count)),

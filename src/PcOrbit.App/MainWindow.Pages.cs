@@ -57,6 +57,9 @@ public sealed record SwitchRow(
 /// still visible: the row's job is to account for the space, and a missing row accounts for
 /// nothing.
 /// </param>
+/// <summary>One of the largest files under a cleanup row, already formatted for the panel.</summary>
+public sealed record CleanupSampleRow(string Name, string Size, string Age);
+
 public sealed class CleanupRow(
     string id,
     string name,
@@ -82,11 +85,30 @@ public sealed class CleanupRow(
 
     public bool CanChoose { get; } = canChoose;
 
-    public bool Chosen { get; set; } = canChoose;
-
     public Brush Accent { get; } = accent;
 
     public Brush RowBg { get; } = rowBg;
+
+    public bool Chosen { get; set; }
+
+    /// <summary>What these files are, in one sentence a person can judge.</summary>
+    public string Explain { get; init; } = string.Empty;
+
+    public string TrustLabel { get; init; } = string.Empty;
+
+    public Brush Tint { get; init; } = Brushes.Transparent;
+
+    public string DetailsLabel { get; init; } = string.Empty;
+
+    public string LargestLabel { get; init; } = string.Empty;
+
+    public string FoldersLabel { get; init; } = string.Empty;
+
+    public IReadOnlyList<CleanupSampleRow> Largest { get; init; } = [];
+
+    public string Folders { get; init; } = string.Empty;
+
+    public Visibility HasDetails => Largest.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
 }
 
 public sealed record TimelineRow(
@@ -616,25 +638,53 @@ public partial class MainWindow
         // is" rather than as a set of unrelated numbers.
         double largest = _cleanup.Candidates.Count == 0 ? 1 : Math.Max(1, _cleanup.Candidates.Max(c => c.Bytes));
 
-        CleanupList.ItemsSource = _cleanup.Candidates.Select((candidate, i) => new CleanupRow(
-            candidate.Id,
-            T($"cleanup.item.{candidate.Id}"),
-            $"{candidate.MegaBytes:N0} MB",
-            NoteFor(candidate),
-            GlyphFor(candidate),
-            candidate.Bytes / largest * 100d,
-            candidate.CanReclaim,
-            candidate.Trust switch
-            {
-                CleanupTrust.Regenerable when candidate.CanReclaim => B("Good"),
-                CleanupTrust.Reclaimable when candidate.CanReclaim => B("Accent"),
-                CleanupTrust.Protected => B("Warn"),
-                _ => B("Faint"),
-            },
-            Stripe(i))
+        int days = (int)_host.Quarantine.Retention.TotalDays;
+
+        CleanupList.ItemsSource = _cleanup.Candidates.Select((candidate, i) =>
         {
-            Chosen = candidate.CanReclaim && !_cleanupSkipped.Contains(candidate.Id),
+            (Brush accent, Brush tint, string trust) = candidate switch
+            {
+                { Trust: CleanupTrust.Regenerable, CanReclaim: true } => (B("Good"), B("GoodSoft"), T("app.cleanup.trust.now")),
+                { Trust: CleanupTrust.Reclaimable, CanReclaim: true } => (B("Accent"), B("AccentSoft"), T("app.cleanup.trust.later", Args(("days", N(days))))),
+                { Trust: CleanupTrust.Protected } => (B("Warn"), B("WarnSoft"), T("app.cleanup.trust.protected")),
+                { Trust: CleanupTrust.ReportOnly } => (B("Muted"), B("Hair"), T("app.cleanup.trust.report")),
+                _ => (B("Faint"), B("Hair"), T("cli.clean.alreadyClear")),
+            };
+
+            return new CleanupRow(
+                candidate.Id,
+                T($"cleanup.item.{candidate.Id}"),
+                $"{candidate.MegaBytes:N0} MB",
+                NoteFor(candidate),
+                GlyphFor(candidate),
+                candidate.Bytes / largest * 100d,
+                candidate.CanReclaim,
+                accent,
+                Stripe(i))
+            {
+                Chosen = candidate.CanReclaim && !_cleanupSkipped.Contains(candidate.Id),
+                Explain = T($"cleanup.what.{candidate.Id}"),
+                TrustLabel = trust,
+                Tint = tint,
+                DetailsLabel = T("app.cleanup.details"),
+                LargestLabel = T("app.cleanup.largest"),
+                FoldersLabel = T("app.cleanup.folders"),
+                Largest = [.. candidate.Largest.Select(f => new CleanupSampleRow(
+                    f.Name,
+                    f.Bytes >= 1024 * 1024
+                        ? $"{f.Bytes / 1024d / 1024d:N0} MB"
+                        : $"{Math.Max(1, f.Bytes / 1024d):N0} KB",
+                    AgeOf(f.Modified)))],
+                Folders = string.Join("\n", candidate.Folders),
+            };
         }).ToList();
+    }
+
+    private string AgeOf(DateTimeOffset when)
+    {
+        int days = (int)(DateTimeOffset.Now - when).TotalDays;
+
+        return days <= 0 ? T("app.cleanup.ageToday") : T("app.cleanup.age", Args(("days", N(days))));
     }
 
     /// <summary>
@@ -716,6 +766,14 @@ public partial class MainWindow
         RenderCleanupTotals();
     }
 
+    private CancellationTokenSource? _cleanupCancel;
+
+    private void OnCleanupCancel(object sender, RoutedEventArgs e)
+    {
+        _cleanupCancel?.Cancel();
+        CleanupCancel.IsEnabled = false;
+    }
+
     private async void OnCleanupApply(object sender, RoutedEventArgs e) => await CleanAsync(alsoPurge: false);
 
     private async void OnCleanupPurge(object sender, RoutedEventArgs e) => await CleanAsync(alsoPurge: true);
@@ -774,37 +832,65 @@ public partial class MainWindow
         long freed = 0;
         int locked = 0;
         int moved = 0;
+        var stopped = false;
 
-        await BusyAsync("app.cleanup.working", async () =>
+        // Off the dispatcher. The store moves and deletes files synchronously — tens of thousands
+        // of them here — and awaiting that on the UI thread froze the whole window for the
+        // duration. Progress comes back through Progress<T>, which was created on the UI thread
+        // and so marshals each report onto it; the rest of the app stays usable meanwhile.
+        _cleanupCancel?.Dispose();
+        _cleanupCancel = new CancellationTokenSource();
+        CancellationToken token = _cleanupCancel.Token;
+
+        var progress = new Progress<CleanupProgress>(p =>
+        {
+            CleanupProgressBar.Value = p.FilesTotal == 0 ? 0 : Math.Min(100, p.FilesDone * 100d / p.FilesTotal);
+            CleanupProgressText.Text = T("app.cleanup.progress", Args(
+                ("done", N(p.FilesDone)),
+                ("total", N(p.FilesTotal)),
+                ("mb", N((int)Math.Round(p.BytesDone / 1024d / 1024d))),
+                ("what", p.CurrentId.Length == 0 ? string.Empty : T($"cleanup.item.{p.CurrentId}"))));
+        });
+
+        CleanupProgressText.Text = T("app.cleanup.progressStart");
+        CleanupProgressBar.Value = 0;
+        CleanupCancel.Content = T("app.cleanup.cancel");
+        CleanupProgressCard.Visibility = Visibility.Visible;
+        CleanupApply.IsEnabled = false;
+        CleanupPurge.IsEnabled = false;
+
+        try
         {
             if (deleteNow.Count > 0)
             {
-                CleanupDeletion deletion = await _host.Quarantine.DeleteRegenerableAsync(deleteNow);
+                CleanupDeletion deletion = await Task.Run(
+                    () => _host.Quarantine.DeleteRegenerableAsync(deleteNow, progress, token),
+                    CancellationToken.None);
 
                 freed += deletion.Freed;
                 locked = deletion.Locked;
             }
 
-            if (quarantine.Count > 0)
+            if (quarantine.Count > 0 && !token.IsCancellationRequested)
             {
-                QuarantineBatch batch = await _host.Quarantine.QuarantineAsync(quarantine);
+                QuarantineBatch batch = await Task.Run(
+                    () => _host.Quarantine.QuarantineAsync(quarantine, progress, token),
+                    CancellationToken.None);
 
                 moved = batch.Files.Count;
+            }
 
-                if (alsoPurge)
-                {
-                    freed += await _host.Quarantine.PurgeAllAsync();
-                }
-                else
-                {
-                    freed += 0;
-                }
-            }
-            else if (alsoPurge)
+            if (alsoPurge && !token.IsCancellationRequested)
             {
-                freed += await _host.Quarantine.PurgeAllAsync();
+                freed += await Task.Run(() => _host.Quarantine.PurgeAllAsync(CancellationToken.None), CancellationToken.None);
             }
-        });
+
+            stopped = token.IsCancellationRequested;
+        }
+        finally
+        {
+            CleanupProgressCard.Visibility = Visibility.Collapsed;
+        }
 
         var summary = new List<string>
         {
@@ -813,6 +899,11 @@ public partial class MainWindow
                 ("moved", N(moved)),
                 ("days", N((int)_host.Quarantine.Retention.TotalDays)))),
         };
+
+        if (stopped)
+        {
+            summary.Insert(0, T("app.cleanup.cancelled"));
+        }
 
         // A running browser holds its own cache open. Expected, and said out loud rather than
         // quietly subtracted from the total the user was shown a moment ago.

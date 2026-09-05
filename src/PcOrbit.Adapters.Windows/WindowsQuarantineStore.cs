@@ -66,6 +66,7 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
 
     public async Task<QuarantineBatch> QuarantineAsync(
         IReadOnlyList<CleanupCandidate> candidates,
+        IProgress<CleanupProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(candidates);
@@ -80,8 +81,18 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
         List<string> failures = [];
         int index = 0;
 
+        int total = candidates.Sum(c => c.FileCount);
+        int done = 0;
+        long bytesDone = 0;
+        var stopped = false;
+
         foreach (CleanupCandidate candidate in candidates)
         {
+            if (stopped)
+            {
+                break;
+            }
+
             // Refused here as well as in the UI. Quarantine is for what can usefully come back;
             // a regenerable cache goes through DeleteRegenerableAsync, and anything else is a bug
             // in the caller that the store is the last place to catch.
@@ -93,7 +104,13 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
 
             foreach (FileInfo file in FilesOf(candidate, failures))
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                // Stopping is between files, never in the middle of one, and it is a result rather
+                // than an exception: what moved is a complete, restorable batch.
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    stopped = true;
+                    break;
+                }
 
                 long bytes;
 
@@ -113,9 +130,22 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
                 {
                     stored.Add(new QuarantinedFile(file.FullName, storedName, bytes));
                     index++;
+                    bytesDone += bytes;
+                }
+
+                if (++done % 40 == 0)
+                {
+                    progress?.Report(new CleanupProgress(done, total, bytesDone, candidate.Id));
                 }
             }
         }
+
+        if (stopped)
+        {
+            failures.Add("stopped by the user before every file was moved.");
+        }
+
+        progress?.Report(new CleanupProgress(done, total, bytesDone, string.Empty));
 
         var batch = new QuarantineBatch(batchId, now, now + Retention, stored, failures);
 
@@ -270,6 +300,7 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
 
     public Task<CleanupDeletion> DeleteRegenerableAsync(
         IReadOnlyList<CleanupCandidate> candidates,
+        IProgress<CleanupProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(candidates);
@@ -279,8 +310,17 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
         int locked = 0;
         List<string> failures = [];
 
+        int total = candidates.Sum(c => c.FileCount);
+        int done = 0;
+        var stopped = false;
+
         foreach (CleanupCandidate candidate in candidates)
         {
+            if (stopped)
+            {
+                break;
+            }
+
             // The refusal is here as well as in the caller. This method deletes without a way back,
             // so it takes only the category that has nothing to come back to.
             if (candidate.Trust != CleanupTrust.Regenerable)
@@ -291,7 +331,11 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
 
             foreach (FileInfo file in FilesOf(candidate, failures))
             {
-                cancellationToken.ThrowIfCancellationRequested();
+                if (cancellationToken.IsCancellationRequested)
+                {
+                    stopped = true;
+                    break;
+                }
 
                 long size;
 
@@ -305,13 +349,26 @@ public sealed class WindowsQuarantineStore : IQuarantineStore
                     // A running browser holds its own cache open. Normal, and counted rather than
                     // fought with: the honest total is the one that leaves these out.
                     locked++;
+                    done++;
                     continue;
                 }
 
                 freed += size;
                 removed++;
+
+                if (++done % 40 == 0)
+                {
+                    progress?.Report(new CleanupProgress(done, total, freed, candidate.Id));
+                }
             }
         }
+
+        if (stopped)
+        {
+            failures.Add("stopped by the user before every file was deleted.");
+        }
+
+        progress?.Report(new CleanupProgress(done, total, freed, string.Empty));
 
         return Task.FromResult(new CleanupDeletion(freed, removed, locked, failures));
     }

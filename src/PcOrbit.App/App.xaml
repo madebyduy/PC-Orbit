@@ -752,6 +752,8 @@
       </Setter>
     </Style>
 
+    <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
     <!-- ============================================================ search, filters, cards -->
     <!--
       A search field that looks like the one in Settings: a rounded well with the magnifier
@@ -874,6 +876,47 @@
           </Trigger.ExitActions>
         </Trigger>
       </Style.Triggers>
+    </Style>
+
+    <!--
+      "Details" as a small text toggle. Lit while open, so the row says whether the panel under it
+      is showing without the reader having to look down for it.
+    -->
+    <Style x:Key="DetailToggle" TargetType="ToggleButton">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="11,0" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Foreground" Value="{StaticResource Muted}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ToggleButton">
+            <Border x:Name="Bg" CornerRadius="8" Padding="{TemplateBinding Padding}" Background="Transparent"
+                    BorderBrush="{StaticResource Hair}" BorderThickness="1">
+              <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <ContentPresenter VerticalAlignment="Center" />
+                <TextBlock x:Name="Chevron" Text="{StaticResource GlyphChevron}" Style="{StaticResource Glyph}"
+                           FontSize="10" Margin="6,1,0,0" RenderTransformOrigin="0.5,0.5">
+                  <TextBlock.RenderTransform><RotateTransform Angle="90" /></TextBlock.RenderTransform>
+                </TextBlock>
+              </StackPanel>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="Bg" Property="Background" Value="{StaticResource AccentSoft}" />
+                <Setter TargetName="Bg" Property="BorderBrush" Value="{StaticResource AccentSoft}" />
+                <Setter Property="Foreground" Value="{StaticResource Accent}" />
+                <Setter TargetName="Chevron" Property="RenderTransform">
+                  <Setter.Value><RotateTransform Angle="-90" /></Setter.Value>
+                </Setter>
+              </Trigger>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bg" Property="Background" Value="#F0F1F6" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
 
     <!-- A small circular risk marker beside a setting's name. -->

@@ -358,6 +358,11 @@ public sealed class WindowsCleanupScanner(
         int files = 0;
         DateTimeOffset? newest = null;
 
+        // The biggest few, kept as the walk goes so no second pass is needed. Eight is enough to
+        // answer "what is actually in here" and few enough to fit under a row.
+        const int keep = 8;
+        List<CleanupSample> largest = [];
+
         // Report-only rows are measured for the total and never acted on, so a full walk of a
         // Recycle Bin with thousands of folders in it is time spent on a number nobody will use.
         int budget = location.Trust == CleanupTrust.ReportOnly ? 4000 : int.MaxValue;
@@ -383,6 +388,17 @@ public sealed class WindowsCleanupScanner(
                 bytes += info.Length;
                 files++;
 
+                if (largest.Count < keep || info.Length > largest[^1].Bytes)
+                {
+                    largest.Add(new CleanupSample(info.Name, info.Length, new DateTimeOffset(touched)));
+                    largest.Sort((a, b) => b.Bytes.CompareTo(a.Bytes));
+
+                    if (largest.Count > keep)
+                    {
+                        largest.RemoveAt(largest.Count - 1);
+                    }
+                }
+
                 if (files >= budget)
                 {
                     problems.Add($"'{path}' holds more than {budget} files; the figure counts the first {budget}.");
@@ -405,7 +421,11 @@ public sealed class WindowsCleanupScanner(
                     ? $"walked {string.Join(", ", present)}"
                     : $"walked {string.Join(", ", present)}, counting files last written before {cutoff:yyyy-MM-dd}",
                 Confidence.High,
-                RawResult: string.Create(CultureInfo.InvariantCulture, $"{files} file(s), {bytes} bytes"))));
+                RawResult: string.Create(CultureInfo.InvariantCulture, $"{files} file(s), {bytes} bytes")))
+        {
+            Largest = largest,
+            Folders = present,
+        });
     }
 
     /// <summary>

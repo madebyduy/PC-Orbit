@@ -954,8 +954,15 @@
         </ScrollViewer>
 
         <!-- ================================= CLEANUP -->
+        <!--
+          Every row says what the files are, in a sentence a person can judge, and opens to show the
+          biggest of them by name. The work itself runs off the UI thread with a progress line and a
+          Stop button; the first version awaited synchronous file moves on the dispatcher and froze
+          the whole window for the duration.
+        -->
         <ScrollViewer x:Name="ViewCleanup" VerticalScrollBarVisibility="Auto" Padding="30,0,30,20" Visibility="Collapsed">
           <StackPanel>
+
             <Border Style="{StaticResource Card}" Margin="0,0,0,14">
               <Grid>
                 <Grid.ColumnDefinitions>
@@ -963,27 +970,32 @@
                   <ColumnDefinition Width="*" />
                   <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <StackPanel Grid.Column="0">
+                <StackPanel Grid.Column="0" VerticalAlignment="Center">
                   <TextBlock x:Name="CleanupTotalLabel" Style="{StaticResource Sect}" Margin="0,0,0,3" />
                   <TextBlock x:Name="CleanupTotal" Style="{StaticResource BigValue}" />
                   <TextBlock x:Name="CleanupSplit" Style="{StaticResource Tiny}" Margin="0,4,0,0" />
                 </StackPanel>
-                <TextBlock Grid.Column="1" x:Name="CleanupNote" Style="{StaticResource Sub}"
-                           VerticalAlignment="Center" Margin="26,0,26,0" TextWrapping="Wrap" />
+                <TextBlock Grid.Column="1" x:Name="CleanupNote" Style="{StaticResource Sub}" VerticalAlignment="Center"
+                           Margin="26,0,26,0" TextWrapping="Wrap" />
                 <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                  <Button x:Name="CleanupApply" Style="{StaticResource PrimaryButton}"
-                          HorizontalAlignment="Stretch" Click="OnCleanupApply" />
-                  <!--
-                    The second button is the one that was missing, and it is deliberately the
-                    quieter of the two. It does what the first does and then empties the
-                    quarantine, so every byte is back at once and nothing can be undone. Offering
-                    it is right — it is the user's disk — but making it the obvious choice would
-                    not be.
-                  -->
-                  <Button x:Name="CleanupPurge" Style="{StaticResource DangerButton}" Margin="0,8,0,0"
-                          HorizontalAlignment="Stretch" Click="OnCleanupPurge" />
+                  <Button x:Name="CleanupApply" Style="{StaticResource PrimaryButton}" Click="OnCleanupApply" />
+                  <Button x:Name="CleanupPurge" Style="{StaticResource DangerButton}" Margin="0,8,0,0" Click="OnCleanupPurge" />
                 </StackPanel>
               </Grid>
+            </Border>
+
+            <!-- progress: on the page, not over the app -->
+            <Border x:Name="CleanupProgressCard" Style="{StaticResource Card}" Margin="0,0,0,14" Visibility="Collapsed">
+              <DockPanel>
+                <Button x:Name="CleanupCancel" DockPanel.Dock="Right" Style="{StaticResource SecondaryButton}"
+                        VerticalAlignment="Center" Margin="16,0,0,0" Click="OnCleanupCancel" />
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock x:Name="CleanupProgressText" FontSize="13" FontWeight="SemiBold"
+                             Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                  <ProgressBar x:Name="CleanupProgressBar" Style="{StaticResource ThinBar}" Margin="0,8,0,0"
+                               Foreground="{StaticResource AccentBar}" Minimum="0" Maximum="100" />
+                </StackPanel>
+              </DockPanel>
             </Border>
 
             <Border Style="{StaticResource Card}" Margin="0">
@@ -996,41 +1008,75 @@
                   <ItemsControl.ItemTemplate>
                     <DataTemplate>
                       <Border Style="{StaticResource SettingsRow}" Padding="14,12" Background="{Binding RowBg}">
-                        <Grid>
-                          <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                          </Grid.ColumnDefinitions>
+                        <StackPanel>
+                          <Grid>
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="Auto" />
+                              <ColumnDefinition Width="Auto" />
+                              <ColumnDefinition Width="*" />
+                              <ColumnDefinition Width="Auto" />
+                              <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                          <!--
-                            One tick box per row. Without it the page offers a single all-or-nothing
-                            button over sixteen very different things, and someone who wants their
-                            browser cache back but keeps their crash dumps has no way to say so.
-                          -->
-                          <CheckBox Grid.Column="0" VerticalAlignment="Top" Margin="0,1,12,0"
-                                    IsChecked="{Binding Chosen, Mode=TwoWay}"
-                                    IsEnabled="{Binding CanChoose}" Tag="{Binding Id}"
-                                    Click="OnCleanupChoice" ToolTip="{Binding Note}" />
+                            <CheckBox Grid.Column="0" IsChecked="{Binding Chosen, Mode=TwoWay}" IsEnabled="{Binding CanChoose}"
+                                      Tag="{Binding Id}" VerticalAlignment="Center" Margin="0,0,12,0" Click="OnCleanupChoice" />
 
-                          <StackPanel Grid.Column="1">
-                            <DockPanel Margin="0,0,0,7">
-                              <TextBlock DockPanel.Dock="Left" Text="{Binding Glyph}"
-                                         Style="{StaticResource Glyph}" FontSize="14"
-                                         Foreground="{Binding Accent}" VerticalAlignment="Center"
-                                         Margin="0,0,9,0" />
-                              <TextBlock Text="{Binding Value}" FontSize="12.5" FontWeight="Bold"
-                                         Foreground="{Binding Accent}" HorizontalAlignment="Right"
-                                         Typography.NumeralAlignment="Tabular" VerticalAlignment="Center" />
-                              <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold"
-                                         Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis"
-                                         VerticalAlignment="Center" />
-                            </DockPanel>
-                            <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent, Mode=OneWay}"
+                            <Border Grid.Column="1" Width="36" Height="36" CornerRadius="9" Background="{Binding Tint}"
+                                    VerticalAlignment="Center" Margin="0,0,14,0">
+                              <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="16"
                                          Foreground="{Binding Accent}" />
-                            <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" Margin="0,6,0,0"
-                                       TextWrapping="Wrap" />
-                          </StackPanel>
-                        </Grid>
+                            </Border>
+
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Margin="0,0,16,0">
+                              <TextBlock Text="{Binding Name}" FontSize="13.5" FontWeight="SemiBold"
+                                         Foreground="{StaticResource Ink}" TextTrimming="CharacterEllipsis" />
+                              <TextBlock Text="{Binding Explain}" Style="{StaticResource Tiny}" Margin="0,2,0,0"
+                                         TextWrapping="Wrap" MaxHeight="34" TextTrimming="CharacterEllipsis" />
+                              <ProgressBar Style="{StaticResource ThinBar}" Value="{Binding Percent, Mode=OneWay}"
+                                           Foreground="{Binding Accent}" Margin="0,8,0,0" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,14,0">
+                              <TextBlock Text="{Binding Value}" FontSize="15" FontWeight="Bold" Foreground="{Binding Accent}"
+                                         HorizontalAlignment="Right" Typography.NumeralAlignment="Tabular" />
+                              <Border Background="{Binding Tint}" CornerRadius="6" Padding="8,2" Margin="0,4,0,0"
+                                      HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding TrustLabel}" FontSize="10.5" FontWeight="SemiBold"
+                                           Foreground="{Binding Accent}" />
+                              </Border>
+                            </StackPanel>
+
+                            <ToggleButton Grid.Column="4" x:Name="More" Content="{Binding DetailsLabel}"
+                                          Style="{StaticResource DetailToggle}" VerticalAlignment="Center"
+                                          Visibility="{Binding HasDetails}" />
+                          </Grid>
+
+                          <!-- what is actually in there -->
+                          <Border Background="#F8FAFC" CornerRadius="9" Padding="14,11" Margin="62,10,0,0"
+                                  Visibility="{Binding IsChecked, ElementName=More, Converter={StaticResource BoolToVis}}">
+                            <StackPanel>
+                              <TextBlock Text="{Binding Note}" Style="{StaticResource Tiny}" TextWrapping="Wrap" />
+                              <TextBlock Text="{Binding LargestLabel}" Style="{StaticResource Sect}" Margin="0,10,0,6" />
+                              <ItemsControl ItemsSource="{Binding Largest}">
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate>
+                                    <DockPanel Margin="0,0,0,4">
+                                      <TextBlock DockPanel.Dock="Right" Text="{Binding Size}" FontSize="12" FontWeight="SemiBold"
+                                                 Foreground="{StaticResource Ink}" Margin="14,0,0,0"
+                                                 Typography.NumeralAlignment="Tabular" />
+                                      <TextBlock DockPanel.Dock="Right" Text="{Binding Age}" Style="{StaticResource Tiny}"
+                                                 Margin="14,0,0,0" VerticalAlignment="Center" />
+                                      <TextBlock Text="{Binding Name}" FontSize="12" Foreground="{StaticResource Ink}"
+                                                 TextTrimming="CharacterEllipsis" />
+                                    </DockPanel>
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                              <TextBlock Text="{Binding FoldersLabel}" Style="{StaticResource Sect}" Margin="0,10,0,4" />
+                              <TextBlock Text="{Binding Folders}" Style="{StaticResource Tiny}" TextWrapping="Wrap" />
+                            </StackPanel>
+                          </Border>
+                        </StackPanel>
                       </Border>
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
