@@ -146,6 +146,9 @@ public sealed class PcOrbitHost : IDisposable
     /// </remarks>
     public IFirmwareSettings Firmware { get; } = new WindowsFirmwareSettings();
 
+    /// <summary>What this product has written to the firmware, with the values it replaced.</summary>
+    public IFirmwareChangeLog FirmwareChanges { get; } = new WindowsFirmwareChangeLog();
+
     /// <summary>
     /// What is currently defending the machine, and whether Windows would even let it be changed.
     /// </summary>

@@ -876,6 +876,22 @@
     "app.cleanup.progress": "{done} / {total} tệp · đã trống {mb} MB · {what}",
     "app.cleanup.progressStart": "Đang bắt đầu…",
     "app.cleanup.cancel": "Dừng",
-    "app.cleanup.cancelled": "Đã dừng. Phần đã chuyển đang nằm trong khu cách ly và khôi phục được; phần đã xoá là bộ đệm tự sinh lại."
+    "app.cleanup.cancelled": "Đã dừng. Phần đã chuyển đang nằm trong khu cách ly và khôi phục được; phần đã xoá là bộ đệm tự sinh lại.",
+    "app.firmware.password.set": "Mật khẩu BIOS: đã đặt",
+    "app.firmware.password.none": "Mật khẩu BIOS: chưa đặt",
+    "app.firmware.reorder": "Sắp xếp",
+    "app.firmware.reorder.title": "Sắp xếp {name}",
+    "app.firmware.reorder.hint": "Các thiết bị firmware sẽ thử, trên cùng trước. Di chuyển chúng; không thêm hay bớt được gì ở đây. Ổ đĩa chứa Windows phải ở chỗ mà firmware tìm thấy.",
+    "app.firmware.reorder.up": "Lên",
+    "app.firmware.reorder.down": "Xuống",
+    "app.firmware.reorder.apply": "Dùng thứ tự này",
+    "app.firmware.history.title": "Những thay đổi bạn đã làm ở đây",
+    "app.firmware.history.hint": "Mọi thiết lập ứng dụng này đã ghi vào firmware, kèm giá trị trước đó. Đặt lại sẽ ghi giá trị cũ qua cùng một bước xác nhận.",
+    "app.firmware.history.empty": "Chưa có gì. Bất cứ thứ gì bạn đổi ở trang này sẽ được liệt kê ở đây kèm đường quay lại.",
+    "app.firmware.history.change": "{from} → {to}",
+    "app.firmware.history.verified": "đã đọc lại ✓",
+    "app.firmware.history.unverified": "chưa xác nhận",
+    "app.firmware.revert": "Đặt lại",
+    "app.firmware.revert.gone": "Firmware không còn đưa ra thiết lập đó, nên không ghi lại giá trị cũ được."
   }
 }

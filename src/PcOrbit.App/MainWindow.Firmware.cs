@@ -2,6 +2,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using PcOrbit.Core.Firmware;
+using PcOrbit.Core.Graph;
+using PcOrbit.Core.Preflight;
 
 namespace PcOrbit.App;
 
@@ -43,7 +45,29 @@ public sealed class FirmwareRow(
     public Brush RiskInk { get; } = riskInk;
 
     public Brush RowBg { get; } = rowBg;
+
+    /// <summary>List-valued: offers Reorder instead of the one-value picker.</summary>
+    public bool Reorderable { get; init; }
+
+    public string ReorderLabel { get; init; } = string.Empty;
+
+    public Visibility ReorderVisible => Reorderable ? Visibility.Visible : Visibility.Collapsed;
+
+    public Visibility ApplyVisible => Reorderable ? Visibility.Collapsed : Visibility.Visible;
 }
+
+/// <summary>One firmware write this app made, ready for the history card.</summary>
+public sealed record FirmwareHistoryRow(
+    string Id,
+    string When,
+    string Setting,
+    string Change,
+    string Verdict,
+    Brush Tint,
+    Brush Ink,
+    string RevertLabel,
+    Visibility RevertVisible,
+    Brush RowBg);
 
 public sealed record FirmwareGroup(string Key, string Name, string Count, IReadOnlyList<FirmwareRow> Rows);
 
@@ -122,6 +146,9 @@ public partial class MainWindow
 
     private void ApplyFirmwareStrings()
     {
+        FirmwareHistoryTitle.Text = T("app.firmware.history.title");
+        FirmwareHistoryHint.Text = T("app.firmware.history.hint");
+        FirmwareHistoryEmpty.Text = T("app.firmware.history.empty");
         FirmwareTitle.Text = T("app.firmware.title");
         FirmwareHint.Text = T("app.firmware.hint");
         FirmwareSearch.Tag = T("app.firmware.search");
@@ -168,6 +195,8 @@ public partial class MainWindow
             FirmwareTools.Visibility = Visibility.Collapsed;
             FirmwareUnavailable.Visibility = Visibility.Visible;
             FirmwareUnavailableText.Text = UnavailableReason();
+            RenderFirmwareStatus();
+            await RenderFirmwareHistoryAsync();
 
             return;
         }
@@ -190,10 +219,73 @@ public partial class MainWindow
                 T("app.firmware.apply"),
                 tint,
                 ink,
-                Stripe(i)));
+                Stripe(i))
+            {
+                Reorderable = setting.Reorderable,
+                ReorderLabel = T("app.firmware.reorder"),
+            });
         })];
 
         ApplyFirmwareFilter();
+        RenderFirmwareStatus();
+        await RenderFirmwareHistoryAsync();
+    }
+
+    /// <summary>
+    /// The four facts a person opens a BIOS page to check, as chips above the list.
+    /// </summary>
+    /// <remarks>
+    /// Three of them also live on Protection. That is a deliberate second home — the one exception
+    /// to the no-repeats rule — because a BIOS page with no Secure Boot on it reads as broken
+    /// however tidy the rule behind it. The fourth, the supervisor password, comes from the vendor
+    /// interface and is shown only when that interface answered.
+    /// </remarks>
+    private void RenderFirmwareStatus()
+    {
+        List<StateRow> chips =
+        [
+            CapabilityRow(CoreCapabilities.SecureBoot, 0),
+            CapabilityRow(CoreCapabilities.BootMode, 1),
+            CapabilityRow(CoreCapabilities.TpmReady, 2),
+        ];
+
+        if (_firmware.Availability == FirmwareAvailability.Available)
+        {
+            chips.Add(new StateRow(
+                T(_firmware.PasswordRequired ? "app.firmware.password.set" : "app.firmware.password.none"),
+                string.Empty,
+                string.Empty,
+                GlyphOf("GlyphSecurity"),
+                _firmware.PasswordRequired ? B("GoodSoft") : B("Hair"),
+                _firmware.PasswordRequired ? B("Good") : B("Muted"),
+                Brushes.Transparent));
+        }
+
+        FirmwareStatus.ItemsSource = chips;
+    }
+
+    private async Task RenderFirmwareHistoryAsync()
+    {
+        if (_host is null)
+        {
+            return;
+        }
+
+        IReadOnlyList<FirmwareChange> changes = await _host.FirmwareChanges.ListAsync();
+
+        FirmwareHistoryEmpty.Visibility = changes.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        FirmwareHistory.ItemsSource = changes.Select((c, i) => new FirmwareHistoryRow(
+            c.Id,
+            c.When.LocalDateTime.ToString("dd/MM HH:mm", System.Globalization.CultureInfo.CurrentCulture),
+            c.Setting,
+            T("app.firmware.history.change", Args(("from", c.From ?? T("status.unknown")), ("to", c.To))),
+            T(c.Verified ? "app.firmware.history.verified" : "app.firmware.history.unverified"),
+            c.Verified ? B("GoodSoft") : B("WarnSoft"),
+            c.Verified ? B("Good") : B("Warn"),
+            T("app.firmware.revert"),
+            c.CanRevert ? Visibility.Visible : Visibility.Collapsed,
+            Stripe(i))).ToList();
     }
 
     private void OnFirmwareFilterChanged(object sender, RoutedEventArgs e)
@@ -287,7 +379,7 @@ public partial class MainWindow
 
     private async void OnFirmwareApply(object sender, RoutedEventArgs e)
     {
-        if (_host is null || _strings is null || sender is not Button { Tag: string name })
+        if (sender is not Button { Tag: string name })
         {
             return;
         }
@@ -295,13 +387,81 @@ public partial class MainWindow
         (FirmwareSetting Setting, FirmwareRow Row) hit = _firmwareRows
             .FirstOrDefault(r => string.Equals(r.Setting.Name, name, StringComparison.Ordinal));
 
-        if (hit.Setting is null || string.IsNullOrWhiteSpace(hit.Row.Wanted))
+        if (hit.Setting is not null && !string.IsNullOrWhiteSpace(hit.Row.Wanted))
+        {
+            await ChangeFirmwareAsync(hit.Setting, hit.Row.Wanted);
+        }
+    }
+
+    private async void OnFirmwareReorder(object sender, RoutedEventArgs e)
+    {
+        if (_strings is null || sender is not Button { Tag: string name })
         {
             return;
         }
 
-        FirmwareChangePlan plan = FirmwareChangePlan.For(
-            hit.Setting, hit.Row.Wanted, _snapshot, _firmware.PasswordRequired);
+        FirmwareSetting? setting = _firmware.Settings
+            .FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.Ordinal));
+
+        if (setting?.Current is null)
+        {
+            return;
+        }
+
+        string? reordered = BootOrderDialog.Show(this, _strings, setting.Name, setting.Current);
+
+        if (reordered is not null)
+        {
+            await ChangeFirmwareAsync(setting, reordered);
+        }
+    }
+
+    /// <summary>
+    /// Put back: the previous value, written through exactly the same confirmation.
+    /// </summary>
+    /// <remarks>
+    /// Not a shortcut. The consequences of restoring Secure Boot are the consequences of changing
+    /// Secure Boot, and the typed confirmation applies both ways. The only thing the history adds is
+    /// the value, which is the one thing a person cannot be expected to remember.
+    /// </remarks>
+    private async void OnFirmwareRevert(object sender, RoutedEventArgs e)
+    {
+        if (_host is null || sender is not Button { Tag: string id })
+        {
+            return;
+        }
+
+        FirmwareChange? change = (await _host.FirmwareChanges.ListAsync())
+            .FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal));
+
+        if (change is null || change.From is null)
+        {
+            return;
+        }
+
+        FirmwareSetting? setting = _firmware.Settings
+            .FirstOrDefault(s => string.Equals(s.Name, change.Setting, StringComparison.Ordinal));
+
+        if (setting is null)
+        {
+            MessageBox.Show(this, T("app.firmware.revert.gone"), T("app.title"), MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        await ChangeFirmwareAsync(setting, change.From);
+    }
+
+    /// <summary>
+    /// The one path every firmware write takes: plan, confirm to the risk, write, read back, record.
+    /// </summary>
+    private async Task ChangeFirmwareAsync(FirmwareSetting setting, string wanted)
+    {
+        if (_host is null || _strings is null)
+        {
+            return;
+        }
+
+        FirmwareChangePlan plan = FirmwareChangePlan.For(setting, wanted, _snapshot, _firmware.PasswordRequired);
 
         if (!plan.CanProceed)
         {
@@ -324,7 +484,21 @@ public partial class MainWindow
 
         FirmwareWriteResult result = await BusyResultAsync(
             T("app.firmware.working"),
-            () => _host.Firmware.SetAsync(hit.Setting, hit.Row.Wanted, answer.Password));
+            () => _host.Firmware.SetAsync(setting, wanted, answer.Password));
+
+        // Recorded whenever the firmware accepted the write, verified or not: an unverified change
+        // is exactly the one whose previous value the person will want later.
+        if (result.Applied)
+        {
+            await _host.FirmwareChanges.RecordAsync(new FirmwareChange(
+                Guid.NewGuid().ToString("N"),
+                DateTimeOffset.Now,
+                _firmware.Vendor ?? string.Empty,
+                setting.Name,
+                setting.Current,
+                wanted,
+                result.Verified));
+        }
 
         MessageBox.Show(
             this,

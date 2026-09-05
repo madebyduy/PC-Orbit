@@ -876,6 +876,22 @@
     "app.cleanup.progress": "{done} of {total} files · {mb} MB freed so far · {what}",
     "app.cleanup.progressStart": "Starting…",
     "app.cleanup.cancel": "Stop",
-    "app.cleanup.cancelled": "Stopped. What was already moved is in quarantine and can be restored; what was already deleted was cache that rebuilds itself."
+    "app.cleanup.cancelled": "Stopped. What was already moved is in quarantine and can be restored; what was already deleted was cache that rebuilds itself.",
+    "app.firmware.password.set": "BIOS password: set",
+    "app.firmware.password.none": "BIOS password: none",
+    "app.firmware.reorder": "Reorder",
+    "app.firmware.reorder.title": "Reorder {name}",
+    "app.firmware.reorder.hint": "The devices the firmware tries, top first. Move them; nothing can be added or removed here. The disk Windows is on has to stay somewhere it will be found.",
+    "app.firmware.reorder.up": "Move up",
+    "app.firmware.reorder.down": "Move down",
+    "app.firmware.reorder.apply": "Use this order",
+    "app.firmware.history.title": "Changes you have made here",
+    "app.firmware.history.hint": "Every setting this app wrote to the firmware, with what it was before. Put back writes the old value through the same confirmation.",
+    "app.firmware.history.empty": "Nothing yet. Anything you change on this page will be listed here with a way back.",
+    "app.firmware.history.change": "{from} → {to}",
+    "app.firmware.history.verified": "read back ✓",
+    "app.firmware.history.unverified": "not confirmed",
+    "app.firmware.revert": "Put back",
+    "app.firmware.revert.gone": "That setting is no longer offered by the firmware, so its old value cannot be written."
   }
 }

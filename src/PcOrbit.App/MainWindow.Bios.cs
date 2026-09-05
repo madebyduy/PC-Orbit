@@ -61,9 +61,10 @@ public partial class MainWindow
     /// </summary>
     /// <remarks>
     /// Secure Boot, the boot mode and the TPM are firmware settings, and they are also the answer
-    /// to "is this machine protected" — which is where somebody actually looks for them. So they
-    /// live on Protection and this page does not repeat them. Every firmware capability has exactly
-    /// one home: these four there, the rest here, and none of them on Readings.
+    /// to "is this machine protected" — so their full rows live on Protection, and this page keeps
+    /// them out of its readings list. They do appear here once more, as status chips above the
+    /// settings: the one deliberate exception to the no-repeats rule, because a BIOS page with no
+    /// Secure Boot on it reads as broken however tidy the rule behind it.
     /// </remarks>
     private static readonly CapabilityId[] OwnedByProtection =
     [

@@ -134,6 +134,30 @@ public sealed class FirmwareSettingsTests
         Assert.False(bootOrder.Writable);
     }
 
+    /// <summary>
+    /// The write the reorder dialog makes: the same names, another order. Accepted as a whole,
+    /// refused when a part is not an option or a device appears twice.
+    /// </summary>
+    [Fact]
+    public void AReorderedListOfTheSameOptionsIsAcceptedAndAStrangerOrADuplicateIsNot()
+    {
+        FirmwareSetting bootOrder = Setting("BootOrder", "USBCD:NVMe0:PXEBOOT", "USBCD", "NVMe0", "PXEBOOT", "HDD0");
+
+        Assert.True(bootOrder.Accepts("NVMe0:USBCD:PXEBOOT"));
+        Assert.True(bootOrder.Reorderable);
+        Assert.False(bootOrder.Accepts("NVMe0:FLOPPY:PXEBOOT"));
+        Assert.False(bootOrder.Accepts("NVMe0:NVMe0:PXEBOOT"));
+
+        FirmwareChangePlan plan = FirmwareChangePlan.For(bootOrder, "NVMe0:USBCD:PXEBOOT", Snapshot(), false);
+
+        Assert.True(plan.CanProceed);
+        Assert.True(plan.NeedsTypedConfirmation);
+    }
+
+    [Fact]
+    public void ARefusedListIsNotReorderableEither() =>
+        Assert.False(Setting("PasswordDeviceList", "A:B", "A", "B").Reorderable);
+
     /// <summary>A colon is not enough on its own: a time is not a list of options.</summary>
     [Fact]
     public void AColonInsideAScalarDoesNotMakeItAList()

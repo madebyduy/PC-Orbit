@@ -76,9 +76,37 @@ public sealed record FirmwareSetting(
         }
     }
 
-    /// <summary>Whether a value is one the firmware said it would take.</summary>
-    public bool Accepts(string value) =>
-        Options.Any(o => string.Equals(o, value, StringComparison.OrdinalIgnoreCase));
+    /// <summary>
+    /// Whether a value is one the firmware said it would take.
+    /// </summary>
+    /// <remarks>
+    /// For a list-valued setting the value is several options joined with colons, and it is
+    /// accepted when every part is an option and no part repeats. That is the shape the firmware
+    /// wrote the current value in, so it is the shape it reads back. A single option is still a
+    /// valid list of one — which is exactly the write the one-value picker must not be allowed to
+    /// make, and <see cref="Writable"/> is what stops it.
+    /// </remarks>
+    public bool Accepts(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        if (!value.Contains(':', StringComparison.Ordinal))
+        {
+            return Options.Any(o => string.Equals(o, value, StringComparison.OrdinalIgnoreCase));
+        }
+
+        string[] parts = value.Split(':', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        return parts.Length > 0
+            && parts.All(part => Options.Any(o => string.Equals(o, part, StringComparison.OrdinalIgnoreCase)))
+            && parts.Distinct(StringComparer.OrdinalIgnoreCase).Count() == parts.Length;
+    }
+
+    /// <summary>A list-valued setting this product offers to reorder, rather than to pick one value for.</summary>
+    public bool Reorderable => Risk != FirmwareRisk.Refused && IsCompound;
 }
 
 /// <summary>

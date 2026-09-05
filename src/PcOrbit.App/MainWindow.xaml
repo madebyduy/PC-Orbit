@@ -1409,6 +1409,31 @@
                 </DockPanel>
                 <TextBlock x:Name="FirmwareHint" Style="{StaticResource Sub}" TextWrapping="Wrap" Margin="0,0,0,12" />
 
+                <!--
+                  The four facts a person opens a BIOS page to check, as chips. Secure Boot, the boot
+                  mode and the TPM also appear on Protection — a deliberate second home, because a
+                  BIOS page without Secure Boot on it reads as broken however tidy the rule behind it.
+                -->
+                <ItemsControl x:Name="FirmwareStatus" Margin="0,0,0,12">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Background="{Binding Tone}" CornerRadius="10" Padding="12,8" Margin="0,0,8,8">
+                        <StackPanel Orientation="Horizontal">
+                          <TextBlock Text="{Binding Glyph}" Style="{StaticResource Glyph}" FontSize="14"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding Name}" FontSize="12" Foreground="{StaticResource Muted}"
+                                     Margin="8,0,6,0" VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding Value}" FontSize="12.5" FontWeight="SemiBold"
+                                     Foreground="{Binding Accent}" VerticalAlignment="Center" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
                 <Border x:Name="FirmwareUnavailable" Background="{StaticResource RowBg}" CornerRadius="9"
                         Padding="14,12" Visibility="Collapsed">
                   <TextBlock x:Name="FirmwareUnavailableText" Style="{StaticResource Sub}" TextWrapping="Wrap" />
@@ -1484,9 +1509,14 @@
                                               ItemsSource="{Binding Options}" SelectedItem="{Binding Wanted, Mode=TwoWay}"
                                               IsEnabled="{Binding Writable}" />
 
-                                    <Button Grid.Column="3" Content="{Binding ApplyLabel}" Tag="{Binding Name}"
-                                            Margin="8,0,0,0" VerticalAlignment="Center" IsEnabled="{Binding Writable}"
-                                            Style="{StaticResource RowButton}" Click="OnFirmwareApply" />
+                                    <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="8,0,0,0" VerticalAlignment="Center">
+                                      <Button Content="{Binding ApplyLabel}" Tag="{Binding Name}" IsEnabled="{Binding Writable}"
+                                              Visibility="{Binding ApplyVisible}" Style="{StaticResource RowButton}"
+                                              Click="OnFirmwareApply" />
+                                      <Button Content="{Binding ReorderLabel}" Tag="{Binding Name}"
+                                              Visibility="{Binding ReorderVisible}" Style="{StaticResource RowButton}"
+                                              Click="OnFirmwareReorder" />
+                                    </StackPanel>
                                   </Grid>
                                 </Border>
                               </DataTemplate>
@@ -1504,6 +1534,45 @@
                 <Border Background="#FEF3C7" CornerRadius="9" Padding="13,11" Margin="0,12,0,0">
                   <TextBlock x:Name="BiosWriteNote" Style="{StaticResource Sub}" TextWrapping="Wrap" />
                 </Border>
+              </StackPanel>
+            </Border>
+
+            <!-- what this app has written, and the way back -->
+            <Border Style="{StaticResource Card}" Margin="0,0,0,14">
+              <StackPanel>
+                <TextBlock x:Name="FirmwareHistoryTitle" Style="{StaticResource CardTitle}" Margin="0,0,0,4" />
+                <TextBlock x:Name="FirmwareHistoryHint" Style="{StaticResource Sub}" TextWrapping="Wrap" Margin="0,0,0,10" />
+                <TextBlock x:Name="FirmwareHistoryEmpty" Style="{StaticResource Sub}" Visibility="Collapsed" />
+                <ItemsControl x:Name="FirmwareHistory">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                      <Border Style="{StaticResource SettingsRow}" Padding="13,10" Background="{Binding RowBg}">
+                        <Grid>
+                          <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                          </Grid.ColumnDefinitions>
+                          <TextBlock Grid.Column="0" Text="{Binding When}" Style="{StaticResource Tiny}"
+                                     VerticalAlignment="Center" Margin="0,0,14,0" Width="96" />
+                          <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Setting}" FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{StaticResource Ink}" />
+                            <TextBlock Text="{Binding Change}" Style="{StaticResource Tiny}" Margin="0,2,0,0" />
+                          </StackPanel>
+                          <Border Grid.Column="2" Background="{Binding Tint}" CornerRadius="6" Padding="8,2"
+                                  VerticalAlignment="Center" Margin="0,0,12,0">
+                            <TextBlock Text="{Binding Verdict}" FontSize="10.5" FontWeight="SemiBold" Foreground="{Binding Ink}" />
+                          </Border>
+                          <Button Grid.Column="3" Content="{Binding RevertLabel}" Tag="{Binding Id}"
+                                  Visibility="{Binding RevertVisible}" Style="{StaticResource RowButton}"
+                                  VerticalAlignment="Center" Click="OnFirmwareRevert" />
+                        </Grid>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
               </StackPanel>
             </Border>
 
