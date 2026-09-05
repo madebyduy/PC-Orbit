@@ -63,6 +63,8 @@ public partial class MainWindow
 
         ElevateBtn.Visibility = elevated ? Visibility.Collapsed : Visibility.Visible;
         ElevateBtn.Content = T("app.elevate.button");
+        ElevatedBadge.Visibility = elevated ? Visibility.Visible : Visibility.Collapsed;
+        ElevatedBadge.Text = T("app.elevate.running");
     }
 
     /// <summary>
@@ -80,84 +82,145 @@ public partial class MainWindow
     /// assembly path handed back to it.
     /// </para>
     /// </remarks>
-    private void OnElevate(object sender, RoutedEventArgs e)
+    private void OnElevate(object sender, RoutedEventArgs e) => TryElevate(fromButton: true);
+
+    /// <summary>
+    /// Starts the administrator copy and closes this one — or says exactly why it could not.
+    /// </summary>
+    /// <returns>True when the elevated copy was started and this window is closing.</returns>
+    /// <remarks>
+    /// Windows asks the user in its own prompt. Declining it comes back as error 1223 and is not a
+    /// failure — nothing happens and we stay. Anything else is a failure and is shown, with the path
+    /// to the log, because a button that silently does nothing is the thing that cost a day here.
+    /// </remarks>
+    private bool TryElevate(bool fromButton)
     {
+        ElevationLog.Note(fromButton ? "button: elevation requested" : "startup: AlwaysElevate is on");
+
         if (ElevatedRelaunch() is not { } start)
         {
-            return;
+            ElevationLog.Note("no launch could be built");
+            ShowElevationFailure(T("app.elevate.noHost"));
+            return false;
         }
 
-        // Windows asks the user in its own prompt. If they decline, nothing happens and we stay.
+        ElevationLog.Note($"launching \"{start.FileName}\" {string.Join(' ', start.ArgumentList)} in \"{start.WorkingDirectory}\"");
+
         try
         {
-            Process.Start(start);
+            using Process? started = Process.Start(start);
+            ElevationLog.Note($"started, new pid={started?.Id.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "?"}");
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
         {
-            return;
+            ElevationLog.Note("declined at the UAC prompt");
+            return false;
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            ElevationLog.Note($"FAILED: {ex.NativeErrorCode} {ex.Message}");
+            ShowElevationFailure(ex.Message);
+            return false;
         }
 
         Close();
+        return true;
     }
+
+    private void ShowElevationFailure(string reason) =>
+        MessageBox.Show(
+            this,
+            T("app.elevate.failed", Args(("reason", reason), ("log", ElevationLog.Path))),
+            T("app.title"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
 
     /// <summary>
     /// This app, asked for again with administrator rights, in a way that will actually start.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The first version repeated <see cref="Environment.ProcessPath"/>, on the theory that however
-    /// this process was started demonstrably works. It does not survive elevation. Under
-    /// <c>dotnet run</c> the apphost <c>PcOrbit.exe</c> finds the runtime through a
-    /// <c>DOTNET_ROOT</c> variable the SDK puts in its environment — and a <c>runas</c> launch goes
-    /// through Windows' own elevation service, which builds the new process's environment from the
-    /// elevated token, not from ours. So the relaunched apphost died with "You must install .NET"
-    /// on a machine that plainly had it, and the button appeared to do nothing.
+    /// Three versions of this have failed on the machine it was written on, and each failure was
+    /// silent until the log existed. Repeating <see cref="Environment.ProcessPath"/> relaunched the
+    /// apphost, which died with "You must install .NET": under <c>dotnet run</c> it finds the runtime
+    /// through a <c>DOTNET_ROOT</c> the SDK puts in the environment, and a <c>runas</c> launch goes
+    /// through Windows' elevation service, which builds the new environment from the elevated token
+    /// and drops it. Naming the user-local <c>dotnet.exe</c> directly failed with
+    /// <c>ERROR_PATH_NOT_FOUND</c> before the prompt ever appeared — for the full path, for the 8.3
+    /// path, with and without a working directory — while <c>powershell.exe</c> from System32
+    /// elevated every time. The cause of that refusal was not established; what is established is
+    /// that it does not apply to System32.
     /// </para>
     /// <para>
-    /// So the relaunch names the runtime host explicitly: the <c>dotnet.exe</c> three folders above
-    /// the runtime directory this very process is executing from, handed our assembly. That path
-    /// needs no environment to resolve. The apphost is used only if that host cannot be found.
+    /// So the elevated process is <c>powershell.exe</c>, hidden, and its one job is to set
+    /// <c>DOTNET_ROOT</c> to the runtime this very process is running on and start the apphost, which
+    /// is a windowed executable and so shows no console. Inside an already-elevated process that is
+    /// an ordinary launch, and ordinary launches from a user's own folder work. The script travels as
+    /// <c>-EncodedCommand</c>, the same way every other script in this product does, so a path with
+    /// a space or an apostrophe in it cannot break the quoting. If there is no apphost beside the
+    /// assembly, the runtime host is started with the assembly instead, console hidden.
     /// </para>
     /// </remarks>
     private static ProcessStartInfo? ElevatedRelaunch()
     {
         string assembly = Assembly.GetEntryAssembly()?.Location ?? string.Empty;
 
+        if (string.IsNullOrEmpty(assembly) || !File.Exists(assembly))
+        {
+            ElevationLog.Note("no entry assembly on disk");
+            return null;
+        }
+
         // shared\Microsoft.NETCore.App\<version>\ -> up three is the dotnet root.
         string runtime = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory();
         string? root = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(runtime.TrimEnd(Path.DirectorySeparatorChar))));
         string? host = root is null ? null : Path.Combine(root, "dotnet.exe");
+        string apphost = Path.ChangeExtension(assembly, ".exe");
+        string directory = Path.GetDirectoryName(assembly) ?? string.Empty;
 
-        if (host is not null && File.Exists(host) && !string.IsNullOrEmpty(assembly))
-        {
-            var viaHost = new ProcessStartInfo(host)
-            {
-                UseShellExecute = true,
-                Verb = "runas",
-                WorkingDirectory = Path.GetDirectoryName(assembly) ?? string.Empty,
-            };
+        string trampoline = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.System),
+            "WindowsPowerShell", "v1.0", "powershell.exe");
 
-            viaHost.ArgumentList.Add(assembly);
+        ElevationLog.Note(
+            $"runtime={runtime} root={root ?? "(none)"} host={host ?? "(none)"} hostExists={host is not null && File.Exists(host)} "
+            + $"apphost={apphost} apphostExists={File.Exists(apphost)} trampoline={trampoline} trampolineExists={File.Exists(trampoline)}");
 
-            return viaHost;
-        }
-
-        if (Environment.ProcessPath is not { } process)
+        if (root is null || !File.Exists(trampoline))
         {
             return null;
         }
 
-        var start = new ProcessStartInfo(process)
+        static string Q(string value) => "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
+
+        string script = File.Exists(apphost)
+            ? $"$env:DOTNET_ROOT = {Q(root)}; $env:DOTNET_ROOT_X64 = {Q(root)}; "
+              + $"Start-Process -FilePath {Q(apphost)} -WorkingDirectory {Q(directory)}"
+            : host is not null && File.Exists(host)
+                ? $"Start-Process -FilePath {Q(host)} -ArgumentList ('\"' + {Q(assembly)} + '\"') -WorkingDirectory {Q(directory)} -WindowStyle Hidden"
+                : string.Empty;
+
+        if (script.Length == 0)
+        {
+            return null;
+        }
+
+        var start = new ProcessStartInfo(trampoline)
         {
             UseShellExecute = true,
             Verb = "runas",
-            WorkingDirectory = Path.GetDirectoryName(process) ?? string.Empty,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            WorkingDirectory = directory,
         };
 
-        if (Path.GetFileName(process).Equals("dotnet.exe", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(assembly))
-        {
-            start.ArgumentList.Add(assembly);
-        }
+        start.ArgumentList.Add("-NoProfile");
+        start.ArgumentList.Add("-NonInteractive");
+        start.ArgumentList.Add("-WindowStyle");
+        start.ArgumentList.Add("Hidden");
+        start.ArgumentList.Add("-EncodedCommand");
+        start.ArgumentList.Add(Convert.ToBase64String(System.Text.Encoding.Unicode.GetBytes(script)));
+
+        ElevationLog.Note($"trampoline script: {script}");
 
         return start;
     }

@@ -843,6 +843,9 @@
     "app.alwaysElevate": "Always open as administrator",
     "app.alwaysElevate.hint": "Windows will ask each time the app starts. Needed to read or change BIOS settings; nothing else requires it.",
     "app.lang.vi": "Tiếng Việt",
-    "app.lang.en": "English"
+    "app.lang.en": "English",
+    "app.elevate.running": "Running as administrator",
+    "app.elevate.failed": "Could not start the administrator copy of this app.\n\n{reason}\n\nThe attempt is recorded in {log} — that file is what to send if you ask for help.",
+    "app.elevate.noHost": "The .NET runtime that runs this app could not be found in a place Windows will accept for an elevated start."
   }
 }

@@ -270,19 +270,13 @@ public partial class MainWindow : Window
 
         _host = await Task.Run(() => PcOrbitHost.Create(options, new WpfSafeApplyConfirmation(catalog)));
 
-        // Someone who lives in the BIOS page asked to skip the button. Windows still asks them.
-        if (_settings.AlwaysElevate && !_host.Elevation.IsElevated && ElevatedRelaunch() is { } elevated)
+        ElevationLog.Note($"window up, host={Environment.ProcessPath} assembly={System.Reflection.Assembly.GetEntryAssembly()?.Location}");
+
+        // Someone who lives in the BIOS page asked to skip the button. Windows still asks them, and
+        // a decline means carrying on as a standard user, which is a complete app too.
+        if (_settings.AlwaysElevate && !_host.Elevation.IsElevated && TryElevate(fromButton: false))
         {
-            try
-            {
-                System.Diagnostics.Process.Start(elevated);
-                Close();
-                return;
-            }
-            catch (System.ComponentModel.Win32Exception)
-            {
-                // Declined at the prompt. Carry on as a standard user, which is a complete app too.
-            }
+            return;
         }
 
         AlwaysElevateBox.IsChecked = _settings.AlwaysElevate;

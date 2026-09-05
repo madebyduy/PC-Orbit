@@ -843,6 +843,9 @@
     "app.alwaysElevate": "Luôn mở với quyền quản trị",
     "app.alwaysElevate.hint": "Windows sẽ hỏi mỗi lần mở app. Cần cho việc đọc và đổi thiết lập BIOS; không việc gì khác cần.",
     "app.lang.vi": "Tiếng Việt",
-    "app.lang.en": "English"
+    "app.lang.en": "English",
+    "app.elevate.running": "Đang chạy với quyền quản trị",
+    "app.elevate.failed": "Không mở được bản chạy với quyền quản trị của ứng dụng.\n\n{reason}\n\nLần thử này đã ghi vào {log} — đó là tệp cần gửi nếu bạn cần trợ giúp.",
+    "app.elevate.noHost": "Không tìm thấy .NET runtime chạy ứng dụng này ở chỗ mà Windows chấp nhận cho một lần mở có nâng quyền."
   }
 }
